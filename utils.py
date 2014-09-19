@@ -5,6 +5,19 @@ import select
 #from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+iconsDir='.'
+
+
+def setIconsDir(dir):
+    global iconsDir
+    iconsDir=dir
+    
+def loadIcon(name):
+    if not name.endswith('.png'):
+        name=name+".png"
+    path=os.path.join(iconsDir,name)
+    #print "Loading '{}'".format(path)
+    return QtGui.QIcon(path)
 
 def message(msg):
     m=QtGui.QMessageBox()
@@ -24,8 +37,8 @@ def appendOutput(output,text):
     #output.ensureCursorVisible()
     output.appendPlainText(text)
 
-
 def appendColorLine(output,line,color):
+    line=line.decode('utf8')
     c=output.textCursor()
     c.movePosition(QtGui.QTextCursor.End)
     f=c.charFormat()
@@ -42,6 +55,14 @@ def appendLine(output,line):
         if len(parts)>2 and parts[1]=='-c':
             line='Compiling '+parts[-1]
             color='#000080'
+        elif line.startswith('ar cr '):
+            libname=(parts[2].split('/'))[-1]
+            line='Creating library {}'.format(libname)
+            color='#000080'
+        elif line.startswith('g++ -o'):
+            appname=(parts[2].split('/'))[-1]
+            line='Linking {}'.format(appname)
+            color='#000080'
         lower=line.lower()
         if lower.find('error')>0:
             appendColorLine(output,line,'#ff0000')
@@ -49,7 +70,10 @@ def appendLine(output,line):
             appendColorLine(output,line,color)
 
 def execute(output,dir,cmd,*args):
-    p = subprocess.Popen([cmd]+list(args), shell=True, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
+    output.clear()
+    cmdlist=[cmd]+list(args)
+    #print "Running: {}".format(cmdlist)
+    p = subprocess.Popen(cmdlist, shell=False, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
     while True:
         reads=[p.stdout.fileno(),p.stderr.fileno()]
         rc=select.select(reads,[],[])

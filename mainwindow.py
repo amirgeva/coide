@@ -27,6 +27,7 @@ class MainWindow(QtGui.QMainWindow):
         self.currentLine=0
         self.currentFile=''
         self.rootDir=rootDir
+        utils.setIconsDir(os.path.join(rootDir,"icons"))
         
         self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','bug.png')))
         
@@ -39,8 +40,13 @@ class MainWindow(QtGui.QMainWindow):
         self.showWorkspacePane()
         self.showOutputPane()
 
-    def loadIcon(self,name):
-        return QtGui.QIcon(os.path.join(self.rootDir,'icons',name+'.png'))
+        s=QtCore.QSettings()
+        self.config=s.value("config").toString()
+        if self.config=='':
+            self.config="Debug"
+        self.configCombo.setCurrentIndex(0 if self.config=='Debug' else 1)
+        
+        self.setAllFonts()
 
     def closeEvent(self, event):
         """ Called before the application window closes
@@ -50,6 +56,8 @@ class MainWindow(QtGui.QMainWindow):
         
         """
         #self.editor.closingApp()
+        while self.central.count()>0:
+            self.closeFile()
         settings = QtCore.QSettings()
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
@@ -64,6 +72,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         bar=self.menuBar()
         m=bar.addMenu('&File')
+        m.addAction(QtGui.QAction('Open &Workspace',self,triggered=self.openWorkspace))
+        m.addAction(QtGui.QAction('&Save File',self,shortcut='Ctrl+S',triggered=self.saveFile))
+        m.addAction(QtGui.QAction('Save &As File',self,triggered=self.saveAsFile))
         m.addAction(QtGui.QAction('&Close File',self,shortcut='Ctrl+F4',triggered=self.closeFile))
         
         m=bar.addMenu('&Build')
@@ -88,14 +99,16 @@ class MainWindow(QtGui.QMainWindow):
         tb=self.addToolBar('Actions')
         tb.setObjectName("Toolbar")
         dir=os.path.join(rootDir,'icons')
-        tb.addAction(self.loadIcon('gear'),'Generate').triggered.connect(self.generate)
+        tb.addAction(utils.loadIcon('gear'),'Generate Makefiles').triggered.connect(self.generate)
+        self.configCombo=self.createConfigCombo(tb)
+        tb.addWidget(self.configCombo)
         #tb.addAction(QtGui.QIcon(os.path.join(dir,'step.png')),'Step').triggered.connect(self.actStep)
         #tb.addAction(QtGui.QIcon(os.path.join(dir,'next.png')),'Next').triggered.connect(self.actNext)
         #tb.addAction(QtGui.QIcon(os.path.join(dir,'out.png')),'Out').triggered.connect(self.actOut)
         #tb.addAction(QtGui.QIcon(os.path.join(dir,'cont.png')),'Continue').triggered.connect(self.actCont)
         #tb.addAction(QtGui.QIcon(os.path.join(dir,'break.png')),'Break').triggered.connect(self.actBreak)
         #tb.addAction(QtGui.QIcon(os.path.join(dir,'stop.png')),'Stop').triggered.connect(self.actStop)
-        self.addToolBar(tb)
+        #self.addToolBar(tb)
 
     def settingsFonts(self):
         """ Edit the font settings for the code window and various panes """
@@ -119,23 +132,28 @@ class MainWindow(QtGui.QMainWindow):
         
     def setAllFonts(self):
         """ Apply fonts to the various sub-windows """
-        self.loadFont('codefont',self.editor.code)
-        self.loadFont('watchesfont',self.watchesTree)
-        self.loadFont('watchesfont',self.stackList)
+        for e in self.editors:
+            self.loadFont('codefont',self.editors.get(e))
+        #self.loadFont('watchesfont',self.watchesTree)
+        #self.loadFont('watchesfont',self.stackList)
         self.loadFont('watchesfont',self.outputEdit)
-        self.loadFont('sourcesfont',self.FilesViewList)
+        self.loadFont('sourcesfont',self.workspaceTree)
         
         
     def build(self):
+        self.saveAll()
         path=self.workspaceTree.mainPath()
         if len(path)>0:
-            utils.execute(self.outputEdit,path,'/usr/bin/make')
+            utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
             
     def clean(self):
-        pass
+        path=self.workspaceTree.mainPath()
+        if len(path)>0:
+            utils.execute(self.outputEdit,path,'/usr/bin/make','clean_{}'.format(self.config))
     
     def rebuild(self):
-        pass
+        self.clean()
+        self.build()
         
     def generate(self):
         mb=QtGui.QMessageBox()
@@ -145,8 +163,46 @@ class MainWindow(QtGui.QMainWindow):
         mb.setDefaultButton(QtGui.QMessageBox.Yes)
         rc=mb.exec_()
         if rc==QtGui.QMessageBox.Yes:
-            genmake.generateTree(os.path.join(self.rootDir,"src"))
+            genmake.generateTree(self.workspaceTree.root)
             utils.message("Done")
+
+    def openWorkspace(self):
+        d=QtGui.QFileDialog()
+        d.setFileMode(QtGui.QFileDialog.Directory)
+        d.setOption(QtGui.QFileDialog.ShowDirsOnly)
+        if d.exec_():
+            ws=(d.selectedFiles())[0]
+            self.workspaceTree.setWorkspacePath(ws)
+
+    def saveTabFile(self,index):
+        n=self.central.tabBar().count()
+        if index>=0 and index<n:
+            path=self.central.tabToolTip(index)
+            editor=self.editors.get(path)
+            if editor:
+                doc=editor.document()
+                if doc.isModified():
+                    f=open(path,'w')
+                    if not f:
+                        utils.errorMessage('Cannot write file: {}'.format(path))
+                        return
+                    f.write(doc.toPlainText())
+                    f.close()
+                    doc.setModified(False)
+            
+
+    def saveFile(self):
+        n=self.central.tabBar().count()
+        if n>0:
+            self.saveTabFile(self.central.currentIndex())
+                    
+    def saveAll(self):
+        n=self.central.tabBar().count()
+        for i in xrange(0,n):
+            self.saveTabFile(i)
+
+    def saveAsFile(self):
+        pass
 
     def closeFile(self):
         n=self.central.tabBar().count()
@@ -158,7 +214,7 @@ class MainWindow(QtGui.QMainWindow):
                 doc=editor.document()
                 if doc.isModified():
                     mb = QtGui.QMessageBox()
-                    mb.setText("The document has been modified.")
+                    mb.setText("{} has been modified.".format(os.path.basename(path)))
                     mb.setInformativeText("Do you want to save your changes?")
                     mb.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
                     mb.setDefaultButton(QtGui.QMessageBox.Save)
@@ -182,6 +238,7 @@ class MainWindow(QtGui.QMainWindow):
         self.paneWorkspace.setObjectName("Workspace")
         self.paneWorkspace.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
         self.workspaceTree=WorkSpace(self.paneWorkspace,self)
+        self.workspaceTree.depsChanged.connect(self.generate)
         #self.workspaceTree.itemClicked.connect(lambda item: self.loadItem(item))
         self.paneWorkspace.setWidget(self.workspaceTree)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)
@@ -189,9 +246,7 @@ class MainWindow(QtGui.QMainWindow):
         self.workspaceTree.doubleClicked.connect(self.docDoubleClicked)
         
     def updateWorkspace(self):
-        folderIcon=self.loadIcon('folder')
-        docIcon=self.loadIcon('doc')
-        self.workspaceTree.update(folderIcon,docIcon)
+        self.workspaceTree.update()
         
     def setActiveSourceFile(self,path):
         if path in self.editors:
@@ -231,6 +286,7 @@ class MainWindow(QtGui.QMainWindow):
                 index=self.central.addTab(editor,os.path.basename(path))
                 self.central.setTabToolTip(index,path)
                 self.editors[path]=editor
+                self.loadFont('codefont',editor)
                 self.central.tabBar().setCurrentIndex(index)
                 return True
         return False
@@ -246,7 +302,6 @@ class MainWindow(QtGui.QMainWindow):
         if self.openSourceFile(path):
             editor=self.editors.get(path)
             if editor:
-                print "Going to '{}':{}:{}".format(path,row,col)
                 self.setActiveSourceFile(path)
                 c=editor.textCursor()
                 c.movePosition(QtGui.QTextCursor.Start)
@@ -265,6 +320,21 @@ class MainWindow(QtGui.QMainWindow):
         self.outputEdit.setReadOnly(True)
         self.paneOutput.setWidget(self.outputEdit)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneOutput)
+
+    def createConfigCombo(self,parent):
+        configCombo=QtGui.QComboBox(parent)
+        configCombo.addItem("Debug")
+        configCombo.addItem("Release")
+        configCombo.currentIndexChanged.connect(self.configChanged)
+        return configCombo
+        
+    def configChanged(self,index):
+        configs=['Debug','Release']
+        self.config=configs[index]
+        s=QtCore.QSettings()
+        s.setValue("config",self.config)
+        s.sync()
+        #print "Config changed to: {}".format(configs[index])
         
     def addOutputText(self,added):
         """ Append the new text captured

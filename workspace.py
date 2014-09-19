@@ -1,16 +1,25 @@
 import os
+import re
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from consts import *
+from properties import Properties
+from depsdlg import DependenciesDialog
+import utils
 
 class WorkSpace(QtGui.QTreeWidget):
+
+    depsChanged=QtCore.pyqtSignal()    
+    
     def __init__(self,pane,mainwin):
         super(WorkSpace,self).__init__(pane)
         self.mainWindow=mainwin
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.setMainAction = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
+        self.editDependenciesAction = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
         self.main=None
-        
+        s=QtCore.QSettings()
+        self.root=s.value('workspace').toString()
         
     def contextMenuEvent(self,event):
         menu=QtGui.QMenu()
@@ -19,6 +28,7 @@ class WorkSpace(QtGui.QTreeWidget):
             makefile=os.path.join(dirpath,"Makefile")
             if os.path.exists(makefile):
                 menu.addAction(self.setMainAction)
+                menu.addAction(self.editDependenciesAction)
         menu.exec_(event.globalPos())
         
     def findDirectoryItem(self,path,parent=None):
@@ -50,6 +60,21 @@ class WorkSpace(QtGui.QTreeWidget):
         if self.main:
             return self.main.data(0,DirectoryRole).toString()
         return ""
+
+    def editDependencies(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        mkPath=os.path.join(path,"mk.cfg")
+        props=Properties(mkPath)
+        libs=re.split('\W+',props.get('LIBS'))
+        d=DependenciesDialog(libs)
+        if d.exec_():
+            props.assign("LIBS",",".join(d.libs))
+            props.save(mkPath)
+            self.depsChanged.emit()
+            return True
+        return False
+        
         
     def setMain(self):
         self.setMainItem(self.currentItem())
@@ -72,11 +97,16 @@ class WorkSpace(QtGui.QTreeWidget):
             settings.sync()
         
         
-    def update(self,folderIcon,docIcon):
+    def update(self):
         self.clear()
+        folderIcon=utils.loadIcon('folder')
+        docIcon=utils.loadIcon('doc')
+
+        if not os.path.exists(self.root):
+            return
         items={}
-        for (dir,subdirs,files) in os.walk('.'):
-            dir=dir[2:]
+        for (dir,subdirs,files) in os.walk(self.root):
+            #dir=dir[2:]
             if dir and not dir[0]=='.':
                 if not dir in items:
                     topItem=QtGui.QTreeWidgetItem([dir])
@@ -99,3 +129,10 @@ class WorkSpace(QtGui.QTreeWidget):
                         item.addChild(child)
                         child.setData(0,FileRole,os.path.join(dir,filename))
         self.loadSettings()
+    
+    def setWorkspacePath(self,path):
+        self.root=path
+        s=QtCore.QSettings()
+        s.setValue('workspace',path)
+        s.sync()
+        self.update()
