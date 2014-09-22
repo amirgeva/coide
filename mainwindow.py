@@ -6,8 +6,9 @@ from qutepart import Qutepart
 from workspace import WorkSpace
 import output
 from consts import *
+from gdbwrapper import *
 #import parseutils
-#from watchestree import WatchesTree
+from watchestree import WatchesTree
 import utils
 import genmake
 import stat
@@ -50,6 +51,12 @@ class MainWindow(QtGui.QMainWindow):
         self.workspaceTree.setConfig(self.config)
         
         self.setAllFonts()
+        
+        self.timer=QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update)
+        self.debugger=None
+        self.runningWidget=None
+
 
     def closeEvent(self, event):
         """ Called before the application window closes
@@ -59,6 +66,9 @@ class MainWindow(QtGui.QMainWindow):
         
         """
         #self.editor.closingApp()
+        self.timer.stop()
+        if self.debugger:
+            self.debugger.closingApp()
         while self.central.count()>0:
             self.closeFile()
         settings = QtCore.QSettings()
@@ -87,12 +97,11 @@ class MainWindow(QtGui.QMainWindow):
         
         m=bar.addMenu('&Debug')
         m.addAction(QtGui.QAction('&Run',self,shortcut='Ctrl+F5',triggered=self.runProject))
-        m.addAction(QtGui.QAction('&Start Debugger',self,shortcut='F5',triggered=self.startDebug))
+        m.addAction(QtGui.QAction('&Start/Continue Debugger',self,shortcut='F5',triggered=self.startDebug))
         ma=m.addMenu('Actions')
         ma.addAction(QtGui.QAction('&Step',self,shortcut='F11',triggered=self.actStep))
         ma.addAction(QtGui.QAction('&Next',self,shortcut='F10',triggered=self.actNext))
         ma.addAction(QtGui.QAction('Step &Out',self,shortcut='Shift+F11',triggered=self.actOut))
-        ma.addAction(QtGui.QAction('&Continue',self,shortcut='F5',triggered=self.actCont))
         ma.addAction(QtGui.QAction('&Break',self,shortcut='Ctrl+C',triggered=self.actBreak))
         ma.addAction(QtGui.QAction('Sto&p',self,shortcut='Shift+F5',triggered=self.actStop))
         ma=m.addMenu('&Breakpoints')
@@ -118,12 +127,12 @@ class MainWindow(QtGui.QMainWindow):
         tb.addAction(utils.loadIcon('gear'),'Generate Makefiles').triggered.connect(self.generate)
         self.configCombo=self.createConfigCombo(tb)
         tb.addWidget(self.configCombo)
-        #tb.addAction(QtGui.QIcon(os.path.join(dir,'step.png')),'Step').triggered.connect(self.actStep)
-        #tb.addAction(QtGui.QIcon(os.path.join(dir,'next.png')),'Next').triggered.connect(self.actNext)
-        #tb.addAction(QtGui.QIcon(os.path.join(dir,'out.png')),'Out').triggered.connect(self.actOut)
-        #tb.addAction(QtGui.QIcon(os.path.join(dir,'cont.png')),'Continue').triggered.connect(self.actCont)
-        #tb.addAction(QtGui.QIcon(os.path.join(dir,'break.png')),'Break').triggered.connect(self.actBreak)
-        #tb.addAction(QtGui.QIcon(os.path.join(dir,'stop.png')),'Stop').triggered.connect(self.actStop)
+        tb.addAction(utils.loadIcon('step.png'),'Step').triggered.connect(self.actStep)
+        tb.addAction(utils.loadIcon('next.png'),'Next').triggered.connect(self.actNext)
+        tb.addAction(utils.loadIcon('out.png'),'Out').triggered.connect(self.actOut)
+        tb.addAction(utils.loadIcon('cont.png'),'Continue').triggered.connect(self.actCont)
+        tb.addAction(utils.loadIcon('break.png'),'Break').triggered.connect(self.actBreak)
+        tb.addAction(utils.loadIcon('stop.png'),'Stop').triggered.connect(self.actStop)
         #self.addToolBar(tb)
 
     def settingsFonts(self):
@@ -284,27 +293,30 @@ class MainWindow(QtGui.QMainWindow):
         if self.setActiveSourceFile(path):
             return True
         else:
-            f=open(path,"r")
-            if not f:
+            try:
+                f=open(path,"r")
+                if not f:
+                    return False
+                lines=f.readlines()
+                if lines:
+                    firstLine=lines[0]
+    
+                    editor=Qutepart()
+                    editor.detectSyntax(sourceFilePath=path, firstLine=firstLine)
+                    editor.lineLengthEdge = 1024
+                    editor.drawIncorrectIndentation = True
+                    editor.drawAnyWhitespace = False
+                    editor.indentUseTabs = False
+                    editor.text="".join(lines)
+                    editor.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
+                    index=self.central.addTab(editor,os.path.basename(path))
+                    self.central.setTabToolTip(index,path)
+                    self.editors[path]=editor
+                    self.loadFont('codefont',editor)
+                    self.central.tabBar().setCurrentIndex(index)
+                    return True
+            except IOError,e:
                 return False
-            lines=f.readlines()
-            if lines:
-                firstLine=lines[0]
-
-                editor=Qutepart()
-                editor.detectSyntax(sourceFilePath=path, firstLine=firstLine)
-                editor.lineLengthEdge = 1024
-                editor.drawIncorrectIndentation = True
-                editor.drawAnyWhitespace = False
-                editor.indentUseTabs = False
-                editor.text="".join(lines)
-                editor.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
-                index=self.central.addTab(editor,os.path.basename(path))
-                self.central.setTabToolTip(index,path)
-                self.editors[path]=editor
-                self.loadFont('codefont',editor)
-                self.central.tabBar().setCurrentIndex(index)
-                return True
         return False
 
     def docDoubleClicked(self,index):
@@ -328,6 +340,30 @@ class MainWindow(QtGui.QMainWindow):
                 if len(color)>0:
                     editor.colorLine(row,color)
         
+    def showCallStackPane(self):
+        self.paneStack=QtGui.QDockWidget("Call Stack",self)
+        self.paneStack.setObjectName("CallStack")
+        self.paneStack.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
+        self.stackList=QtGui.QListWidget(self.paneStack)
+        self.paneStack.setWidget(self.stackList)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneStack)
+    
+    def showWatchesPane(self):
+        self.paneWatches=QtGui.QDockWidget("Watches",self)
+        self.paneWatches.setObjectName("Watches")
+        self.paneWatches.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
+        self.watchesTree=WatchesTree(self.paneWatches)
+        self.watchesTree.setColumnCount(2)
+        self.watchesTree.setHeaderLabels(['Name','Value'])
+        self.paneWatches.setWidget(self.watchesTree)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneWatches)
+        
+        self.watchesTree.addTopLevelItem(QtGui.QTreeWidgetItem(['* Double-Click for new watch']))
+        self.watchesTree.resizeColumnToContents(0)
+        self.watchesTree.itemDoubleClicked.connect(lambda item,column : self.watchDoubleClicked(item,column))
+        self.loadWatches()
+        
+        
     def showOutputPane(self):        
         self.paneOutput=QtGui.QDockWidget("Output",self)
         self.paneOutput.setObjectName("Output")
@@ -336,6 +372,32 @@ class MainWindow(QtGui.QMainWindow):
         self.outputEdit.setReadOnly(True)
         self.paneOutput.setWidget(self.outputEdit)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneOutput)
+
+    def watchDoubleClicked(self,item,column):
+        """ Edits existing watches, or adds a new watch """
+        changed=False
+        index=self.watchesTree.indexOfTopLevelItem(item)
+        if item.text(column)=='* Double-Click for new watch':
+            res=QtGui.QInputDialog.getText(self,'New Watch','Expression')
+            expr=res[0]
+            if len(expr)>0 and res[1]:
+                self.watchesTree.insertTopLevelItem(index,QtGui.QTreeWidgetItem([expr]))
+                changed=True
+                self.updateWatches()
+        else:
+            watch=item.text(0)
+            res=QtGui.QInputDialog.getText(self,"Edit Watch",'Expression',text=watch)
+            watch=res[0]
+            if res[1]:
+                changed=True
+                if len(watch)>0:
+                    item.setText(0,watch)
+                    self.updateWatches()
+                else:
+                    self.watchesTree.takeTopLevelItem(index)
+        if changed:
+            self.saveWatches()
+
 
     def createConfigCombo(self,parent):
         configCombo=QtGui.QComboBox(parent)
@@ -379,27 +441,169 @@ class MainWindow(QtGui.QMainWindow):
         f.close()
         os.chmod(path,stat.S_IRUSR|stat.S_IWUSR|stat.S_IXUSR)
         call(['xterm','-fn','10x20','-e',path])
+        os.remove(path)
+        
+    def getCurrentFile(self):
+        if self.central.count()==0:
+            return ''
+        return self.central.tabToolTip(self.central.currentIndex())
+        
+    def getCurrentEditor(self):
+        path=self.getCurrentFile()
+        if len(path)>0:
+            return self.editors.get(path)
+        
+    def updatePosition(self):
+        """ Query current position and update the code view """
+        (path,line)=self.debugger.getCurrentPos()
+        changed=(self.currentLine!=line)
+        if len(path)>0 and self.getCurrentFile()!=path:
+            self.openSourceFile(path)
+        e=self.editors.get(path)
+        if e:
+            e.colorLine(line,'#0080ff')
+        #self.editor.code.setCurrentLine(self.currentFile,self.currentLine)
+        
+    def saveWatches(self):
+        """ Save all watches to settings, for future sessions """
+        res=[]
+        n=self.watchesTree.topLevelItemCount()-1
+        for i in xrange(0,n):
+            item=self.watchesTree.topLevelItem(i)
+            if len(res)>0:
+                res.append(';')
+            res.append(item.text(0))
+        settings=QtCore.QSettings()
+        key='watches:{}'.format(self.debugger.debugged)
+        settings.setValue(key,''.join(res))
+        
+    def loadWatches(self):
+        """ Load all previous session watches from settings """
+        while self.watchesTree.topLevelItemCount()>1:
+            self.watchesTree.takeTopLevelItem(0)
+        settings=QtCore.QSettings()
+        key='watches:{}'.format(self.debugger.debugged)
+        val=settings.value(key,'').toString()
+        if len(val)>0:
+            arr=val.split(';')
+            if len(arr)>0:
+                res=[]
+                for watch in arr:
+                    res.append(QtGui.QTreeWidgetItem([watch]))
+                self.watchesTree.insertTopLevelItems(0,res)
+        
+    def updateWatches(self):
+        """ Re-evaluate the value of each watch and update view """
+        n=self.watchesTree.topLevelItemCount()-1
+        for i in xrange(0,n):
+            item=self.watchesTree.topLevelItem(i)
+            item.takeChildren()
+            expr=item.text(0)
+            res=self.debugger.evaluate(expr)
+            if len(res)==0:
+                item.setText(1,'')
+            else:
+                if res[0]=='string' or res[0]=='number':
+                    item.setText(1,res[1])
+                elif res[0]=='vector' or res[0]=='list':
+                    del res[0]
+                    parseutils.addSequence(item,res)
+                elif res[0]=='map':
+                    del res[0]
+                    parseutils.addMapping(item,res)
+                elif res[0]=='struct':
+                    item.setText(1,parseutils.flatten(res))
+                    del res[0]
+                    parseutils.addMapping(item,res)
+                    
+    def updateCallstack(self):
+        bt=self.debugger.getBackTrace()
+        self.stackList.clear()
+        for line in bt:
+            self.stackList.addItem(line)
+    
         
     def startDebug(self):
-        pass        
+        if self.debugger:
+            self.actCont()
+            return
+        cmd=[self.workspaceTree.getExecutablePath()]
+        args=self.workspaceTree.getDebugParams().split()
+        for a in args:
+            cmd.append(a)
+        self.debugger=GDBWrapper(cmd)
+        self.showWatchesPane()
+        self.showCallStackPane()
+        self.timer.start()
         
-    def actStep(self):
-        pass
-    
-    def actNext(self):
-        pass
-    
-    def actCont(self):
-        pass
-    
-    def actOut(self):
-        pass
-    
-    def actBreak(self):
-        pass
-    
-    def actStop(self):
-        pass
-    
+    def stopDebugger(self):
+        if self.debugger:
+            self.debugger.quitDebugger()
+            self.debugger=None        
+            self.paneWatches.close()
+            self.paneStack.close()
+            self.timer.stop()
+        
     def clearBreakpoints(self):
-        pass
+        if self.debugger:
+            self.debugger.clearBreakpoints()
+
+    def actStep(self):
+        if self.debugger:
+            self.debugger.actStep()
+
+    def actNext(self):
+        if self.debugger:
+            self.debugger.actNext()
+
+    def actOut(self):
+        if self.debugger:
+            self.debugger.actOut()
+
+    def actCont(self):
+        if self.debugger:
+            e=self.getCurrentEditor()
+            if e:
+                e.colorLine(0,'')
+            self.debugger.actCont()
+
+    def actBreak(self):
+        if self.debugger:
+            self.debugger.actBreak()
+
+    def actStop(self):
+        if self.debugger:
+            self.debugger.actStop()
+
+    
+    def update(self):
+        """ Called every 50ms to check if a change in debugger state occurred
+        
+        Basically this is waiting for a change of state, indicated by:
+        * self.debugger.changed
+        
+        If a change is detected, everything is re-evaluated and drawn
+        
+        """
+        if self.debugger:
+            text=self.debugger.update()
+            if len(text)>0:
+                self.addOutputText(text)
+            if self.debugger.changed:
+                self.updatePosition()
+                self.updateWatches()
+                self.updateCallstack()
+                self.debugger.changed=False
+            if not self.debugger.running:
+                self.stopDebugger()
+        # If the debugger is active running the program,
+        # create an indication using an animation in the top left
+        # corner of the application window
+        if self.debugger and self.debugger.active:
+            if self.runningWidget is None:
+                from running import RunningWidget
+                self.runningWidget=RunningWidget(self)
+                self.runningWidget.show()
+        elif not self.runningWidget is None:
+            self.runningWidget.close()
+            self.runningWidget=None

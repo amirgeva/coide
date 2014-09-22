@@ -89,6 +89,7 @@ def findLine(path,prefix,removePrefix=False):
     f=open(path,"r")
     for line in f:
         if line.startswith(prefix):
+            line=line.strip()
             if not removePrefix:
                 return line
             return line[len(prefix):]
