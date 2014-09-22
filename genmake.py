@@ -110,8 +110,9 @@ class Generator:
         verifyDir(intr)
         outdir=os.path.join(dir.replace(self.srcDir,self.outDir),cfg)
         verifyDir(outdir)
-        reloutdir=os.path.relpath(outdir,dir)
-        globalInclude=os.path.relpath(self.globalInc,dir)
+        #reloutdir=os.path.relpath(outdir,dir)
+        reloutdir=outdir
+        #globalInclude=os.path.relpath(self.globalInc,dir)
         cfgInclude=''
         
         #o = open(output,'w')
@@ -127,7 +128,8 @@ class Generator:
         o.write('LFLAGS_{}={}\n'.format(cfg,lflags))
         objs = arreplace(srcs,'.cpp','.o')
         for i in xrange(0,len(objs)):
-            objs[i]=os.path.join(os.path.relpath(intr,dir),objs[i])
+            #objs[i]=os.path.join(os.path.relpath(intr,dir),objs[i])
+            objs[i]=os.path.join(intr,objs[i])
             
         o.write("OBJS_{}=".format(cfg))
         for obj in objs:
@@ -139,6 +141,7 @@ class Generator:
             o.write('\tar cr {} $(OBJS_{})\n\n'.format(outfile,cfg))
         else:
             outfile="{}/{}".format(reloutdir,name)
+            o.write('OUTPUT_PATH_{}={}\n\n'.format(cfg,outfile))
             o.write('{}: $(OBJS_{})\n'.format(outfile,cfg))
             o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
             

@@ -84,3 +84,14 @@ def execute(output,dir,cmd,*args):
                 appendLine(output,p.stderr.readline().strip())
         if p.poll() != None:
             break
+
+def findLine(path,prefix,removePrefix=False):
+    f=open(path,"r")
+    for line in f:
+        if line.startswith(prefix):
+            if not removePrefix:
+                return line
+            return line[len(prefix):]
+    return ''
+    
+    

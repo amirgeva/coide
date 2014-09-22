@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'uis/debug_settings.ui'
+#
+# Created: Mon Sep 22 15:21:19 2014
+#      by: PyQt4 UI code generator 4.10.4
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt4 import QtCore, QtGui
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    def _fromUtf8(s):
+        return s
+
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig)
+
+class Ui_DebugSettingsDialog(object):
+    def setupUi(self, DebugSettingsDialog):
+        DebugSettingsDialog.setObjectName(_fromUtf8("DebugSettingsDialog"))
+        DebugSettingsDialog.resize(453, 147)
+        self.buttonBox = QtGui.QDialogButtonBox(DebugSettingsDialog)
+        self.buttonBox.setGeometry(QtCore.QRect(90, 100, 341, 32))
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
+        self.cwdEdit = QtGui.QLineEdit(DebugSettingsDialog)
+        self.cwdEdit.setGeometry(QtCore.QRect(150, 10, 251, 27))
+        self.cwdEdit.setObjectName(_fromUtf8("cwdEdit"))
+        self.label = QtGui.QLabel(DebugSettingsDialog)
+        self.label.setGeometry(QtCore.QRect(10, 10, 131, 17))
+        self.label.setObjectName(_fromUtf8("label"))
+        self.paramsEdit = QtGui.QLineEdit(DebugSettingsDialog)
+        self.paramsEdit.setGeometry(QtCore.QRect(150, 50, 291, 27))
+        self.paramsEdit.setObjectName(_fromUtf8("paramsEdit"))
+        self.label_2 = QtGui.QLabel(DebugSettingsDialog)
+        self.label_2.setGeometry(QtCore.QRect(10, 50, 111, 17))
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.browseDirButton = QtGui.QPushButton(DebugSettingsDialog)
+        self.browseDirButton.setGeometry(QtCore.QRect(410, 10, 31, 27))
+        self.browseDirButton.setObjectName(_fromUtf8("browseDirButton"))
+
+        self.retranslateUi(DebugSettingsDialog)
+        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), DebugSettingsDialog.accept)
+        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), DebugSettingsDialog.reject)
+        QtCore.QMetaObject.connectSlotsByName(DebugSettingsDialog)
+
+    def retranslateUi(self, DebugSettingsDialog):
+        DebugSettingsDialog.setWindowTitle(_translate("DebugSettingsDialog", "Debug Settings", None))
+        self.label.setText(_translate("DebugSettingsDialog", "Working Directory", None))
+        self.label_2.setText(_translate("DebugSettingsDialog", "Parameters", None))
+        self.browseDirButton.setText(_translate("DebugSettingsDialog", "...", None))
+

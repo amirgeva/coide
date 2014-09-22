@@ -6,6 +6,7 @@ from consts import *
 from properties import Properties
 from depsdlg import DependenciesDialog
 import utils
+import uis
 
 class WorkSpace(QtGui.QTreeWidget):
 
@@ -17,9 +18,15 @@ class WorkSpace(QtGui.QTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.setMainAction = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
         self.editDependenciesAction = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
+        self.debugSettingsAction = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
         self.main=None
+        self.debug=('','')
         s=QtCore.QSettings()
         self.root=s.value('workspace').toString()
+        self.config="Debug"
+        
+    def setConfig(self,config):
+        self.config=config
         
     def contextMenuEvent(self,event):
         menu=QtGui.QMenu()
@@ -29,6 +36,7 @@ class WorkSpace(QtGui.QTreeWidget):
             if os.path.exists(makefile):
                 menu.addAction(self.setMainAction)
                 menu.addAction(self.editDependenciesAction)
+                menu.addAction(self.debugSettingsAction)
         menu.exec_(event.globalPos())
         
     def findDirectoryItem(self,path,parent=None):
@@ -54,7 +62,14 @@ class WorkSpace(QtGui.QTreeWidget):
     def loadSettings(self):
         settings=QtCore.QSettings()
         mainpath=settings.value('mainproj').toString()
-        self.setMainItem(self.findDirectoryItem(mainpath),save=False)
+        mainitem=self.findDirectoryItem(mainpath)
+        self.setMainItem(mainitem,save=False)
+        self.loadMainProjectInfo()
+        
+    def loadMainProjectInfo(self):
+        mkPath=os.path.join(self.mainPath(),"mk.cfg")
+        props=Properties(mkPath)
+        self.debug=(props.get("CWD"),props.get("PARAMS"))
         
     def mainPath(self):        
         if self.main:
@@ -75,6 +90,31 @@ class WorkSpace(QtGui.QTreeWidget):
             return True
         return False
         
+    def editDebugSettings(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        mkPath=os.path.join(path,"mk.cfg")
+        props=Properties(mkPath)
+        d=uis.loadDialog('debug_settings')
+        d.cwdEdit.setText(props.get("CWD"))
+        d.paramsEdit.setText(props.get("PARAMS"))
+        if d.exec_():
+            props.assign('CWD',d.cwdEdit.text())
+            props.assign('PARAMS',d.paramsEdit.text())
+            self.debug=(d.cwdEdit.text(),d.paramsEdit.text())
+            props.save(mkPath)
+
+    def getDebugDirectory(self):
+        return self.debug[0]
+        
+    def getDebugParams(self):
+        return self.debug[1]
+
+    def getExecutablePath(self):
+        mkPath=os.path.join(self.mainPath(),"Makefile")
+        outPath=utils.findLine(mkPath,"OUTPUT_PATH_{}=".format(self.config),True)
+        return outPath
+
         
     def setMain(self):
         self.setMainItem(self.currentItem())
@@ -91,6 +131,7 @@ class WorkSpace(QtGui.QTreeWidget):
             self.scrollToItem(item)
             self.expandItem(item)
         self.main=item
+        self.loadMainProjectInfo()
         if save:
             settings=QtCore.QSettings()
             settings.setValue('mainproj',self.main.data(0,DirectoryRole).toString())

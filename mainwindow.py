@@ -10,6 +10,8 @@ from consts import *
 #from watchestree import WatchesTree
 import utils
 import genmake
+import stat
+from subprocess import call
 
 class MainWindow(QtGui.QMainWindow):
     """ Main IDE Window
@@ -45,6 +47,7 @@ class MainWindow(QtGui.QMainWindow):
         if self.config=='':
             self.config="Debug"
         self.configCombo.setCurrentIndex(0 if self.config=='Debug' else 1)
+        self.workspaceTree.setConfig(self.config)
         
         self.setAllFonts()
 
@@ -81,6 +84,19 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
         m.addAction(QtGui.QAction('&Clean',self,triggered=self.clean))
         m.addAction(QtGui.QAction('&Rebuild',self,shortcut='Shift+F7',triggered=self.rebuild))
+        
+        m=bar.addMenu('&Debug')
+        m.addAction(QtGui.QAction('&Run',self,shortcut='Ctrl+F5',triggered=self.runProject))
+        m.addAction(QtGui.QAction('&Start Debugger',self,shortcut='F5',triggered=self.startDebug))
+        ma=m.addMenu('Actions')
+        ma.addAction(QtGui.QAction('&Step',self,shortcut='F11',triggered=self.actStep))
+        ma.addAction(QtGui.QAction('&Next',self,shortcut='F10',triggered=self.actNext))
+        ma.addAction(QtGui.QAction('Step &Out',self,shortcut='Shift+F11',triggered=self.actOut))
+        ma.addAction(QtGui.QAction('&Continue',self,shortcut='F5',triggered=self.actCont))
+        ma.addAction(QtGui.QAction('&Break',self,shortcut='Ctrl+C',triggered=self.actBreak))
+        ma.addAction(QtGui.QAction('Sto&p',self,shortcut='Shift+F5',triggered=self.actStop))
+        ma=m.addMenu('&Breakpoints')
+        ma.addAction(QtGui.QAction('&Clear',self,triggered=self.clearBreakpoints))
         
         #m=bar.addMenu('&Debug')
         #m.addAction(QtGui.QAction('&Step',self,shortcut='F11',triggered=self.actStep))
@@ -334,6 +350,7 @@ class MainWindow(QtGui.QMainWindow):
         s=QtCore.QSettings()
         s.setValue("config",self.config)
         s.sync()
+        self.workspaceTree.setConfig(self.config)
         #print "Config changed to: {}".format(configs[index])
         
     def addOutputText(self,added):
@@ -350,4 +367,39 @@ class MainWindow(QtGui.QMainWindow):
         self.outputEdit.setTextCursor(c)
         self.outputEdit.ensureCursorVisible()
         
-
+    def runProject(self):
+        path='/tmp/coide_run.sh'
+        f=open(path,'w')
+        dir=self.workspaceTree.getDebugDirectory()
+        cmd=self.workspaceTree.getExecutablePath()
+        params=self.workspaceTree.getDebugParams()
+        if len(params)>0:
+            cmd=cmd+" "+params
+        f.write('#!/bin/sh\ncd {}\n{}\nread -r -p "Press any key..." key\n'.format(dir,cmd))
+        f.close()
+        os.chmod(path,stat.S_IRUSR|stat.S_IWUSR|stat.S_IXUSR)
+        call(['xterm','-fn','10x20','-e',path])
+        
+    def startDebug(self):
+        pass        
+        
+    def actStep(self):
+        pass
+    
+    def actNext(self):
+        pass
+    
+    def actCont(self):
+        pass
+    
+    def actOut(self):
+        pass
+    
+    def actBreak(self):
+        pass
+    
+    def actStop(self):
+        pass
+    
+    def clearBreakpoints(self):
+        pass
