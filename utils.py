@@ -69,6 +69,11 @@ def appendLine(output,line):
         else:
             appendColorLine(output,line,color)
 
+def call(dir,cmd,*args):
+    cmdlist=[cmd]+list(args)
+    p = subprocess.Popen(cmdlist, shell=False, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
+    return p.communicate()
+
 def execute(output,dir,cmd,*args):
     output.clear()
     cmdlist=[cmd]+list(args)

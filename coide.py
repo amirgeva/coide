@@ -9,6 +9,7 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 #from gdbwrapper import GDBWrapper
 from mainwindow import MainWindow
+import callbacks
 
 def main():
     """ Creates the main window and runs the application
@@ -36,7 +37,8 @@ def main():
     #w.setDebugger(dbg)
     w.show()
     app.exec_()
-        
+    for cb in callbacks.closeCallbacks:
+        cb()
 
 if __name__=='__main__':
     main()

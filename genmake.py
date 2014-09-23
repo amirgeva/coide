@@ -1,19 +1,10 @@
 #!/usr/bin/env python
 import os
-import subprocess
 import re
 from properties import Properties
+from system import listAllPackages
 
-def listAllPackages():
-    res=set()
-    all=subprocess.check_output(['pkg-config','--list-all'])
-    lines=all.splitlines()
-    for line in lines:
-        name=(line.split(' '))[0]
-        res.add(name)
-    return res
-        
-    
+
 
 root=os.path.abspath('.')
 print ("ROOT={}".format(root))
@@ -169,6 +160,12 @@ def generateTree(root):
     for (dir,subdirs,files) in os.walk(os.path.join(root,"src")):
         if isSourceDir(dir,files):
             g.generate(dir,files)
+            
+def generateDirectory(root,dir):
+    g=Generator(root)
+    files=os.listdir(dir)
+    if isSourceDir(dir,files):
+        g.generate(dir,files)
 
 def main():
     generateTree("src")

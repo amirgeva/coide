@@ -15,10 +15,14 @@ class WorkSpace(QtGui.QTreeWidget):
     def __init__(self,pane,mainwin):
         super(WorkSpace,self).__init__(pane)
         self.mainWindow=mainwin
+        self.setHeaderHidden(True)
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
-        self.setMainAction = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
-        self.editDependenciesAction = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
-        self.debugSettingsAction = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
+        self.actBuild = QtGui.QAction('Build',self,triggered=self.buildCurrent)
+        self.actSetMain = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
+        self.actEditDependencies = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
+        self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
+        self.actCreateFolder = QtGui.QAction('Create Folder',self,triggered=self.createFolder)
+        self.actCreateFile = QtGui.QAction('Create File',self,triggered=self.createFile)
         self.main=None
         self.debug=('','')
         s=QtCore.QSettings()
@@ -34,10 +38,14 @@ class WorkSpace(QtGui.QTreeWidget):
         if len(dirpath)>0:
             makefile=os.path.join(dirpath,"Makefile")
             if os.path.exists(makefile):
-                menu.addAction(self.setMainAction)
-                menu.addAction(self.editDependenciesAction)
-                menu.addAction(self.debugSettingsAction)
-        menu.exec_(event.globalPos())
+                menu.addAction(self.actBuild)
+                menu.addAction(self.actSetMain)
+                menu.addAction(self.actEditDependencies)
+                menu.addAction(self.actDebugSettings)
+            menu.addAction(self.actCreateFolder)
+            menu.addAction(self.actCreateFile)
+        if menu:
+            menu.exec_(event.globalPos())
         
     def findDirectoryItem(self,path,parent=None):
         if not parent:
@@ -76,6 +84,11 @@ class WorkSpace(QtGui.QTreeWidget):
             return self.main.data(0,DirectoryRole).toString()
         return ""
 
+    def buildCurrent(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        self.mainWindow.buildSpecific(path)
+
     def editDependencies(self):
         item=self.currentItem()
         path=item.data(0,DirectoryRole).toString()
@@ -103,6 +116,31 @@ class WorkSpace(QtGui.QTreeWidget):
             props.assign('PARAMS',d.paramsEdit.text())
             self.debug=(d.cwdEdit.text(),d.paramsEdit.text())
             props.save(mkPath)
+            
+    def createFolder(self):
+        (name,rc)=QtGui.QInputDialog.getText(self,"Create Folder","Folder Name")
+        if rc:
+            item=self.currentItem()
+            path=item.data(0,DirectoryRole).toString()
+            try:
+                os.mkdir(os.path.join(path,name))
+                self.update()
+            except OSError,e:
+                utils.message("Failed to create folder")
+        
+    def createFile(self):
+        (name,rc)=QtGui.QInputDialog.getText(self,"Create File","File Name")
+        if rc:
+            item=self.currentItem()
+            path=item.data(0,DirectoryRole).toString()
+            try:
+                f=open(os.path.join(path,name),"w")
+                f.write("\n")
+                f.close()
+                self.update()
+            except IOError,e:
+                utils.message("Failed to create file")
+        
 
     def getDebugDirectory(self):
         return self.debug[0]
@@ -139,6 +177,7 @@ class WorkSpace(QtGui.QTreeWidget):
         
         
     def update(self):
+        self.main=None
         self.clear()
         folderIcon=utils.loadIcon('folder')
         docIcon=utils.loadIcon('doc')

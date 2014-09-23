@@ -1,7 +1,7 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 import os
-#from codeedit import CodeEditor
+
 from qutepart import Qutepart
 from workspace import WorkSpace
 import output
@@ -33,7 +33,8 @@ class MainWindow(QtGui.QMainWindow):
         utils.setIconsDir(os.path.join(rootDir,"icons"))
         
         self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','bug.png')))
-        
+
+        self.generateQueue=set()        
         self.editors={}
         self.central=QtGui.QTabWidget()
         self.setCentralWidget(self.central)
@@ -56,7 +57,10 @@ class MainWindow(QtGui.QMainWindow):
         self.timer.timeout.connect(self.update)
         self.debugger=None
         self.runningWidget=None
-
+        
+        self.generateTimer=QtCore.QTimer()
+        self.generateTimer.timeout.connect(self.autoGenerate)
+        self.generateTimer.start(1000)
 
     def closeEvent(self, event):
         """ Called before the application window closes
@@ -86,8 +90,8 @@ class MainWindow(QtGui.QMainWindow):
         bar=self.menuBar()
         m=bar.addMenu('&File')
         m.addAction(QtGui.QAction('Open &Workspace',self,triggered=self.openWorkspace))
-        m.addAction(QtGui.QAction('&Save File',self,shortcut='Ctrl+S',triggered=self.saveFile))
-        m.addAction(QtGui.QAction('Save &As File',self,triggered=self.saveAsFile))
+        m.addAction(QtGui.QAction('&Save',self,shortcut='Ctrl+S',triggered=self.saveFile))
+        m.addAction(QtGui.QAction('Save &As',self,triggered=self.saveAsFile))
         m.addAction(QtGui.QAction('&Close File',self,shortcut='Ctrl+F4',triggered=self.closeFile))
         
         m=bar.addMenu('&Build')
@@ -124,7 +128,7 @@ class MainWindow(QtGui.QMainWindow):
         tb=self.addToolBar('Actions')
         tb.setObjectName("Toolbar")
         dir=os.path.join(rootDir,'icons')
-        tb.addAction(utils.loadIcon('gear'),'Generate Makefiles').triggered.connect(self.generate)
+        tb.addAction(utils.loadIcon('gear'),'Generate Makefiles').triggered.connect(self.generateA)
         self.configCombo=self.createConfigCombo(tb)
         tb.addWidget(self.configCombo)
         tb.addAction(utils.loadIcon('step.png'),'Step').triggered.connect(self.actStep)
@@ -164,12 +168,14 @@ class MainWindow(QtGui.QMainWindow):
         self.loadFont('watchesfont',self.outputEdit)
         self.loadFont('sourcesfont',self.workspaceTree)
         
-        
-    def build(self):
+    def buildSpecific(self,path):
         self.saveAll()
-        path=self.workspaceTree.mainPath()
+        self.autoGenerate()
         if len(path)>0:
             utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
+        
+    def build(self):
+        self.buildSpecific(self.workspaceTree.mainPath())
             
     def clean(self):
         path=self.workspaceTree.mainPath()
@@ -179,6 +185,12 @@ class MainWindow(QtGui.QMainWindow):
     def rebuild(self):
         self.clean()
         self.build()
+        
+    def autoGenerate(self):
+        for path in self.generateQueue:
+            print "Generating makefile for '{}'".format(path)
+            genmake.generateDirectory(self.workspaceTree.root,path)
+        self.generateQueue.clear()
         
     def generate(self):
         mb=QtGui.QMessageBox()
@@ -214,6 +226,9 @@ class MainWindow(QtGui.QMainWindow):
                     f.write(doc.toPlainText())
                     f.close()
                     doc.setModified(False)
+                    dir=os.path.dirname(path)
+                    print "Adding '{}' to generate queue".format(dir)
+                    self.generateQueue.add(dir)
             
 
     def saveFile(self):
@@ -534,7 +549,7 @@ class MainWindow(QtGui.QMainWindow):
         self.debugger=GDBWrapper(cmd)
         self.showWatchesPane()
         self.showCallStackPane()
-        self.timer.start()
+        self.timer.start(50)
         
     def stopDebugger(self):
         if self.debugger:
