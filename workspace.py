@@ -103,6 +103,19 @@ class WorkSpace(QtGui.QTreeWidget):
             return True
         return False
         
+    def addLibrariesToProject(self,libs):
+        if self.main:
+            path=self.mainPath()
+            mkPath=os.path.join(path,"mk.cfg")
+            props=Properties(mkPath)
+            lst=props.get("LIBS").split(',')
+            lst=[x for x in lst if len(x)>0]
+            for l in libs:
+                lst.append(l)
+            props.assign("LIBS",",".join(lst))
+            props.save(mkPath)
+            self.depsChanged.emit()
+        
     def editDebugSettings(self):
         item=self.currentItem()
         path=item.data(0,DirectoryRole).toString()

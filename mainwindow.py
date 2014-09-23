@@ -128,7 +128,7 @@ class MainWindow(QtGui.QMainWindow):
         tb=self.addToolBar('Actions')
         tb.setObjectName("Toolbar")
         dir=os.path.join(rootDir,'icons')
-        tb.addAction(utils.loadIcon('gear'),'Generate Makefiles').triggered.connect(self.generateA)
+        tb.addAction(utils.loadIcon('gear'),'Generate Makefiles').triggered.connect(self.generate)
         self.configCombo=self.createConfigCombo(tb)
         tb.addWidget(self.configCombo)
         tb.addAction(utils.loadIcon('step.png'),'Step').triggered.connect(self.actStep)
@@ -167,12 +167,52 @@ class MainWindow(QtGui.QMainWindow):
         #self.loadFont('watchesfont',self.stackList)
         self.loadFont('watchesfont',self.outputEdit)
         self.loadFont('sourcesfont',self.workspaceTree)
+
+    def findUndefinedReferences(self,output):
+        undefined=set()
+        for line in output:
+            #print "{} - {}".format(type(line),line)
+            p=line.find('undefined reference to ')
+            if p>0:
+                name=line[p+24:]
+                p=name.find('(')
+                if p>0:
+                    name=name[0:p]
+                    undefined.add(name)
+        return undefined
+        
+    def attemptUndefResolution(self,undefs):
+        from system import getLibrarySymbols
+        suggested=set()
+        syms=getLibrarySymbols()
+        for sym in undefs:
+            if sym in syms:
+                s=syms.get(sym)
+                for l in s:
+                    suggested.add(l)
+        if len(suggested)>0:
+            print suggested
+            mb=QtGui.QMessageBox()
+            mb.setText("Missing Libraries?")
+            text="Add:"
+            for s in suggested:
+                text=text+" "+s
+            mb.setInformativeText(text)
+            mb.setStandardButtons(QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
+            mb.setDefaultButton(QtGui.QMessageBox.Yes)
+            rc=mb.exec_()
+            if rc==QtGui.QMessageBox.Yes:
+                self.workspaceTree.addLibrariesToProject(suggested)
+        
         
     def buildSpecific(self,path):
         self.saveAll()
         self.autoGenerate()
         if len(path)>0:
-            utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
+            output=utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
+            undefs=self.findUndefinedReferences(output)
+            if len(undefs)>0:
+                self.attemptUndefResolution(undefs)
         
     def build(self):
         self.buildSpecific(self.workspaceTree.mainPath())
@@ -192,6 +232,9 @@ class MainWindow(QtGui.QMainWindow):
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
         
+    def generateAll(self):
+        genmake.generateTree(self.workspaceTree.root)
+        
     def generate(self):
         mb=QtGui.QMessageBox()
         mb.setText("Generate make files")
@@ -200,7 +243,7 @@ class MainWindow(QtGui.QMainWindow):
         mb.setDefaultButton(QtGui.QMessageBox.Yes)
         rc=mb.exec_()
         if rc==QtGui.QMessageBox.Yes:
-            genmake.generateTree(self.workspaceTree.root)
+            self.generateAll()
             utils.message("Done")
 
     def openWorkspace(self):
@@ -278,7 +321,7 @@ class MainWindow(QtGui.QMainWindow):
         self.paneWorkspace.setObjectName("Workspace")
         self.paneWorkspace.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
         self.workspaceTree=WorkSpace(self.paneWorkspace,self)
-        self.workspaceTree.depsChanged.connect(self.generate)
+        self.workspaceTree.depsChanged.connect(self.generateAll)
         #self.workspaceTree.itemClicked.connect(lambda item: self.loadItem(item))
         self.paneWorkspace.setWidget(self.workspaceTree)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)

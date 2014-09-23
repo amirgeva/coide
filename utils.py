@@ -77,18 +77,23 @@ def call(dir,cmd,*args):
 def execute(output,dir,cmd,*args):
     output.clear()
     cmdlist=[cmd]+list(args)
-    #print "Running: {}".format(cmdlist)
+    text=[]
     p = subprocess.Popen(cmdlist, shell=False, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
     while True:
         reads=[p.stdout.fileno(),p.stderr.fileno()]
         rc=select.select(reads,[],[])
         for fd in rc[0]:
             if fd==p.stdout.fileno():
-                appendLine(output,p.stdout.readline().strip())
+                line=p.stdout.readline().strip()
+                appendLine(output,line)
+                text.append(line)
             if fd==p.stderr.fileno():
-                appendLine(output,p.stderr.readline().strip())
+                line=p.stderr.readline().strip()
+                appendLine(output,line)
+                text.append(line)
         if p.poll() != None:
             break
+    return text
 
 def findLine(path,prefix,removePrefix=False):
     f=open(path,"r")
