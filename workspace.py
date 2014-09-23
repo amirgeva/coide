@@ -18,6 +18,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.setHeaderHidden(True)
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.actBuild = QtGui.QAction('Build',self,triggered=self.buildCurrent)
+        self.actRebuild = QtGui.QAction('Rebuild',self,triggered=self.rebuildCurrent)
         self.actSetMain = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
         self.actEditDependencies = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
         self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
@@ -39,9 +40,12 @@ class WorkSpace(QtGui.QTreeWidget):
             makefile=os.path.join(dirpath,"Makefile")
             if os.path.exists(makefile):
                 menu.addAction(self.actBuild)
+                menu.addAction(self.actRebuild)
+                menu.addSeparator()
                 menu.addAction(self.actSetMain)
                 menu.addAction(self.actEditDependencies)
                 menu.addAction(self.actDebugSettings)
+                menu.addSeparator()
             menu.addAction(self.actCreateFolder)
             menu.addAction(self.actCreateFile)
         if menu:
@@ -87,6 +91,12 @@ class WorkSpace(QtGui.QTreeWidget):
     def buildCurrent(self):
         item=self.currentItem()
         path=item.data(0,DirectoryRole).toString()
+        self.mainWindow.buildSpecific(path)
+
+    def rebuildCurrent(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        self.mainWindow.cleanSpecific(path)
         self.mainWindow.buildSpecific(path)
 
     def editDependencies(self):

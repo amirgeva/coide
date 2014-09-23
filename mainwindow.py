@@ -217,10 +217,12 @@ class MainWindow(QtGui.QMainWindow):
     def build(self):
         self.buildSpecific(self.workspaceTree.mainPath())
             
-    def clean(self):
-        path=self.workspaceTree.mainPath()
+    def cleanSpecific(self,path):
         if len(path)>0:
             utils.execute(self.outputEdit,path,'/usr/bin/make','clean_{}'.format(self.config))
+        
+    def clean(self):
+        self.cleanSpecific(self.workspaceTree.mainPath())
     
     def rebuild(self):
         self.clean()
