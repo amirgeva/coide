@@ -89,6 +89,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         bar=self.menuBar()
         m=bar.addMenu('&File')
+        m.addAction(QtGui.QAction('&Initialize Workspace',self,triggered=self.initWorkspace))
         m.addAction(QtGui.QAction('Open &Workspace',self,triggered=self.openWorkspace))
         m.addAction(QtGui.QAction('&Save',self,shortcut='Ctrl+S',triggered=self.saveFile))
         m.addAction(QtGui.QAction('Save &As',self,triggered=self.saveAsFile))
@@ -149,8 +150,8 @@ class MainWindow(QtGui.QMainWindow):
     def loadFont(self,name,target):
         """ Load previously saved font settings """
         settings=QtCore.QSettings()
-        fb=settings.value(name).toByteArray()
-        if not fb is None:
+        if settings.contains(name):
+            fb=settings.value(name).toByteArray()
             buf=QtCore.QBuffer(fb)
             buf.open(QtCore.QIODevice.ReadOnly)
             font=QtGui.QFont()
@@ -247,6 +248,24 @@ class MainWindow(QtGui.QMainWindow):
         if rc==QtGui.QMessageBox.Yes:
             self.generateAll()
             utils.message("Done")
+
+    def initWorkspace(self):
+        d=QtGui.QFileDialog()
+        d.setFileMode(QtGui.QFileDialog.Directory)
+        d.setOption(QtGui.QFileDialog.ShowDirsOnly)
+        if d.exec_():
+            ws=(d.selectedFiles())[0]
+            os.makedirs(os.path.join(ws,'include'))
+            dir=os.path.join(ws,'src','hello')
+            os.makedirs(dir)
+            mainpath=os.path.join(dir,'main.cpp')
+            f=open(mainpath,"w")
+            f.write('#include <iostream>\n\n\nint main(int argc, char* argv[])\n')
+            f.write('{\n  std::cout << "Hello World" << std::endl;\n  return 0;\n}\n')
+            f.close()
+            self.workspaceTree.setWorkspacePath(ws)
+            self.workspaceTree.setMainPath(dir)
+            self.generateAll()
 
     def openWorkspace(self):
         d=QtGui.QFileDialog()

@@ -74,9 +74,7 @@ class WorkSpace(QtGui.QTreeWidget):
     def loadSettings(self):
         settings=QtCore.QSettings()
         mainpath=settings.value('mainproj').toString()
-        mainitem=self.findDirectoryItem(mainpath)
-        self.setMainItem(mainitem,save=False)
-        self.loadMainProjectInfo()
+        self.setMainPath(mainpath)
         
     def loadMainProjectInfo(self):
         mkPath=os.path.join(self.mainPath(),"mk.cfg")
@@ -197,7 +195,11 @@ class WorkSpace(QtGui.QTreeWidget):
             settings=QtCore.QSettings()
             settings.setValue('mainproj',self.main.data(0,DirectoryRole).toString())
             settings.sync()
-        
+            
+    def setMainPath(self,mainpath):
+        mainitem=self.findDirectoryItem(mainpath)
+        self.setMainItem(mainitem,save=False)
+        self.loadMainProjectInfo()
         
     def update(self):
         self.main=None

@@ -74,6 +74,12 @@ class _CompletionModel(QAbstractItemModel):
         self.canCompleteText = commonStart[len(wordBeforeCursor):]
 
         self.layoutChanged.emit()
+        
+    def setDotWords(self,words):
+        self._typedText=''
+        self.words=words
+        self.canCompleteText=''
+        self.layoutChanged.emit()
 
     def hasWords(self):
         return len(self.words) > 0
@@ -356,6 +362,8 @@ class Completer(QObject):
     def _onTextChanged(self):
         """Text in the qpart changed. Update word set"""
         self._globalUpdateWordSetTimer.schedule(self._updateWordSet)
+        if self._qpart.completionEnabled and self._isDot():
+            pass
 
     def _updateWordSet(self):
         """Make a set of words, which shall be completed, from text
@@ -439,6 +447,12 @@ class Completer(QObject):
             self._widget.close()
             self._widget = None
             self._completionOpenedManually = False
+            
+    def _isDot(self):
+        cursor = self._qpart.textCursor()
+        p=cursor.positionInBlock()
+        text=cursor.block().text()[p-1:p]
+        return text=='.'
 
     def _wordBeforeCursor(self):
         """Get word, which is located before cursor
