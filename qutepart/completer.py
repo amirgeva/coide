@@ -393,9 +393,10 @@ class Completer(QObject):
             text=self._qpart.text
             out,err=p.communicate(text)
             words=self.parseClang(out)
-            self.invokeCompletion()
-            if self._widget:
-                self._widget.model().setDotWords(words)
+            if len(words)>0:
+                self.invokeCompletion()
+                if self._widget:
+                    self._widget.model().setDotWords(words)
 
     def _updateWordSet(self):
         """Make a set of words, which shall be completed, from text
