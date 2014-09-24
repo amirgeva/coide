@@ -284,6 +284,10 @@ class Qutepart(QPlainTextEdit):
 
         self._updateLineNumberAreaWidth(0)
         self._updateExtraSelections()
+        
+    def setPath(self,path):
+        self.path=path
+        self._completer.setDir(os.path.dirname(path))
 
     def _initActions(self):
         """Init shortcuts for text editing

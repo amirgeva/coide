@@ -359,11 +359,43 @@ class Completer(QObject):
         """
         self._globalUpdateWordSetTimer.cancel(self._updateWordSet)
 
+    def setDir(self,dir):
+        self.dir=dir
+        
+    def parseClang(self,text):
+        lines=text.split('\n')
+        words=set()
+        className=''
+        for line in lines:
+            if line.startswith("COMPLETION: "):
+                line=line[12:]
+                parts=line.split(' ')
+                word=parts[0]
+                if not word.startswith('operator'):
+                    if word.startswith('~'):
+                        className=word[1:]
+                    else:
+                        words.add(word)
+        if className:
+            words.remove(className)
+        return list(words)
+
     def _onTextChanged(self):
         """Text in the qpart changed. Update word set"""
         self._globalUpdateWordSetTimer.schedule(self._updateWordSet)
-        if self._qpart.completionEnabled and self._isDot():
-            pass
+        (dot,row,col)=self._isDot()
+        if self._qpart.completionEnabled and dot:
+            cmd=['clang','-xc++','-w','-fsyntax-only','-Xclang']
+            cmd.append('-code-completion-at=-:{}:{}'.format(row+1,col+1))
+            cmd.append('-')
+            import subprocess
+            p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir)
+            text=self._qpart.text
+            out,err=p.communicate(text)
+            words=self.parseClang(out)
+            self.invokeCompletion()
+            if self._widget:
+                self._widget.model().setDotWords(words)
 
     def _updateWordSet(self):
         """Make a set of words, which shall be completed, from text
@@ -421,7 +453,7 @@ class Completer(QObject):
             wholeWord = wordBeforeCursor + self._wordAfterCursor()
 
             forceShow = requestedByUser or self._completionOpenedManually
-            if wordBeforeCursor:
+            if wordBeforeCursor or requestedByUser:
                 if len(wordBeforeCursor) >= self._qpart.completionThreshold or forceShow:
                     if self._widget is None:
                         model = _CompletionModel(self._wordSet)
@@ -452,7 +484,7 @@ class Completer(QObject):
         cursor = self._qpart.textCursor()
         p=cursor.positionInBlock()
         text=cursor.block().text()[p-1:p]
-        return text=='.'
+        return (text=='.',cursor.blockNumber(),p)
 
     def _wordBeforeCursor(self):
         """Get word, which is located before cursor

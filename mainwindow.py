@@ -381,6 +381,7 @@ class MainWindow(QtGui.QMainWindow):
                     firstLine=lines[0]
     
                     editor=Qutepart()
+                    editor.setPath(path)
                     editor.detectSyntax(sourceFilePath=path, firstLine=firstLine)
                     editor.lineLengthEdge = 1024
                     editor.drawIncorrectIndentation = True
