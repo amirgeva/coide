@@ -115,6 +115,8 @@ class Generator:
             if lib in packages:
                 cflags=cflags+' `pkg-config --cflags {}` '.format(lib)
                 lflags=lflags+' `pkg-config --libs {}` '.format(lib)
+            else:
+                lflags=lflags+' -l{} '.format(lib)
         o.write('CFLAGS_{}={}\n'.format(cfg,cflags))
         o.write('LFLAGS_{}={}\n'.format(cfg,lflags))
         objs = arreplace(srcs,'.cpp','.o')

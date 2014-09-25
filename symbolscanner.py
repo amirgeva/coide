@@ -7,11 +7,14 @@ packages=listAllPackages()
 
 def mapLibrariesToPackages():
     libmap={}
+    #f=open('pkg-libs.txt','w')
     for package in packages:
+        #print >> f, package
         out,err=utils.call('.','pkg-config','--libs',package)
         for token in out.split():
             if token.startswith('-l'):
                 libname='lib{}'.format(token[2:])
+                #f.write("  "+libname)
                 static=libname+'.a'
                 dynamic=libname+'.so'
                 if not static in libmap:
@@ -19,17 +22,28 @@ def mapLibrariesToPackages():
                 libmap.get(static).add(package)                    
                 if not dynamic in libmap:
                     libmap[dynamic]=set()
-                libmap.get(dynamic).add(package)                    
+                libmap.get(dynamic).add(package)
+        #f.write('\n')
     return libmap
     
 libraryMap=mapLibrariesToPackages()
 
 
+def baseLibName(f):
+    if f.startswith("lib"):
+        f=f[3:]
+    p=f.find('.')
+    if p>0:
+        f=f[0:p]
+    return f
+
 def parseStatic(path,symbols,f):
     (out,err)=utils.call('.','objdump','-t','-C',path)
+    refs=set()
     if not f in libraryMap:
-        return
-    refs=libraryMap.get(f)
+        refs.add(baseLibName(f))
+    else:
+        refs=libraryMap.get(f)
     dump=out.split('\n')
     for line in dump:
         parts=line.split()
@@ -48,9 +62,11 @@ def parseStatic(path,symbols,f):
 
 def parseDynamic(path,symbols,f):
     (out,err)=utils.call('.','objdump','-T','-C',path)
+    refs=set()
     if not f in libraryMap:
-        return
-    refs=libraryMap.get(f)
+        refs.add(baseLibName(f))
+    else:
+        refs=libraryMap.get(f)
     dump=out.split('\n')
     for line in dump:
         parts=line.split()
