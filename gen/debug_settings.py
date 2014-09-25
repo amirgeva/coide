@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uis/debug_settings.ui'
 #
-# Created: Mon Sep 22 18:16:17 2014
+# Created: Thu Sep 25 20:04:02 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!

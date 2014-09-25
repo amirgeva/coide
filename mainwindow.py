@@ -1,18 +1,20 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+
 import os
+import stat
+from subprocess import call
+
 
 from qutepart import Qutepart
 from workspace import WorkSpace
 import output
 from consts import *
 from gdbwrapper import *
-#import parseutils
 from watchestree import WatchesTree
 import utils
 import genmake
-import stat
-from subprocess import call
+import uis
 
 class MainWindow(QtGui.QMainWindow):
     """ Main IDE Window
@@ -179,31 +181,51 @@ class MainWindow(QtGui.QMainWindow):
                 p=name.find('(')
                 if p>0:
                     name=name[0:p]
-                    undefined.add(name)
+                else:
+                    name=name[0:len(name)-1]
+                undefined.add(name)
+        print undefined
         return undefined
+
+    def dumpSyms(self,syms):
+        f=open('allsyms.txt','w')
+        for sym in syms:
+            print >> f, sym
+            s=syms.get(sym)
+            print >> f, s
+            
+    def toggleAdded(self,item):
+        if item.checkState():
+            self.added.add(item.text())
+        else:
+            self.added.remove(item.text())
         
     def attemptUndefResolution(self,undefs):
         from system import getLibrarySymbols
-        suggested=set()
+        suggested={}
         syms=getLibrarySymbols()
+        #self.dumpSyms(syms)
         for sym in undefs:
             if sym in syms:
                 s=syms.get(sym)
                 for l in s:
-                    suggested.add(l)
+                    if not l in suggested:
+                        suggested[l]=1
+                    else:
+                        n=suggested.get(l)+1
+                        suggested[l]=n
+        self.added=set()
         if len(suggested)>0:
-            print suggested
-            mb=QtGui.QMessageBox()
-            mb.setText("Missing Libraries?")
-            text="Add:"
+            d=uis.loadDialog('libsuggest')
+            model = QtGui.QStandardItemModel(d.libsList)
             for s in suggested:
-                text=text+" "+s
-            mb.setInformativeText(text)
-            mb.setStandardButtons(QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
-            mb.setDefaultButton(QtGui.QMessageBox.Yes)
-            rc=mb.exec_()
-            if rc==QtGui.QMessageBox.Yes:
-                self.workspaceTree.addLibrariesToProject(suggested)
+                item=QtGui.QStandardItem(s)
+                item.setCheckable(True)
+                model.appendRow(item)
+            d.libsList.setModel(model)
+            model.itemChanged.connect(lambda item : self.toggleAdded(item))
+            if d.exec_():
+                self.workspaceTree.addLibrariesToProject(self.added)
         
         
     def buildSpecific(self,path):
