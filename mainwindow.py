@@ -76,6 +76,22 @@ class MainWindow(QtGui.QMainWindow):
         self.timer.stop()
         if self.debugger:
             self.debugger.closingApp()
+        ws=self.workspaceTree.settings()
+        if (self.central.count()>0):
+            cur=self.central.currentIndex()
+            path=self.central.tabToolTip(cur)
+            ws.setValue('curtab',path)
+            n=self.central.count()
+            opentabs=[]
+            for i in xrange(0,n):
+                path=self.central.tabToolTip(i)
+                opentabs.append(path)
+            ws.setValue('opentabs',','.join(opentabs))
+        else:
+            ws.setValue('curtab','')
+            ws.setValue('opentabs','')
+        ws.sync()
+            
         while self.central.count()>0:
             self.closeFile()
         settings = QtCore.QSettings()
@@ -88,6 +104,14 @@ class MainWindow(QtGui.QMainWindow):
         settings = QtCore.QSettings()
         self.restoreGeometry(settings.value("geometry").toByteArray())
         self.restoreState(settings.value("windowState").toByteArray())
+        ws=self.workspaceTree.settings()
+        opentabs=ws.value('opentabs','').toString()
+        opentabs=opentabs.split(',')
+        for path in opentabs:
+            self.openSourceFile(path)
+        curtab=ws.value('curtab','').toString()
+        if curtab:
+            self.setActiveSourceFile(curtab)
 
     def setupMenu(self):
         """ Creates the application main menu 
