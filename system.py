@@ -16,20 +16,29 @@ def listAllPackages():
         res.add(name)
     return res
 
-def symbolScan(q):
+def symbolScan(q,ws):
     import symbolscanner
-    q.put(symbolscanner.librarySymbols)
+    q.put(symbolscanner.getLibrarySymbols(ws))
 
-scanq=Queue()
-scannerProcess=Process(target=symbolScan,args=(scanq,))
-scannerProcess.start()
+scanq=Queue()    
+scannerProcess=None
+scanStarted=False
+    
+def startSymbolScan(workspacePath):
+    global scannerProcess
+    global scanStarted
+    if scanq and not scanStarted:
+        scanStarted=True
+        scannerProcess=Process(target=symbolScan,args=(scanq,workspacePath))
+        scannerProcess.start()
+    
 libSyms=None
 
 def getLibrarySymbols():
     global libSyms
     global scannerProcess
     global scanq
-    if scannerProcess:
+    if not libSyms:
         libSyms=scanq.get()
         scannerProcess.join()
         scannerProcess=None
@@ -39,4 +48,5 @@ def getLibrarySymbols():
 callbacks.closeCallbacks.append(getLibrarySymbols)
 
 if __name__=='__main__':
-    querySymbols(True)
+    getLibrarySymbols(True)
+    

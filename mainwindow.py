@@ -392,6 +392,8 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)
         self.updateWorkspace()
         self.workspaceTree.doubleClicked.connect(self.docDoubleClicked)
+        from system import startSymbolScan
+        startSymbolScan(self.workspaceTree.root)
         
     def updateWorkspace(self):
         self.workspaceTree.update()
