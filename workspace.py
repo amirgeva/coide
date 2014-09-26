@@ -28,7 +28,10 @@ class WorkSpace(QtGui.QTreeWidget):
         self.debug=('','')
         s=QtCore.QSettings()
         self.root=s.value('workspace').toString()
+        self.wsini=os.path.join(self.root,'settings.ini')
         self.config="Debug"
+        self.itemCollapsed.connect(self.onCollapsed)
+        self.itemExpanded.connect(self.onExpanded)
         
     def setConfig(self,config):
         self.config=config
@@ -71,10 +74,52 @@ class WorkSpace(QtGui.QTreeWidget):
                     return res
         return None
         
+    def getExpandedChildPaths(self,parent):
+        res=[]
+        for i in xrange(0,parent.childCount()):
+            item=parent.child(i)
+            dir=item.data(0,DirectoryRole).toString()
+            if dir and self.isItemExpanded(item):
+                res.append(dir)
+            res=res+self.getExpandedChildPaths(item)
+        return res
+        
+    def getExpandedPaths(self):
+        res=[]
+        for i in xrange(0,self.topLevelItemCount):
+            item=self.topLevelItem(i)
+            dir=item.data(0,DirectoryRole).toString()
+            if dir and self.isItemExpanded(item):
+                res.append(dir)
+            res=res+self.getExpandedChildPaths(item)
+        return res
+        
+    def settings(self):
+        return QtCore.QSettings(self.wsini,QtCore.QSettings.IniFormat)
+        
     def loadSettings(self):
-        settings=QtCore.QSettings()
+        settings=self.settings()
         mainpath=settings.value('mainproj').toString()
         self.setMainPath(mainpath)
+        e=set(settings.value('expanded').toString().split(','))
+        for dir in e:
+            item=self.findDirectoryItem(dir)
+            if item:
+                self.expandItem(item)
+        
+    def onCollapsed(self,item):
+        s=self.settings()
+        e=set(s.value('expanded').toString().split(','))
+        e.remove(item.data(0,DirectoryRole).toString())
+        s.setValue('expanded',','.join(e))
+        s.sync()
+    
+    def onExpanded(self,item):
+        s=self.settings()
+        e=set(s.value('expanded').toString().split(','))
+        e.add(item.data(0,DirectoryRole).toString())
+        s.setValue('expanded',','.join(e))
+        s.sync()
         
     def loadMainProjectInfo(self):
         mkPath=os.path.join(self.mainPath(),"mk.cfg")
@@ -192,7 +237,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.main=item
         self.loadMainProjectInfo()
         if save:
-            settings=QtCore.QSettings()
+            settings=self.settings()
             settings.setValue('mainproj',self.main.data(0,DirectoryRole).toString())
             settings.sync()
             

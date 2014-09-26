@@ -296,6 +296,7 @@ class MainWindow(QtGui.QMainWindow):
         if d.exec_():
             ws=(d.selectedFiles())[0]
             self.workspaceTree.setWorkspacePath(ws)
+            self.generateAll()
 
     def saveTabFile(self,index):
         n=self.central.tabBar().count()
