@@ -34,7 +34,7 @@ class MainWindow(QtGui.QMainWindow):
         self.rootDir=rootDir
         utils.setIconsDir(os.path.join(rootDir,"icons"))
         
-        self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','bug.png')))
+        self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','C64.png')))
 
         self.generateQueue=set()        
         self.editors={}
