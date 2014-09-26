@@ -26,7 +26,7 @@ class GDBWrapper:
     def __init__(self,args):
         """ Start gdb.  dataRoot indicates location of parsers """
         dataRoot=os.path.dirname(os.path.abspath(__file__))
-        print "Starting debugger for: {}".format(args)
+        #print "Starting debugger for: {}".format(args)
         self.args=['gdb']+args
         self.debugged=os.path.abspath(args[0])
         self.dumpLog=None
@@ -81,7 +81,7 @@ class GDBWrapper:
             print "Failed to install pretty prints"
 
     def quitDebugger(self):
-        print "Closing debugger"
+        #print "Closing debugger"
         if self.active:
             self.actBreak()
         if self.running:
@@ -433,8 +433,8 @@ class GDBWrapper:
                             fn=func[1]
                             self.replaces.update(fn())
                             found+=1
-                    if found>0:
-                        print "Loaded parser {}".format(name)
+                    #if found>0:
+                    #    print "Loaded parser {}".format(name)
                 except ImportError:
                     pass
 
@@ -472,7 +472,7 @@ class GDBWrapper:
         lines,ok=self.read()
         self.changed=ch
         if not ok: 
-            print "Failed to evaluate {}".format(var)
+            #print "Failed to evaluate {}".format(var)
             return ''
         #print '{} = {}'.format(var,lines)
         if type(lines) is list:

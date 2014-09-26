@@ -32,10 +32,13 @@ class FontSettingsDialog(QtGui.QDialog):
         self.fontsDict[name]=fontText
         self.mainLayout.addLayout(fontLayout)
         settings=QtCore.QSettings()
-        fb=settings.value(name).toByteArray()
-        if not fb is None:
+        if settings.contains(name):
+            fb=settings.value(name).toByteArray()
             font=QtGui.QFont()
             QtCore.QDataStream(fb) >> font
+            fontText.setFont(font)
+        else:
+            font=QtGui.QFont("Monospace",14)
             fontText.setFont(font)
         return fontButton,fontText
         

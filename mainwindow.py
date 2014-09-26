@@ -54,6 +54,7 @@ class MainWindow(QtGui.QMainWindow):
         self.workspaceTree.setConfig(self.config)
         
         self.setAllFonts()
+        self.loadWindowSettings()
         
         self.timer=QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
@@ -63,6 +64,7 @@ class MainWindow(QtGui.QMainWindow):
         self.generateTimer=QtCore.QTimer()
         self.generateTimer.timeout.connect(self.autoGenerate)
         self.generateTimer.start(1000)
+        
 
     def closeEvent(self, event):
         """ Called before the application window closes
@@ -71,7 +73,6 @@ class MainWindow(QtGui.QMainWindow):
         to allow future sessions to look the same
         
         """
-        #self.editor.closingApp()
         self.timer.stop()
         if self.debugger:
             self.debugger.closingApp()
@@ -82,6 +83,11 @@ class MainWindow(QtGui.QMainWindow):
         settings.setValue("windowState", self.saveState())
         settings.sync()
         super(MainWindow,self).closeEvent(event)
+        
+    def loadWindowSettings(self):
+        settings = QtCore.QSettings()
+        self.restoreGeometry(settings.value("geometry").toByteArray())
+        self.restoreState(settings.value("windowState").toByteArray())
 
     def setupMenu(self):
         """ Creates the application main menu 
@@ -174,7 +180,6 @@ class MainWindow(QtGui.QMainWindow):
     def findUndefinedReferences(self,output):
         undefined=set()
         for line in output:
-            #print "{} - {}".format(type(line),line)
             p=line.find('undefined reference to ')
             if p>0:
                 name=line[p+24:]
@@ -184,16 +189,8 @@ class MainWindow(QtGui.QMainWindow):
                 else:
                     name=name[0:len(name)-1]
                 undefined.add(name)
-        print undefined
         return undefined
 
-    def dumpSyms(self,syms):
-        f=open('allsyms.txt','w')
-        for sym in syms:
-            print >> f, sym
-            s=syms.get(sym)
-            print >> f, s
-            
     def toggleAdded(self,item):
         if item.checkState():
             self.added.add(item.text())
@@ -253,7 +250,7 @@ class MainWindow(QtGui.QMainWindow):
         
     def autoGenerate(self):
         for path in self.generateQueue:
-            print "Generating makefile for '{}'".format(path)
+            #print "Generating makefile for '{}'".format(path)
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
         
@@ -314,7 +311,7 @@ class MainWindow(QtGui.QMainWindow):
                     f.close()
                     doc.setModified(False)
                     dir=os.path.dirname(path)
-                    print "Adding '{}' to generate queue".format(dir)
+                    #print "Adding '{}' to generate queue".format(dir)
                     self.generateQueue.add(dir)
             
 

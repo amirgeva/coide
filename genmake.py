@@ -7,7 +7,7 @@ from system import listAllPackages
 
 
 root=os.path.abspath('.')
-print ("ROOT={}".format(root))
+#print ("ROOT={}".format(root))
 
 packages=listAllPackages()
 
@@ -94,7 +94,6 @@ class Generator:
         libs=re.split(',| ',pb.get("LIBS"))
         libs=filter(bool,libs)  # remove empty strings
         if len(type)==0:
-            #red("No project type defined.")
             return False
         srcs=filterSources(files)
         intr=os.path.join(dir.replace(self.srcDir,self.intrDir),cfg)
@@ -154,7 +153,7 @@ class Generator:
         o.write('OPT_Debug=-g\n')
         self.generateConfig(dir,files,"Release",o)
         if self.generateConfig(dir,files,"Debug",o):
-            blue("Generated {}".format(dir))
+            pass
         
 
 def generateTree(root):

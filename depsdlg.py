@@ -35,9 +35,7 @@ class DependenciesDialog(QtGui.QDialog):
     def removePressed(self):
         i=self.depsList.currentRow()
         n=self.depsList.count()
-        print "i={} n={}".format(i,n)
         if i>=0 and i<n:
-            print "Trying to take item index={}".format(i)
             self.depsList.takeItem(i)
 
     def cancelPressed(self):
