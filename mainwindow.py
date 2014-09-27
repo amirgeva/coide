@@ -23,6 +23,7 @@ class MainWindow(QtGui.QMainWindow):
     watches, call stack, and output
     
     """
+    LIBRARY_SCAN = "Scanning Libraries"
     
     def __init__(self,rootDir,parent=None):
         """ Initialize.  rootDir indicates where data files are located """
@@ -62,7 +63,7 @@ class MainWindow(QtGui.QMainWindow):
         self.runningWidget=None
         
         self.generateTimer=QtCore.QTimer()
-        self.generateTimer.timeout.connect(self.autoGenerate)
+        self.generateTimer.timeout.connect(self.timer1000)
         self.generateTimer.start(1000)
         
 
@@ -222,13 +223,23 @@ class MainWindow(QtGui.QMainWindow):
             self.added.remove(item.text())
         
     def attemptUndefResolution(self,undefs):
-        from system import getLibrarySymbols
+        from system import getLibrarySymbols, getWorkspaceSymbols
+        print "Undefs={}".format(undefs)
         suggested={}
         syms=getLibrarySymbols()
-        #self.dumpSyms(syms)
+        wsSyms=getWorkspaceSymbols()
         for sym in undefs:
             if sym in syms:
                 s=syms.get(sym)
+                for l in s:
+                    if not l in suggested:
+                        suggested[l]=1
+                    else:
+                        n=suggested.get(l)+1
+                        suggested[l]=n
+            if sym in wsSyms:
+                print "Found '{}' in workspace".format(sym)
+                s=wsSyms.get(sym)
                 for l in s:
                     if not l in suggested:
                         suggested[l]=1
@@ -277,6 +288,13 @@ class MainWindow(QtGui.QMainWindow):
             #print "Generating makefile for '{}'".format(path)
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
+        
+    def timer1000(self):
+        self.autoGenerate() 
+        if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
+            from system import scanq
+            if not scanq.empty():
+                self.statusBar().showMessage('Ready')
         
     def generateAll(self):
         genmake.generateTree(self.workspaceTree.root)
@@ -392,6 +410,7 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)
         self.updateWorkspace()
         self.workspaceTree.doubleClicked.connect(self.docDoubleClicked)
+        self.statusBar().showMessage(MainWindow.LIBRARY_SCAN)
         from system import startSymbolScan
         startSymbolScan(self.workspaceTree.root)
         

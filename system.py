@@ -33,20 +33,26 @@ def startSymbolScan(workspacePath):
         scannerProcess.start()
     
 libSyms=None
+wsSyms=None
 
 def getLibrarySymbols():
     global libSyms
+    global wsSyms
     global scannerProcess
     global scanq
     if not libSyms:
-        libSyms=scanq.get()
+        (libSyms,wsSyms)=scanq.get()
         scannerProcess.join()
         scannerProcess=None
         scanq=None
     return libSyms
     
+def getWorkspaceSymbols():
+    getLibrarySymbols()
+    return wsSyms
+        
 callbacks.closeCallbacks.append(getLibrarySymbols)
 
 if __name__=='__main__':
-    getLibrarySymbols(True)
+    getLibrarySymbols()
     

@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import utils
 from system import listAllPackages, libraryDirs
 
@@ -11,6 +12,15 @@ def baseLibName(f):
         f=f[0:p]
     return f
 
+def isLibraryDir(dir):
+    try:
+        for line in open(os.path.join(dir,'Makefile')):
+            if line.strip()=='TYPE=LIB':
+                return True
+    except IOError:
+        pass
+    return False
+
 class Scanner:
     instance=None
 
@@ -19,6 +29,7 @@ class Scanner:
         self.packages=listAllPackages()
         self.libraryMap=self.mapLibrariesToPackages()
         self.librarySymbols=self.querySymbols()
+        self.workspaceSymbols=self.queryWorkspaceSymbols()
 
     def mapLibrariesToPackages(self):
         libmap={}
@@ -111,11 +122,37 @@ class Scanner:
                 sys.stdout.write('\n')
         return symbols
 
+    def queryWorkspaceSymbols(self,printOut=False):
+        symbols={}
+        for dir,subdirs,files in os.walk(os.path.join(self.ws,'src')):
+            if isLibraryDir(dir):
+                files=[f for f in files if f.endswith('.cpp')]
+                for f in files:
+                    path=os.path.join(dir,f)
+                    for line in open(path,'r').readlines():
+                        words=re.split('\W+',line.strip())
+                        for word in words:
+                            if not word in symbols:
+                                symbols[word]=set()
+                            symbols.get(word).add(dir)
+        if printOut:
+            f=open('ws_syms.txt','w')
+            for s in symbols:
+                print>>f, s
+                dirs=symbols.get(s)
+                for d in dirs:
+                    print>>f, '    '+d
+            f.close()
+        return symbols
 
 
 def getLibrarySymbols(ws):
     if Scanner.instance is None:
         Scanner.instance=Scanner(ws)
-    return Scanner.instance.librarySymbols
+    return (Scanner.instance.librarySymbols,Scanner.instance.workspaceSymbols)
     
-    
+
+
+if __name__=='__main__':
+    s=Scanner('/home/amir/workspace')
+    s.queryWorkspaceSymbols(True)

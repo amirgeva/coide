@@ -91,6 +91,7 @@ class Generator:
                 type="APP"
             else:
                 type="LIB"
+        o.write('TYPE={}\n'.format(type))
         libs=re.split(',| ',pb.get("LIBS"))
         libs=filter(bool,libs)  # remove empty strings
         if len(type)==0:
