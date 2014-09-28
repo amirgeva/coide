@@ -9,6 +9,9 @@ class Properties:
                 parts=line.strip().split('=')
                 if len(parts)==2:
                     self.props[parts[0]]=parts[1]
+    
+    def has(self,name):
+        return name in self.props
 
     def get(self,name):
         if name in self.props:

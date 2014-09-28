@@ -80,6 +80,27 @@ class Generator:
         self.srcDir=os.path.join(root,'src')
         self.intrDir=os.path.join(root,'intr')
         self.outDir=os.path.join(root,'out')
+        self.scanWorkspace()
+        
+    def scanWorkspace(self):
+        self.wsLibs={}
+        for dir,subdirs,files in os.walk(self.srcDir):
+            type=""
+            if isSourceDir(dir,files):
+                mkPath=os.path.join(dir,'mk.cfg')
+                if os.path.exists(mkPath):
+                    props=Properties(mkPath)
+                    if props.has("TYPE"):
+                        type=props.get("TYPE")
+                if type=="":
+                    if findMain(dir):
+                        type="APP"
+                    else:
+                        type="LIB"
+                if type=="LIB":
+                    dirname=(dir.split('/'))[-1]
+                    self.wsLibs[dirname]=os.path.relpath(dir,self.srcDir)
+                    
 
     def generateConfig(self,dir,files,cfg,o):
         name=os.path.basename(dir)
@@ -116,11 +137,10 @@ class Generator:
                 cflags=cflags+' `pkg-config --cflags {}` '.format(lib)
                 lflags=lflags+' `pkg-config --libs {}` '.format(lib)
             else:
-                if lib.startswith(self.srcDir):
-                    rel=os.path.relpath(lib,self.srcDir)
+                if lib in self.wsLibs:
+                    rel=self.wsLibs.get(lib)
                     libdir=os.path.join(self.root,'out',rel,cfg)
-                    libname=(lib.split('/'))[-1]
-                    lflags=lflags+' -L{} -l{} '.format(libdir,libname)
+                    lflags=lflags+' -L{} -l{} '.format(libdir,lib)
                 else:
                     lflags=lflags+' -l{} '.format(lib)
         o.write('CFLAGS_{}={}\n'.format(cfg,cflags))

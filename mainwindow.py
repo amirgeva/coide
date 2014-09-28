@@ -66,6 +66,8 @@ class MainWindow(QtGui.QMainWindow):
         self.generateTimer.timeout.connect(self.timer1000)
         self.generateTimer.start(1000)
         
+        self.generateAll()
+        
 
     def closeEvent(self, event):
         """ Called before the application window closes
@@ -297,7 +299,7 @@ class MainWindow(QtGui.QMainWindow):
         self.autoGenerate() 
         if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
             from system import scanq
-            if not scanq.empty():
+            if scanq and not scanq.empty():
                 self.statusBar().showMessage('Ready')
         
     def generateAll(self):

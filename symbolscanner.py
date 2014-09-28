@@ -126,6 +126,7 @@ class Scanner:
         symbols={}
         for dir,subdirs,files in os.walk(os.path.join(self.ws,'src')):
             if isLibraryDir(dir):
+                libname=(dir.split('/'))[-1]
                 files=[f for f in files if f.endswith('.cpp')]
                 for f in files:
                     path=os.path.join(dir,f)
@@ -134,7 +135,7 @@ class Scanner:
                         for word in words:
                             if not word in symbols:
                                 symbols[word]=set()
-                            symbols.get(word).add(dir)
+                            symbols.get(word).add(libname)
         if printOut:
             f=open('ws_syms.txt','w')
             for s in symbols:
