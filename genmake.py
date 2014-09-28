@@ -132,6 +132,7 @@ class Generator:
         o.write('INC_{}=-I{} {}\n'.format(cfg,self.globalInc,cfgInclude))
         cflags='-c -std=c++11 $(OPT_{}) $(INC_{}) '.format(cfg,cfg)
         lflags='$(OPT_{}) $(OBJS_{}) '.format(cfg,cfg)
+        libdeps={}
         for lib in libs:
             if lib in packages:
                 cflags=cflags+' `pkg-config --cflags {}` '.format(lib)
@@ -141,6 +142,7 @@ class Generator:
                     rel=self.wsLibs.get(lib)
                     libdir=os.path.join(self.root,'out',rel,cfg)
                     lflags=lflags+' -L{} -l{} '.format(libdir,lib)
+                    libdeps[lib]=os.path.join(self.root,'src',rel)
                 else:
                     lflags=lflags+' -l{} '.format(lib)
         o.write('CFLAGS_{}={}\n'.format(cfg,cflags))
@@ -154,6 +156,16 @@ class Generator:
         for obj in objs:
             o.write("\\\n"+obj)
         o.write("\n\n")
+        
+        liblist=[]
+
+        for lib in libdeps:
+            libname="{}_{}".format(lib,cfg)
+            liblist.append(libname)
+            libpath=libdeps.get(lib)
+            o.write("{}:\n".format(libname))
+            o.write("\t@make --no-print-directory -C {} {}\n\n".format(libpath,cfg))
+        
         if type=='LIB':
             outfile='{}/lib{}.a'.format(reloutdir,name)
             o.write('{}: $(OBJS_{})\n'.format(outfile,cfg))
@@ -161,7 +173,8 @@ class Generator:
         else:
             outfile="{}/{}".format(reloutdir,name)
             o.write('OUTPUT_PATH_{}={}\n\n'.format(cfg,outfile))
-            o.write('{}: $(OBJS_{})\n'.format(outfile,cfg))
+            liblist=' '.join(liblist)
+            o.write('{}: $(OBJS_{}) {}\n'.format(outfile,cfg,liblist))
             o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
             
         o.write('clean_{}:\n\trm $(OBJS_{}) {}\n\n'.format(cfg,cfg,outfile))        
