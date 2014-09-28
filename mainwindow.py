@@ -127,6 +127,7 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Save',self,shortcut='Ctrl+S',triggered=self.saveFile))
         m.addAction(QtGui.QAction('Save &As',self,triggered=self.saveAsFile))
         m.addAction(QtGui.QAction('&Close File',self,shortcut='Ctrl+F4',triggered=self.closeFile))
+        m.addAction(QtGui.QAction('E&xit',self,shortcut='Ctrl+Q',triggered=self.exitApp))
         
         m=bar.addMenu('&Build')
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
@@ -172,6 +173,9 @@ class MainWindow(QtGui.QMainWindow):
         tb.addAction(utils.loadIcon('break.png'),'Break').triggered.connect(self.actBreak)
         tb.addAction(utils.loadIcon('stop.png'),'Stop').triggered.connect(self.actStop)
         #self.addToolBar(tb)
+
+    def exitApp(self):
+        self.close()
 
     def settingsFonts(self):
         """ Edit the font settings for the code window and various panes """

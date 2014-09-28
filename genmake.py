@@ -116,7 +116,13 @@ class Generator:
                 cflags=cflags+' `pkg-config --cflags {}` '.format(lib)
                 lflags=lflags+' `pkg-config --libs {}` '.format(lib)
             else:
-                lflags=lflags+' -l{} '.format(lib)
+                if lib.startswith(self.srcDir):
+                    rel=os.path.relpath(lib,self.srcDir)
+                    libdir=os.path.join(self.root,'out',rel,cfg)
+                    libname=(lib.split('/'))[-1]
+                    lflags=lflags+' -L{} -l{} '.format(libdir,libname)
+                else:
+                    lflags=lflags+' -l{} '.format(lib)
         o.write('CFLAGS_{}={}\n'.format(cfg,cflags))
         o.write('LFLAGS_{}={}\n'.format(cfg,lflags))
         objs = arreplace(srcs,'.cpp','.o')
