@@ -18,6 +18,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.setHeaderHidden(True)
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.actBuild = QtGui.QAction('Build',self,triggered=self.buildCurrent)
+        self.actClean = QtGui.QAction('Clean',self,triggered=self.cleanCurrent)
         self.actRebuild = QtGui.QAction('Rebuild',self,triggered=self.rebuildCurrent)
         self.actSetMain = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
         self.actEditDependencies = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
@@ -44,6 +45,7 @@ class WorkSpace(QtGui.QTreeWidget):
             if os.path.exists(makefile):
                 menu.addAction(self.actBuild)
                 menu.addAction(self.actRebuild)
+                menu.addAction(self.actClean)
                 menu.addSeparator()
                 menu.addAction(self.actSetMain)
                 menu.addAction(self.actEditDependencies)
@@ -135,12 +137,15 @@ class WorkSpace(QtGui.QTreeWidget):
         item=self.currentItem()
         path=item.data(0,DirectoryRole).toString()
         self.mainWindow.buildSpecific(path)
-
-    def rebuildCurrent(self):
+        
+    def cleanCurrent(self):
         item=self.currentItem()
         path=item.data(0,DirectoryRole).toString()
         self.mainWindow.cleanSpecific(path)
-        self.mainWindow.buildSpecific(path)
+
+    def rebuildCurrent(self):
+        self.cleanCurrent()
+        self.buildCurrent()
 
     def editDependencies(self):
         item=self.currentItem()
@@ -191,7 +196,7 @@ class WorkSpace(QtGui.QTreeWidget):
             try:
                 os.mkdir(os.path.join(path,name))
                 self.update()
-            except OSError,e:
+            except OSError:
                 utils.message("Failed to create folder")
         
     def createFile(self):
@@ -204,7 +209,7 @@ class WorkSpace(QtGui.QTreeWidget):
                 f.write("\n")
                 f.close()
                 self.update()
-            except IOError,e:
+            except IOError:
                 utils.message("Failed to create file")
         
 
