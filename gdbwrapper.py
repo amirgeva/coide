@@ -10,11 +10,6 @@ import sys
 import time
 import parseutils
 
-class Breakpoint:
-    def __init__(self,enabled=True,index=-1):
-        self.enabled=enabled
-        self.index=index
-
 class GDBWrapper:
     """ Wrapper above the GDB process
 
@@ -22,9 +17,10 @@ class GDBWrapper:
     and read/parse responses    
     
     """
-    
-    def __init__(self,args):
+
+    def __init__(self,bps,args):
         """ Start gdb.  dataRoot indicates location of parsers """
+        self.breakpoints=bps
         dataRoot=os.path.dirname(os.path.abspath(__file__))
         #print "Starting debugger for: {}".format(args)
         self.args=['gdb']+args
@@ -49,12 +45,9 @@ class GDBWrapper:
         self.active=False    # Program is currenly running, debugger waiting for breakpoint or exit
         self.changed=True
         # dict:  str filepath -> dict of breakpoints ( int line -> Breakpoint )
-        self.breakpoints={}
         self.allFiles=set()
         self.initializePrettyPrints(dataRoot)
         self.recursiveTypes={'map','vector','struct'}
-        
-        self.breakpointsChanged=QtCore.pyqtSignal()
         
         self.pid=''
         self.write('start')
@@ -70,7 +63,7 @@ class GDBWrapper:
                     self.running=True
         if len(self.pid)==0:
             QtGui.QMessageBox.critical(self,'Problem','Failed to get debugged program PID')
-        #self.loadBreakpoints()
+        self.setBreakpoints()
 
     def initializePrettyPrints(self,dataRoot):
         """ Installs the python extension for pretty printing """
@@ -183,48 +176,9 @@ class GDBWrapper:
                             allBps[path]={}
                         bps=allBps.get(path)
                         bps[line]=Breakpoint(enabled,index)
-                if self.breakpoints != allBps:
-                    self.breakpoints=allBps
-                    self.breakpointsChanged.emit()
+                self.breakpoints.loadFeedback(allBps)
 
     
-    def loadBreakpoints(self,s):
-        """ Reloads the breakpoints from a previous session """
-        if self.active:
-            return
-        self.write('delete breakpoints')
-        self.write('y')
-        self.read()
-        if len(s)>0:
-            srcinfos=s.split(';')
-            for src in srcinfos:
-                if len(src)>0:
-                    fields=src.split(',')
-                    path=fields[0]
-                    del fields[0]
-                    n=len(fields)
-                    for i in xrange(0,(n/2)):
-                        line=int(fields[i*2])
-                        enabled=(fields[i*2+1]=='1')
-                        self.toggleBreakpoint(path,line)
-                        if not enabled:
-                            self.ableBreakpoint(path,line)
-        
-    def saveBreakpoints(self):
-        """ Serializes breakpoints for a later session """
-        arr=[]
-        for path in self.breakpoints.keys():
-            arr.append(path)
-            bps=self.breakpoints.get(path)
-            for line in bps.keys():
-                bp=bps[line]
-                arr.append(',')
-                arr.append(str(line))
-                arr.append(',')
-                arr.append('1' if bp.enabled else '0')
-            arr.append(';')
-        return ''.join(arr)
-        
     def updatePath(self,name):
         """ Given a file name, find the first file path that matches """
         if name[0]=='/':
@@ -311,16 +265,22 @@ class GDBWrapper:
         
     def clearBreakpoints(self):
         self.write("set confirm off")
+        self.read()
         self.write("delete")
-        self.updateBreakpoints()
+        self.read()
         
-    def getBreakpoints(self,path):
-        if not self.breakpoints.has_key(path):
-            name=os.path.basename(path)
-            if not self.breakpoints.has_key(name):
-                return {}
-            return self.breakpoints.get(name)
-        return self.breakpoints.get(path)
+    #def getBreakpoints(self,path):
+    #    if not self.breakpoints.has_key(path):
+    #        name=os.path.basename(path)
+    #        if not self.breakpoints.has_key(name):
+    #            return {}
+    #        return self.breakpoints.get(name)
+    #    return self.breakpoints.get(path)
+    
+    def setBreakpoint(self,path,line):    
+        self.write('break {}:{}'.format(path,line))
+        self.read()
+        self.changed=True
     
     def toggleBreakpoint(self,path,line):
         if not self.active:
@@ -335,7 +295,6 @@ class GDBWrapper:
                 self.write('break {}:{}'.format(path,line))
                 self.read()
             self.changed=True
-            self.updateBreakpoints()
     
     def ableBreakpoint(self,path,line):
         """ Enables/Disables a breakpoint """
@@ -351,8 +310,17 @@ class GDBWrapper:
                 lines,ok=self.read()
                 if ok:
                     bp.enabled=not bp.enabled
-                    self.breakpointsChanged.emit()
 
+    def setBreakpoints(self):
+        self.clearBreakpoints()
+        for path in self.breakpoints.paths():
+            bps=self.breakpoints.pathBreakpoints(path)
+            for line in bps:
+                bp=bps.get(line)
+                line=line+1
+                self.setBreakpoint(path,line)
+                if not bp.enabled:
+                    self.ableBreakpoint(path,line)
     
     def actStep(self):
         """ Single steps going into function calls """
@@ -379,6 +347,7 @@ class GDBWrapper:
     def actCont(self):
         """ Continue running the program (until done, or breakpoint) """
         if not self.running:
+            #self.setBreakpoints()
             self.write('run')
             self.running=True
             self.active=True

@@ -584,10 +584,6 @@ class Qutepart(QPlainTextEdit):
         self.toggleLineBreakpoint(self.contextMenuLine)
 
     def toggleLineBreakpoint(self,line):
-        if line in self._bpMarks:
-            del self._bpMarks[line]
-        else:
-            self._bpMarks[line]=line
         self.breakpointToggled.emit(self.path,line)
         self.update()
 

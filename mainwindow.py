@@ -12,6 +12,7 @@ import output
 from consts import *
 from gdbwrapper import *
 from watchestree import WatchesTree
+from breakpoints import BreakpointsDB
 import utils
 import genmake
 import uis
@@ -35,6 +36,7 @@ class MainWindow(QtGui.QMainWindow):
         self.rootDir=rootDir
         utils.setIconsDir(os.path.join(rootDir,"icons"))
         self.debugger=None
+        self.breakpoints=BreakpointsDB()
         
         self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','C64.png')))
 
@@ -471,10 +473,8 @@ class MainWindow(QtGui.QMainWindow):
                     self.loadFont('codefont',editor)
                     self.central.tabBar().setCurrentIndex(index)
                     editor.breakpointToggled.connect(self.breakpointToggled)
-                    if path in self.workspaceTree.breakpoints:
-                        bps=self.workspaceTree.breakpoints.get(path)
-                        for line in bps:
-                            editor.toggleLineBreakpoint(line)
+                    bps=self.breakpoints.pathBreakpoints(path)
+                    editor._bpMarks=bps
                     return True
             except IOError,e:
                 return False
@@ -694,10 +694,7 @@ class MainWindow(QtGui.QMainWindow):
             self.stackList.addItem(line)
     
     def breakpointToggled(self,path,line):
-        if self.debugger:
-            self.debugger.toggleBreakpoint(path,line)
-        else:
-            self.workspaceTree.toggleBreakpoint(path,line)
+        self.breakpoints.toggleBreakpoint(path,line)
         
     def startDebug(self):
         if self.debugger:
@@ -707,7 +704,7 @@ class MainWindow(QtGui.QMainWindow):
         args=self.workspaceTree.getDebugParams().split()
         for a in args:
             cmd.append(a)
-        self.debugger=GDBWrapper(cmd)
+        self.debugger=GDBWrapper(self.breakpoints,cmd)
         self.showWatchesPane()
         self.showCallStackPane()
         self.timer.start(50)
