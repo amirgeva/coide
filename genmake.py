@@ -165,7 +165,10 @@ class Generator:
             libpath=libdeps.get(lib)
             o.write("{}:\n".format(libname))
             o.write("\t@make --no-print-directory -C {} {}\n\n".format(libpath,cfg))
+            o.write("clean_{}:\n".format(libname))
+            o.write("\t@make --no-print-directory -C {} clean_{}\n\n".format(libpath,cfg))
         
+        cleanlibs=''
         if type=='LIB':
             outfile='{}/lib{}.a'.format(reloutdir,name)
             o.write('{}: $(OBJS_{})\n'.format(outfile,cfg))
@@ -173,11 +176,12 @@ class Generator:
         else:
             outfile="{}/{}".format(reloutdir,name)
             o.write('OUTPUT_PATH_{}={}\n\n'.format(cfg,outfile))
+            cleanlibs='clean_'+' clean_'.join(liblist)
             liblist=' '.join(liblist)
             o.write('{}: $(OBJS_{}) {}\n'.format(outfile,cfg,liblist))
             o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
             
-        o.write('clean_{}:\n\trm $(OBJS_{}) {}\n\n'.format(cfg,cfg,outfile))        
+        o.write('clean_{}: {}\n\trm $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
         o.write('{}: {}\n\n'.format(cfg,outfile))
             
         for i in xrange(0,len(objs)):

@@ -101,6 +101,7 @@ class MainWindow(QtGui.QMainWindow):
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
         settings.sync()
+        self.removeTempScripts()
         super(MainWindow,self).closeEvent(event)
         
     def loadWindowSettings(self):
@@ -580,8 +581,19 @@ class MainWindow(QtGui.QMainWindow):
         self.outputEdit.setTextCursor(c)
         self.outputEdit.ensureCursorVisible()
         
+    def tempScriptPath(self):
+        from time import time
+        t=int(time()*10)
+        return '/tmp/coide_{}.sh'.format(t)
+        
+    def removeTempScripts(self):
+        files=os.listdir('/tmp')
+        files=[f for f in files if f.startswith('coide_')]
+        for f in files:
+            os.remove('/tmp/{}'.format(f))
+        
     def runProject(self):
-        path='/tmp/coide_run.sh'
+        path=self.tempScriptPath()
         f=open(path,'w')
         dir=self.workspaceTree.getDebugDirectory()
         cmd=self.workspaceTree.getExecutablePath()
@@ -591,8 +603,7 @@ class MainWindow(QtGui.QMainWindow):
         f.write('#!/bin/sh\ncd {}\n{}\nread -r -p "Press any key..." key\n'.format(dir,cmd))
         f.close()
         os.chmod(path,stat.S_IRUSR|stat.S_IWUSR|stat.S_IXUSR)
-        call(['xterm','-fn','10x20','-e',path])
-        os.remove(path)
+        utils.run('/tmp','xterm','-fn','10x20','-e',path)
         
     def getCurrentFile(self):
         if self.central.count()==0:
