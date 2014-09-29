@@ -269,6 +269,8 @@ class Qutepart(QPlainTextEdit):
         self._userExtraSelectionFormat.setBackground(QBrush(QColor('#ff0e00')))
 
         self._lintMarks = {}
+        
+        self._bpMarks = {}
 
         self.blockCountChanged.connect(self._updateLineNumberAreaWidth)
         self.updateRequest.connect(self._updateSideAreas)
@@ -284,6 +286,24 @@ class Qutepart(QPlainTextEdit):
 
         self._updateLineNumberAreaWidth(0)
         self._updateExtraSelections()
+        
+        self.actToggleBreakpoint = QAction('Toggle Breakpoint',self,triggered=self.toggleBreakpoint)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)
+
+    def showContextMenu(self,pos):
+        menu=self.createStandardContextMenu()
+        acts=menu.actions()
+        if len(acts)>0:
+            first=acts[0]
+            menu.insertAction(first,self.actToggleBreakpoint)
+            menu.insertSeparator(first)
+        else:
+            menu.addAction(self.actToggleBreakpoint)
+        cursor = self.cursorForPosition(pos)
+        self.contextMenuLine = cursor.block().blockNumber()
+        menu.exec_(self.viewport().mapToGlobal(pos))
+        
         
     def setPath(self,path):
         self.path=path
@@ -543,6 +563,31 @@ class Qutepart(QPlainTextEdit):
         if use != self._indenter.useTabs:
             self._indenter.useTabs = use
             self.indentUseTabsChanged.emit(use)
+            
+    @property
+    def bpMarks(self):
+        return self._bpMarks
+        
+    @bpMarks.setter
+    def bpMarks(self,marks):
+        if self._bpMarks != marks:
+            self._bpMarks = marks
+            self.update()
+            
+    def _clearBpMarks(self):
+        if self._bpMarks != {}:
+            self._bpMarks = {}
+            self.update()
+
+    def toggleBreakpoint(self):
+        self.toggleLineBreakpoint(self.contextMenuLine)
+
+    def toggleLineBreakpoint(self,line):
+        if line in self._bpMarks:
+            del self._bpMarks[line]
+        else:
+            self._bpMarks[line]=line
+        self.update()
 
     @property
     def lintMarks(self):

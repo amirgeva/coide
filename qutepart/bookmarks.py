@@ -67,15 +67,17 @@ class Bookmarks:
         """
         for block in qutepart.iterateBlocksBackFrom(self._qpart.textCursor().block().previous()):
             if self.isBlockMarked(block) or \
-               block.blockNumber() in self._qpart.lintMarks:
-                self._qpart.setTextCursor(QTextCursor(block))
-                return
+               block.blockNumber() in self._qpart.lintMarks or \
+               block.blockNumber() in self._qpart.bpMarks:
+                   self._qpart.setTextCursor(QTextCursor(block))
+                   return
 
     def _onNextBookmark(self):
         """Previous Bookmark action triggered. Move cursor
         """
         for block in qutepart.iterateBlocksFrom(self._qpart.textCursor().block().next()):
             if self.isBlockMarked(block) or \
-               block.blockNumber() in self._qpart.lintMarks:
-                self._qpart.setTextCursor(QTextCursor(block))
-                return
+               block.blockNumber() in self._qpart.lintMarks or \
+               block.blockNumber() in self._qpart.bpMarks:
+                   self._qpart.setTextCursor(QTextCursor(block))
+                   return
