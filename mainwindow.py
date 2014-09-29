@@ -34,6 +34,7 @@ class MainWindow(QtGui.QMainWindow):
         self.currentFile=''
         self.rootDir=rootDir
         utils.setIconsDir(os.path.join(rootDir,"icons"))
+        self.debugger=None
         
         self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','C64.png')))
 
@@ -46,6 +47,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setupToolbar(rootDir)
         self.showWorkspacePane()
         self.showOutputPane()
+        
+        
 
         s=QtCore.QSettings()
         self.config=s.value("config").toString()
@@ -76,6 +79,7 @@ class MainWindow(QtGui.QMainWindow):
         to allow future sessions to look the same
         
         """
+        self.workspaceTree.onClose()
         self.timer.stop()
         if self.debugger:
             self.debugger.closingApp()
@@ -466,6 +470,11 @@ class MainWindow(QtGui.QMainWindow):
                     self.editors[path]=editor
                     self.loadFont('codefont',editor)
                     self.central.tabBar().setCurrentIndex(index)
+                    editor.breakpointToggled.connect(self.breakpointToggled)
+                    if path in self.workspaceTree.breakpoints:
+                        bps=self.workspaceTree.breakpoints.get(path)
+                        for line in bps:
+                            editor.toggleLineBreakpoint(line)
                     return True
             except IOError,e:
                 return False
@@ -684,6 +693,11 @@ class MainWindow(QtGui.QMainWindow):
         for line in bt:
             self.stackList.addItem(line)
     
+    def breakpointToggled(self,path,line):
+        if self.debugger:
+            self.debugger.toggleBreakpoint(path,line)
+        else:
+            self.workspaceTree.toggleBreakpoint(path,line)
         
     def startDebug(self):
         if self.debugger:

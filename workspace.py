@@ -5,6 +5,7 @@ from PyQt4 import QtGui
 from consts import *
 from properties import Properties
 from depsdlg import DependenciesDialog
+from gdbwrapper import Breakpoint
 import utils
 import uis
 
@@ -25,6 +26,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
         self.actCreateFolder = QtGui.QAction('Create Folder',self,triggered=self.createFolder)
         self.actCreateFile = QtGui.QAction('Create File',self,triggered=self.createFile)
+        self.breakpoints={}
         self.main=None
         self.debug=('','')
         s=QtCore.QSettings()
@@ -33,6 +35,10 @@ class WorkSpace(QtGui.QTreeWidget):
         self.config="Debug"
         self.itemCollapsed.connect(self.onCollapsed)
         self.itemExpanded.connect(self.onExpanded)
+        self.loadBreakpoints()
+        
+    def onClose(self):
+        self.saveBreakpoints()
         
     def setConfig(self,config):
         self.config=config
@@ -108,6 +114,7 @@ class WorkSpace(QtGui.QTreeWidget):
             item=self.findDirectoryItem(dir)
             if item:
                 self.expandItem(item)
+        self.loadBreakpoints()
         
     def onCollapsed(self,item):
         s=self.settings()
@@ -286,8 +293,61 @@ class WorkSpace(QtGui.QTreeWidget):
         self.loadSettings()
     
     def setWorkspacePath(self,path):
+        self.saveBreakpoints()
         self.root=path
         s=QtCore.QSettings()
         s.setValue('workspace',path)
         s.sync()
         self.update()
+        self.loadBreakpoints()
+        
+    def toggleBreakpoint(self,path,line):
+        if not path in self.breakpoints:
+            self.breakpoints[path]={}
+        bps=self.breakpoints.get(path)
+        if line in bps:
+            del bps[line]
+        else:
+            bps[line]=Breakpoint(True,0)
+        
+    def ableBreakpoint(self,path,line,enabled):
+        if path in self.breakpoints:
+            bps=self.breakpoints.get(path)
+            if line in bps:
+                bps.get(line).enabled=enabled
+
+    def loadBreakpoints(self):
+        self.breakpoints={}
+        settings=self.settings()
+        allbps=settings.value('breakpoints','').toString()
+        if len(allbps)>0:
+            srcinfos=allbps.split(';')
+            for src in srcinfos:
+                if len(src)>0:
+                    fields=src.split(',')
+                    path=fields[0]
+                    del fields[0]
+                    n=len(fields)
+                    for i in xrange(0,(n/2)):
+                        line=int(fields[i*2])
+                        enabled=(fields[i*2+1]=='1')
+                        self.toggleBreakpoint(path,line)
+                        if not enabled:
+                            self.ableBreakpoint(path,line,False)
+
+    def saveBreakpoints(self):
+        settings=self.settings()
+        arr=[]
+        for path in self.breakpoints:
+            arr.append(path)
+            bps=self.breakpoints.get(path)
+            for line in bps.keys():
+                bp=bps[line]
+                arr.append(',')
+                arr.append(str(line))
+                arr.append(',')
+                arr.append('1' if bp.enabled else '0')
+            arr.append(';')
+        settings.setValue('breakpoints',''.join(arr))
+        
+        

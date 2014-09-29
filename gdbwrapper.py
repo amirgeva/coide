@@ -11,8 +11,8 @@ import time
 import parseutils
 
 class Breakpoint:
-    def __init__(self,state=True,index=-1):
-        self.enabled=state
+    def __init__(self,enabled=True,index=-1):
+        self.enabled=enabled
         self.index=index
 
 class GDBWrapper:
@@ -44,14 +44,17 @@ class GDBWrapper:
         self.locPattern=re.compile('Located in (.+)$')
         # Read the gdb startup text
         self.read()
-        self.running=False
-        self.active=False
+
+        self.running=False   # Indicates the debugged program has started
+        self.active=False    # Program is currenly running, debugger waiting for breakpoint or exit
         self.changed=True
         # dict:  str filepath -> dict of breakpoints ( int line -> Breakpoint )
         self.breakpoints={}
         self.allFiles=set()
         self.initializePrettyPrints(dataRoot)
         self.recursiveTypes={'map','vector','struct'}
+        
+        self.breakpointsChanged=QtCore.pyqtSignal()
         
         self.pid=''
         self.write('start')
@@ -67,7 +70,7 @@ class GDBWrapper:
                     self.running=True
         if len(self.pid)==0:
             QtGui.QMessageBox.critical(self,'Problem','Failed to get debugged program PID')
-        self.loadBreakpoints()
+        #self.loadBreakpoints()
 
     def initializePrettyPrints(self,dataRoot):
         """ Installs the python extension for pretty printing """
@@ -158,7 +161,7 @@ class GDBWrapper:
     def updateBreakpoints(self):
         """ Queries and updates the breakpoints dict """
         if not self.active:
-            self.breakpoints={}
+            allBps={}
             self.write('info break')
             lines,ok=self.read()
             if ok:
@@ -176,18 +179,19 @@ class GDBWrapper:
                         path=parts[0]
                         line=int(parts[1])
                         self.log("{}: ({}) Breakpoint '{}':{}".format(index,enabled,path,line))
-                        if not self.breakpoints.has_key(path):
-                            self.breakpoints[path]={}
-                        bps=self.breakpoints.get(path)
+                        if not allBps.has_key(path):
+                            allBps[path]={}
+                        bps=allBps.get(path)
                         bps[line]=Breakpoint(enabled,index)
-                self.saveBreakpoints()
+                if self.breakpoints != allBps:
+                    self.breakpoints=allBps
+                    self.breakpointsChanged.emit()
+
     
-    def loadBreakpoints(self):
+    def loadBreakpoints(self,s):
         """ Reloads the breakpoints from a previous session """
         if self.active:
             return
-        settings=QtCore.QSettings()
-        s=settings.value(self.debugged,'').toString()
         self.write('delete breakpoints')
         self.write('y')
         self.read()
@@ -208,7 +212,6 @@ class GDBWrapper:
         
     def saveBreakpoints(self):
         """ Serializes breakpoints for a later session """
-        settings=QtCore.QSettings()
         arr=[]
         for path in self.breakpoints.keys():
             arr.append(path)
@@ -220,7 +223,7 @@ class GDBWrapper:
                 arr.append(',')
                 arr.append('1' if bp.enabled else '0')
             arr.append(';')
-        settings.setValue(self.debugged,''.join(arr))
+        return ''.join(arr)
         
     def updatePath(self,name):
         """ Given a file name, find the first file path that matches """
@@ -348,7 +351,7 @@ class GDBWrapper:
                 lines,ok=self.read()
                 if ok:
                     bp.enabled=not bp.enabled
-                    self.saveBreakpoints()
+                    self.breakpointsChanged.emit()
 
     
     def actStep(self):
