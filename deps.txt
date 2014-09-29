@@ -1,0 +1,11 @@
+required:
+python
+python-qt4
+python-sip
+g++
+
+
+optional:
+clang
+
+
