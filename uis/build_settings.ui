@@ -182,6 +182,19 @@
     <string>Custom Flags</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="resetButton">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>180</y>
+     <width>131</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Reset to Default</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

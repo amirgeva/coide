@@ -26,6 +26,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actCreateFolder = QtGui.QAction('Create Folder',self,triggered=self.createFolder)
         self.actCreateFile = QtGui.QAction('Create File',self,triggered=self.createFile)
         self.main=None
+        self.src=None
         self.debug=('','')
         s=QtCore.QSettings()
         self.root=s.value('workspace').toString()
@@ -257,6 +258,7 @@ class WorkSpace(QtGui.QTreeWidget):
         
     def update(self):
         self.main=None
+        self.src=None
         self.clear()
         folderIcon=utils.loadIcon('folder')
         docIcon=utils.loadIcon('doc')
@@ -277,6 +279,8 @@ class WorkSpace(QtGui.QTreeWidget):
                 for sub in subdirs:
                     path=os.path.join(dir,sub)
                     child=QtGui.QTreeWidgetItem([sub])
+                    if sub=='src' and self.src is None:
+                        self.src=child
                     child.setIcon(0,folderIcon)
                     child.setData(0,DirectoryRole,path)
                     items[path]=child
@@ -308,4 +312,13 @@ class WorkSpace(QtGui.QTreeWidget):
         allbps=self.mainWindow.breakpoints.save()
         settings.setValue('breakpoints',allbps)
         
-        
+    def addProjectsToTree(self,root):
+        def addSubItems(src,dst):
+            for i in xrange(0,src.childCount()):
+                item=src.child(i)
+                ditem=QtGui.QTreeWidgetItem([item.text(0)])
+                ditem.setData(0,DirectoryRole,item.data(0,DirectoryRole))
+                dst.addChild(ditem)
+                addSubItems(item,ditem)
+        if self.src:
+            addSubItems(self.src,root)

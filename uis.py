@@ -6,14 +6,15 @@ import re
 import inspect
 import importlib
 
-def loadDialog(name):
+def loadDialog(name,dlg=None):
     module=importlib.import_module('gen.'+name)
     for name,obj in inspect.getmembers(module):
         if name.startswith("Ui_"):
-            d=QtGui.QDialog()
+            if not dlg:
+                dlg=QtGui.QDialog()
             ui=obj()
-            ui.setupUi(d)
-            return d
+            ui.setupUi(dlg)
+            return dlg
 
 
 def generate():

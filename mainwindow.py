@@ -284,7 +284,8 @@ class MainWindow(QtGui.QMainWindow):
         
         
     def buildSettings(self):
-        d=uis.loadDialog('build_settings')
+        from buildsettings import BuildSettingsDialog
+        d=BuildSettingsDialog(self)
         if d.exec_():
             pass
         

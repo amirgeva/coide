@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uis/build_settings.ui'
 #
-# Created: Tue Sep 30 11:00:53 2014
+# Created: Tue Sep 30 12:44:23 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -69,6 +69,9 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.label_3 = QtGui.QLabel(BuildSettingsDialog)
         BuildSettingsDialog.label_3.setGeometry(QtCore.QRect(180, 210, 191, 17))
         BuildSettingsDialog.label_3.setObjectName(_fromUtf8("label_3"))
+        BuildSettingsDialog.resetButton = QtGui.QPushButton(BuildSettingsDialog)
+        BuildSettingsDialog.resetButton.setGeometry(QtCore.QRect(320, 180, 131, 27))
+        BuildSettingsDialog.resetButton.setObjectName(_fromUtf8("resetButton"))
 
         self.retranslateUi(BuildSettingsDialog)
         QtCore.QObject.connect(BuildSettingsDialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), BuildSettingsDialog.accept)
@@ -90,4 +93,5 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.pedantic.setText(_translate("BuildSettingsDialog", "Pedantic", None))
         BuildSettingsDialog.checkBox.setText(_translate("BuildSettingsDialog", "Warnings as errors", None))
         BuildSettingsDialog.label_3.setText(_translate("BuildSettingsDialog", "Custom Flags", None))
+        BuildSettingsDialog.resetButton.setText(_translate("BuildSettingsDialog", "Reset to Default", None))
 
