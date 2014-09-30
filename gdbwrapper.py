@@ -67,7 +67,7 @@ class GDBWrapper:
                     self.running=True
         if len(self.pid)==0:
             QtGui.QMessageBox.critical(self,'Problem','Failed to get debugged program PID')
-        self.loadBreakpoints()
+        #self.loadBreakpoints()
 
     def initializePrettyPrints(self,dataRoot):
         """ Installs the python extension for pretty printing """
