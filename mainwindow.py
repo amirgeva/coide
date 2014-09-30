@@ -12,6 +12,7 @@ import output
 from consts import *
 from gdbwrapper import *
 from watchestree import WatchesTree
+from breakpoints import BreakpointsDB
 import utils
 import genmake
 import uis
@@ -34,6 +35,8 @@ class MainWindow(QtGui.QMainWindow):
         self.currentFile=''
         self.rootDir=rootDir
         utils.setIconsDir(os.path.join(rootDir,"icons"))
+        self.debugger=None
+        self.breakpoints=BreakpointsDB()
         
         self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','C64.png')))
 
@@ -46,6 +49,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setupToolbar(rootDir)
         self.showWorkspacePane()
         self.showOutputPane()
+        
+        
 
         s=QtCore.QSettings()
         self.config=s.value("config").toString()
@@ -76,6 +81,7 @@ class MainWindow(QtGui.QMainWindow):
         to allow future sessions to look the same
         
         """
+        self.workspaceTree.onClose()
         self.timer.stop()
         if self.debugger:
             self.debugger.closingApp()
@@ -466,6 +472,9 @@ class MainWindow(QtGui.QMainWindow):
                     self.editors[path]=editor
                     self.loadFont('codefont',editor)
                     self.central.tabBar().setCurrentIndex(index)
+                    editor.breakpointToggled.connect(self.breakpointToggled)
+                    bps=self.breakpoints.pathBreakpoints(path)
+                    editor._bpMarks=bps
                     return True
             except IOError,e:
                 return False
@@ -684,6 +693,8 @@ class MainWindow(QtGui.QMainWindow):
         for line in bt:
             self.stackList.addItem(line)
     
+    def breakpointToggled(self,path,line):
+        self.breakpoints.toggleBreakpoint(path,line)
         
     def startDebug(self):
         if self.debugger:
@@ -693,7 +704,7 @@ class MainWindow(QtGui.QMainWindow):
         args=self.workspaceTree.getDebugParams().split()
         for a in args:
             cmd.append(a)
-        self.debugger=GDBWrapper(cmd)
+        self.debugger=GDBWrapper(self.breakpoints,cmd)
         self.showWatchesPane()
         self.showCallStackPane()
         self.timer.start(50)

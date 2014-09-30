@@ -34,6 +34,9 @@ class WorkSpace(QtGui.QTreeWidget):
         self.itemCollapsed.connect(self.onCollapsed)
         self.itemExpanded.connect(self.onExpanded)
         
+    def onClose(self):
+        self.saveBreakpoints()
+        
     def setConfig(self,config):
         self.config=config
         
@@ -108,6 +111,7 @@ class WorkSpace(QtGui.QTreeWidget):
             item=self.findDirectoryItem(dir)
             if item:
                 self.expandItem(item)
+        self.loadBreakpoints()
         
     def onCollapsed(self,item):
         s=self.settings()
@@ -286,8 +290,22 @@ class WorkSpace(QtGui.QTreeWidget):
         self.loadSettings()
     
     def setWorkspacePath(self,path):
+        self.saveBreakpoints()
         self.root=path
         s=QtCore.QSettings()
         s.setValue('workspace',path)
         s.sync()
         self.update()
+        self.loadBreakpoints()
+        
+    def loadBreakpoints(self):
+        settings=self.settings()
+        allbps=settings.value('breakpoints','').toString()
+        self.mainWindow.breakpoints.load(allbps)
+
+    def saveBreakpoints(self):
+        settings=self.settings()
+        allbps=self.mainWindow.breakpoints.save()
+        settings.setValue('breakpoints',allbps)
+        
+        

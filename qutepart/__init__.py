@@ -209,6 +209,7 @@ class Qutepart(QPlainTextEdit):
     indentWidthChanged = pyqtSignal(int)
     indentUseTabsChanged = pyqtSignal(bool)
     eolChanged = pyqtSignal(unicode)
+    breakpointToggled = pyqtSignal(unicode,int)
 
     LINT_ERROR = 'e'
     LINT_WARNING = 'w'
@@ -583,10 +584,7 @@ class Qutepart(QPlainTextEdit):
         self.toggleLineBreakpoint(self.contextMenuLine)
 
     def toggleLineBreakpoint(self,line):
-        if line in self._bpMarks:
-            del self._bpMarks[line]
-        else:
-            self._bpMarks[line]=line
+        self.breakpointToggled.emit(self.path,line)
         self.update()
 
     @property
