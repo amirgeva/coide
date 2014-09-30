@@ -110,6 +110,15 @@ class MainWindow(QtGui.QMainWindow):
         self.removeTempScripts()
         super(MainWindow,self).closeEvent(event)
         
+    def saveDebugWindowState(self):
+        settings = QtCore.QSettings()
+        settings.setValue("debugWindowState", self.saveState())
+        settings.sync()
+        
+    def loadDebugWindowState(self):
+        settings = QtCore.QSettings()
+        self.restoreState(settings.value("debugWindowState").toByteArray())
+        
     def loadWindowSettings(self):
         settings = QtCore.QSettings()
         self.restoreGeometry(settings.value("geometry").toByteArray())
@@ -707,12 +716,14 @@ class MainWindow(QtGui.QMainWindow):
         self.debugger=GDBWrapper(self.breakpoints,cmd)
         self.showWatchesPane()
         self.showCallStackPane()
+        self.loadDebugWindowState()
         self.timer.start(50)
         
     def stopDebugger(self):
         if self.debugger:
+            self.saveDebugWindowState()
             self.debugger.quitDebugger()
-            self.debugger=None        
+            self.debugger=None
             self.paneWatches.close()
             self.paneStack.close()
             self.timer.stop()
