@@ -151,6 +151,7 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
         m.addAction(QtGui.QAction('&Clean',self,triggered=self.clean))
         m.addAction(QtGui.QAction('&Rebuild',self,shortcut='Shift+F7',triggered=self.rebuild))
+        m.addAction(QtGui.QAction('&Settings',self,shortcut='Ctrl+F7',triggered=self.buildSettings))
         
         m=bar.addMenu('&Debug')
         m.addAction(QtGui.QAction('&Run',self,shortcut='Ctrl+F5',triggered=self.runProject))
@@ -281,6 +282,11 @@ class MainWindow(QtGui.QMainWindow):
             if d.exec_():
                 self.workspaceTree.addLibrariesToProject(self.added)
         
+        
+    def buildSettings(self):
+        d=uis.loadDialog('build_settings')
+        if d.exec_():
+            pass
         
     def buildSpecific(self,path):
         self.saveAll()
