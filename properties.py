@@ -3,7 +3,7 @@ import os
 class Properties:
     def __init__(self,path=''):
         self.props={}
-        if os.path.exists(path):
+        if path and os.path.exists(path):
             lines=open(path).readlines()
             for line in lines:
                 parts=line.strip().split('=')
@@ -13,10 +13,10 @@ class Properties:
     def has(self,name):
         return name in self.props
 
-    def get(self,name):
+    def get(self,name,default=''):
         if name in self.props:
             return self.props.get(name)
-        return ''
+        return default
         
     def assign(self,name,value):
         self.props[name]=value

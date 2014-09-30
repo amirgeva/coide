@@ -320,5 +320,6 @@ class WorkSpace(QtGui.QTreeWidget):
                 ditem.setData(0,DirectoryRole,item.data(0,DirectoryRole))
                 dst.addChild(ditem)
                 addSubItems(item,ditem)
+        root.setData(0,DirectoryRole,self.root)
         if self.src:
             addSubItems(self.src,root)
