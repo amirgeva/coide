@@ -283,11 +283,13 @@ class MainWindow(QtGui.QMainWindow):
                 self.workspaceTree.addLibrariesToProject(self.added)
         
         
-    def buildSettings(self):
+    def buildSettings(self,path=''):
         from buildsettings import BuildSettingsDialog
-        d=BuildSettingsDialog(self)
-        if d.exec_():
-            pass
+        if not path:
+            path=self.workspaceTree.root
+        d=BuildSettingsDialog(self,path)
+        d.exec_()
+        self.generateAll()
         
     def buildSpecific(self,path):
         self.saveAll()

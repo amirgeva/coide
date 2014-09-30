@@ -20,6 +20,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actBuild = QtGui.QAction('Build',self,triggered=self.buildCurrent)
         self.actClean = QtGui.QAction('Clean',self,triggered=self.cleanCurrent)
         self.actRebuild = QtGui.QAction('Rebuild',self,triggered=self.rebuildCurrent)
+        self.actBuildSettings = QtGui.QAction('Build Settings',self,triggered=self.buildSettings)
         self.actSetMain = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
         self.actEditDependencies = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
         self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
@@ -50,6 +51,7 @@ class WorkSpace(QtGui.QTreeWidget):
                 menu.addAction(self.actBuild)
                 menu.addAction(self.actRebuild)
                 menu.addAction(self.actClean)
+                menu.addAction(self.actBuildSettings)
                 menu.addSeparator()
                 menu.addAction(self.actSetMain)
                 menu.addAction(self.actEditDependencies)
@@ -137,7 +139,12 @@ class WorkSpace(QtGui.QTreeWidget):
         if self.main:
             return self.main.data(0,DirectoryRole).toString()
         return ""
-
+        
+    def buildSettings(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        self.mainWindow.buildSettings(path)
+        
     def buildCurrent(self):
         item=self.currentItem()
         path=item.data(0,DirectoryRole).toString()

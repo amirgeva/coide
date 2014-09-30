@@ -1,4 +1,5 @@
 import os
+import re
 
 class Properties:
     def __init__(self,path=''):
@@ -10,6 +11,9 @@ class Properties:
                 if len(parts)==2:
                     self.props[parts[0]]=parts[1]
     
+    def copyFrom(self,props):
+        self.props=props.props.copy()
+    
     def has(self,name):
         return name in self.props
 
@@ -20,6 +24,16 @@ class Properties:
         
     def assign(self,name,value):
         self.props[name]=value
+        
+    def search(self,exp):
+        '''
+        Returns a list of name that match the regular expression
+        '''
+        res=[]
+        for name in self.props:
+            if re.match(exp,name):
+                res.append(name)
+        return res
 
     def save(self,path):
         f=open(path,"w")

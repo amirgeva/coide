@@ -9,6 +9,17 @@ from system import listAllPackages
 root=os.path.abspath('.')
 #print ("ROOT={}".format(root))
 
+def mkProps(props, dir):
+    path=os.path.join(dir,'mk.cfg')
+    if os.path.exists(path):
+        p=Properties(path)
+        if p.get("BUILD_DEFAULTS")!="True":
+            names=p.search('BUILD_.+')
+            for name in names:
+                if name!="BUILD_DEFAULTS":
+                    props.assign(name,p.get(name))
+    return props
+
 packages=listAllPackages()
 
 class C:
@@ -71,7 +82,14 @@ def findMain(dir):
                 if re.search(pat,line):
                     return True
     return False
-            
+
+flagsPat=re.compile('\((.+)\)')            
+def extractFlags(s):
+    m=re.search(flagsPat,s)
+    if m:
+        g=m.groups()
+        return g[0]
+    return ""
 
 class Generator:
     def __init__(self,root):
@@ -102,7 +120,7 @@ class Generator:
                     self.wsLibs[dirname]=os.path.relpath(dir,self.srcDir)
                     
 
-    def generateConfig(self,dir,files,cfg,o):
+    def generateConfig(self,dir,files,cfg,o,props):
         name=os.path.basename(dir)
         absdir=os.path.abspath(dir)
         pb=Properties(os.path.join(dir,"mk.cfg"))
@@ -130,7 +148,15 @@ class Generator:
         #o = open(output,'w')
         o.write('CPP_{}=g++\n'.format(cfg))
         o.write('INC_{}=-I{} {}\n'.format(cfg,self.globalInc,cfgInclude))
-        cflags='-c -std=c++11 $(OPT_{}) $(INC_{}) '.format(cfg,cfg)
+        warn=extractFlags(props.get("BUILD_WARN",""))
+        cflags='-c {} -std=c++11 $(OPT_{}) $(INC_{}) '.format(warn,cfg,cfg)
+        if props.get("BUILD_PEDANTIC")=="True":
+            cflags=cflags+" -pedantic-errors "
+        if props.get("BUILD_WARNERR")=="True":
+            cflags=cflags+" -Werror "
+        custom=props.get("BUILD_CUSTOM")
+        if custom:
+            cflags=cflags+" "+custom
         lflags='$(OPT_{}) $(OBJS_{}) '.format(cfg,cfg)
         libdeps={}
         for lib in libs:
@@ -191,12 +217,29 @@ class Generator:
         return True
             
     def generate(self,dir,files):
+        #props=mkProps(Properties(),root)
+        stack=[]
+        curdir=dir
+        while True:
+            stack.append(curdir)
+            if curdir==self.root:
+                break
+            curdir=os.path.abspath(os.path.join(curdir,'..'))
+        props=Properties()
+        while len(stack)>0:
+            props=mkProps(props,stack[-1])
+            del stack[-1]
         output=os.path.join(dir,"Makefile")
         o=open(output,"w")
-        o.write('OPT_Release=-O2\n')
+        opt=props.get("BUILD_OPT")
+        if len(opt)==0:
+            opt="-O2"
+        if opt=="Custom":
+            opt=""
+        o.write('OPT_Release={}\n'.format(opt))
         o.write('OPT_Debug=-g\n')
-        self.generateConfig(dir,files,"Release",o)
-        if self.generateConfig(dir,files,"Debug",o):
+        self.generateConfig(dir,files,"Release",o,props)
+        if self.generateConfig(dir,files,"Debug",o,props):
             pass
         
 

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uis/build_settings.ui'
 #
-# Created: Tue Sep 30 15:04:51 2014
+# Created: Tue Sep 30 19:39:29 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -62,9 +62,9 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.pedantic = QtGui.QCheckBox(BuildSettingsDialog.settingsGroup)
         BuildSettingsDialog.pedantic.setGeometry(QtCore.QRect(16, 80, 161, 22))
         BuildSettingsDialog.pedantic.setObjectName(_fromUtf8("pedantic"))
-        BuildSettingsDialog.checkBox = QtGui.QCheckBox(BuildSettingsDialog.settingsGroup)
-        BuildSettingsDialog.checkBox.setGeometry(QtCore.QRect(16, 112, 201, 22))
-        BuildSettingsDialog.checkBox.setObjectName(_fromUtf8("checkBox"))
+        BuildSettingsDialog.warnErrors = QtGui.QCheckBox(BuildSettingsDialog.settingsGroup)
+        BuildSettingsDialog.warnErrors.setGeometry(QtCore.QRect(16, 112, 201, 22))
+        BuildSettingsDialog.warnErrors.setObjectName(_fromUtf8("warnErrors"))
         BuildSettingsDialog.customFlags = QtGui.QPlainTextEdit(BuildSettingsDialog.settingsGroup)
         BuildSettingsDialog.customFlags.setGeometry(QtCore.QRect(16, 208, 257, 91))
         BuildSettingsDialog.customFlags.setObjectName(_fromUtf8("customFlags"))
@@ -92,7 +92,7 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.warnCB.setItemText(1, _translate("BuildSettingsDialog", "None (-w)", None))
         BuildSettingsDialog.warnCB.setItemText(2, _translate("BuildSettingsDialog", "All (-Wall)", None))
         BuildSettingsDialog.pedantic.setText(_translate("BuildSettingsDialog", "Pedantic", None))
-        BuildSettingsDialog.checkBox.setText(_translate("BuildSettingsDialog", "Warnings as errors", None))
+        BuildSettingsDialog.warnErrors.setText(_translate("BuildSettingsDialog", "Warnings as errors", None))
         BuildSettingsDialog.label_3.setText(_translate("BuildSettingsDialog", "Custom Flags", None))
         BuildSettingsDialog.closeButton.setText(_translate("BuildSettingsDialog", "Close", None))
 

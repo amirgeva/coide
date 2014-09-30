@@ -155,7 +155,7 @@
      <string>Pedantic</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox">
+   <widget class="QCheckBox" name="warnErrors">
     <property name="geometry">
      <rect>
       <x>16</x>

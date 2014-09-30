@@ -42,25 +42,53 @@ def setCombo(cb,value):
             return
                 
 class BuildSettingsDialog(QtGui.QDialog):
-    def __init__(self,mainwin,parent=None):
+    def __init__(self,mainwin,startPath,parent=None):
         super(BuildSettingsDialog,self).__init__(parent)
         self.mainWindow=mainwin
         uis.loadDialog('build_settings',self)
         self.settingsGroup.setDisabled(True)
+        self.defaults.stateChanged.connect(self.defaultsToggled)
         self.workspaceItem=QtGui.QTreeWidgetItem(['Workspace'])
         self.mainWindow.workspaceTree.addProjectsToTree(self.workspaceItem)
+        self.workspaceDir=self.workspaceItem.data(0,DirectoryRole).toString()
         self.projTree.addTopLevelItem(self.workspaceItem)
         self.workspaceItem.setExpanded(True)
         self.projTree.itemSelectionChanged.connect(self.selectionChanged)
         self.closeButton.clicked.connect(self.closeClicked)
         self.prevPath=''
-        self.projTree.setCurrentItem(self.workspaceItem)
-        wsdir=self.workspaceItem.data(0,DirectoryRole).toString()
-        self.prevPath=os.path.join(wsdir,'mk.cfg')
+        firstItem=None
+        if startPath==self.workspaceDir:
+            firstItem=self.workspaceItem
+        else:
+            firstItem=self.findItem(self.workspaceItem,startPath)
+        if not firstItem:
+            firstItem=self.workspaceItem
+        self.projTree.setCurrentItem(firstItem)
+        self.projTree.scrollToItem(firstItem)
+        dir=firstItem.data(0,DirectoryRole).toString()
+        self.prevPath=os.path.join(dir,'mk.cfg')
+        
+    def findItem(self,parent,path):
+        n=parent.childCount()
+        for i in xrange(0,n):
+            item=parent.child(i)
+            dir=item.data(0,DirectoryRole).toString()
+            if dir==path:
+                return item
+            res=self.findItem(item,path)
+            if res:
+                return res
+        return None
         
     def closeClicked(self):
         self.save(self.prevPath)
         self.close()
+        
+    def defaultsToggled(self,state):
+        if state==QtCore.Qt.Checked:
+            self.settingsGroup.setDisabled(True)
+        else:
+            self.settingsGroup.setEnabled(True)
         
     def selectionChanged(self):
         if self.prevPath:
@@ -80,6 +108,7 @@ class BuildSettingsDialog(QtGui.QDialog):
         setCombo(self.optCB,getStr(props,'OPT','-O2'))
         setCombo(self.warnCB,getStr(props,'WARN','Default'))
         check(self.pedantic,getBool(props,'PEDANTIC',False))
+        check(self.warnErrors,getBool(props,'WARNERR',False))
         self.customFlags.setPlainText(getStr(props,'CUSTOM',''))
         
     def save(self,path):
@@ -88,6 +117,7 @@ class BuildSettingsDialog(QtGui.QDialog):
         setStr(props,'OPT',self.optCB.currentText())
         setStr(props,'WARN',self.warnCB.currentText())
         setBool(props,'PEDANTIC',getCheck(self.pedantic))
+        setBool(props,'WARNERR',getCheck(self.warnErrors))
         setStr(props,'CUSTOM',self.customFlags.toPlainText())
         props.save(path)
         
