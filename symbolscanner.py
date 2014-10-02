@@ -14,8 +14,10 @@ def baseLibName(f):
 
 def isLibraryDir(dir):
     try:
-        for line in open(os.path.join(dir,'Makefile')):
-            if line.strip()=='TYPE=LIB':
+        path=os.path.join(dir,'Makefile')
+        for line in open(path):
+            s=line.strip()
+            if s=='TYPE=LIB':
                 return True
     except IOError:
         pass
@@ -24,12 +26,17 @@ def isLibraryDir(dir):
 class Scanner:
     instance=None
 
-    def __init__(self,ws):
+    def __init__(self,ws,libSyms=None,wsSyms=None,wsLibs=None):
         self.ws=ws
-        self.packages=listAllPackages()
-        self.libraryMap=self.mapLibrariesToPackages()
-        self.librarySymbols=self.querySymbols()
-        self.workspaceSymbols=self.queryWorkspaceSymbols()
+        if libSyms and wsSyms and wsLibs:
+            self.librarySymbols=libSyms
+            self.workspaceSymbols=wsSyms
+            self.workspaceLibSyms=wsLibs
+        else:
+            self.packages=listAllPackages()
+            self.libraryMap=self.mapLibrariesToPackages()
+            self.librarySymbols=self.querySymbols()
+            self.scanWorkspaceSymbols()
 
     def mapLibrariesToPackages(self):
         libmap={}
@@ -111,7 +118,7 @@ class Scanner:
                         self.parseStatic(path,symbols,f)
                     else:
                         self.parseDynamic(path,symbols,f)
-            except OSError,e:
+            except OSError:
                 pass
         if printout:
             for sym in symbols:
@@ -121,38 +128,67 @@ class Scanner:
                     sys.stdout.write("  "+l)
                 sys.stdout.write('\n')
         return symbols
+        
+    def scanWorkspaceDirectory(self,dir,files=[]):
+        libname=(dir.split('/'))[-1]
+        self.removeLibRefs(libname)
+        if len(files)==0:
+            files=os.listdir(dir)
+        files=[f for f in files if f.endswith('.cpp')]
+        for f in files:
+            path=os.path.join(dir,f)
+            for line in open(path,'r').readlines():
+                words=re.split('\W+',line.strip())
+                for word in words:
+                    if not word in self.workspaceSymbols:
+                        self.workspaceSymbols[word]=set()
+                    if not libname in self.workspaceLibSyms:
+                        self.workspaceLibSyms[libname]=set()
+                    self.workspaceSymbols.get(word).add(libname)
+                    self.workspaceLibSyms.get(libname).add(word)
 
-    def queryWorkspaceSymbols(self,printOut=False):
-        symbols={}
+    def scanWorkspaceSymbols(self,printOut=False):
+        self.workspaceSymbols={}
+        self.workspaceLibSyms={}
         for dir,subdirs,files in os.walk(os.path.join(self.ws,'src')):
             if isLibraryDir(dir):
-                libname=(dir.split('/'))[-1]
-                files=[f for f in files if f.endswith('.cpp')]
-                for f in files:
-                    path=os.path.join(dir,f)
-                    for line in open(path,'r').readlines():
-                        words=re.split('\W+',line.strip())
-                        for word in words:
-                            if not word in symbols:
-                                symbols[word]=set()
-                            symbols.get(word).add(libname)
+                self.scanWorkspaceDirectory(dir,files)
         if printOut:
             f=open('ws_syms.txt','w')
-            for s in symbols:
+            for s in self.workspaceSymbols:
                 print>>f, s
-                dirs=symbols.get(s)
+                dirs=self.workspaceSymbols.get(s)
                 for d in dirs:
                     print>>f, '    '+d
             f.close()
-        return symbols
+        
+    def removeLibRefs(self,libname):
+        if libname.count('/')>0:
+            libname=(libname.split('/'))[-1]
+        if libname in self.workspaceLibSyms:
+            words=self.workspaceLibSyms.get(libname)
+            for word in words:
+                self.workspaceSymbols.get(word).remove(libname)
+            del self.workspaceLibSyms[libname]
+        
 
 
 def getLibrarySymbols(ws):
     if Scanner.instance is None:
         Scanner.instance=Scanner(ws)
-    return (Scanner.instance.librarySymbols,Scanner.instance.workspaceSymbols)
-    
+    return (Scanner.instance.librarySymbols,
+            Scanner.instance.workspaceSymbols,
+            Scanner.instance.workspaceLibSyms
+           )
 
+def setInitialResults(ws,libSyms,wsSyms,wsLibs):
+    Scanner.instance=Scanner(ws,libSyms,wsSyms,wsLibs)
+
+def rescanOnFileSave(filepath):
+    dir=os.path.dirname(filepath)
+    if Scanner.instance and isLibraryDir(dir):
+        Scanner.instance.scanWorkspaceDirectory(dir)
+        
 
 if __name__=='__main__':
     s=Scanner('/home/amir/workspace')

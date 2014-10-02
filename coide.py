@@ -11,6 +11,19 @@ from PyQt4 import QtGui
 from mainwindow import MainWindow
 import callbacks
 
+version = '0.11'
+
+def migrateSettings(oldver):
+    print "Migrating settings from {} to {}".format(oldver,version)
+
+def checkVersion():
+    s=QtCore.QSettings()
+    sver=s.value('version','').toString()
+    if sver!=version:
+        migrateSettings(sver)
+        s.setValue('version',version)
+        s.sync()
+
 def main():
     """ Creates the main window and runs the application
     
@@ -27,6 +40,7 @@ def main():
     QtCore.QCoreApplication.setOrganizationName("MLGSoft")
     QtCore.QCoreApplication.setOrganizationDomain("mlgsoft.com")
     QtCore.QCoreApplication.setApplicationName("Coide")
+    checkVersion()
     root=os.getenv('COIDE','')
     if len(root)==0:
         root=os.path.join(sys.prefix,"share/coide")

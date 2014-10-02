@@ -38,6 +38,7 @@ class MainWindow(QtGui.QMainWindow):
         self.debugger=None
         self.breakpoints=BreakpointsDB()
         
+        self.setWindowTitle("Coide")
         self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','C64.png')))
 
         self.generateQueue=set()        
@@ -386,6 +387,10 @@ class MainWindow(QtGui.QMainWindow):
                     dir=os.path.dirname(path)
                     #print "Adding '{}' to generate queue".format(dir)
                     self.generateQueue.add(dir)
+                    from system import getLibrarySymbols
+                    getLibrarySymbols()
+                    from symbolscanner import rescanOnFileSave
+                    rescanOnFileSave(path)
             
 
     def saveFile(self):
