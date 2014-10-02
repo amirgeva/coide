@@ -40,14 +40,11 @@ class Scanner:
 
     def mapLibrariesToPackages(self):
         libmap={}
-        #f=open('pkg-libs.txt','w')
         for package in self.packages:
-            #print >> f, package
             out,err=utils.call('.','pkg-config','--libs',package)
             for token in out.split():
                 if token.startswith('-l'):
                     libname='lib{}'.format(token[2:])
-                    #f.write("  "+libname)
                     static=libname+'.a'
                     dynamic=libname+'.so'
                     if not static in libmap:
@@ -56,7 +53,6 @@ class Scanner:
                     if not dynamic in libmap:
                         libmap[dynamic]=set()
                     libmap.get(dynamic).add(package)
-            #f.write('\n')
         return libmap
     
     def parseStatic(self,path,symbols,f):

@@ -391,7 +391,7 @@ class MainWindow(QtGui.QMainWindow):
                     getLibrarySymbols()
                     from symbolscanner import rescanOnFileSave
                     rescanOnFileSave(path)
-            
+
 
     def saveFile(self):
         n=self.central.tabBar().count()
