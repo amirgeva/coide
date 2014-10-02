@@ -45,6 +45,8 @@ class MainWindow(QtGui.QMainWindow):
         self.editors={}
         self.central=QtGui.QTabWidget()
         self.setCentralWidget(self.central)
+        self.central.setTabsClosable(True)
+        self.central.tabCloseRequested.connect(self.closeTab)
         
         self.setupMenu()
         self.setupToolbar(rootDir)
@@ -84,6 +86,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         self.workspaceTree.onClose()
         self.timer.stop()
+        self.generateTimer.stop()
         if self.debugger:
             self.debugger.closingApp()
         ws=self.workspaceTree.settings()
@@ -317,7 +320,7 @@ class MainWindow(QtGui.QMainWindow):
         
     def autoGenerate(self):
         for path in self.generateQueue:
-            #print "Generating makefile for '{}'".format(path)
+            print "Generating makefile for '{}'".format(path)
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
         
@@ -405,34 +408,36 @@ class MainWindow(QtGui.QMainWindow):
 
     def saveAsFile(self):
         pass
+    
+    def closeTab(self,index):
+        path=self.central.tabToolTip(index)
+        editor=self.editors.get(path)
+        if editor:
+            doc=editor.document()
+            if doc.isModified():
+                mb = QtGui.QMessageBox()
+                mb.setText("{} has been modified.".format(os.path.basename(path)))
+                mb.setInformativeText("Do you want to save your changes?")
+                mb.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
+                mb.setDefaultButton(QtGui.QMessageBox.Save)
+                rc = mb.exec_()
+                if rc == QtGui.QMessageBox.Save:
+                    f=open(path,'w')
+                    if not f:
+                        utils.errorMessage('Cannot write file: {}'.format(path))
+                        return
+                    f.write(doc.toPlainText())
+                    f.close()
+                elif rc == QtGui.QMessageBox.Cancel:
+                    return
+            del self.editors[path]
+            self.central.removeTab(index)
 
     def closeFile(self):
         n=self.central.tabBar().count()
         if n>0:
             index=self.central.currentIndex()
-            path=self.central.tabToolTip(index)
-            editor=self.editors.get(path)
-            if editor:
-                doc=editor.document()
-                if doc.isModified():
-                    mb = QtGui.QMessageBox()
-                    mb.setText("{} has been modified.".format(os.path.basename(path)))
-                    mb.setInformativeText("Do you want to save your changes?")
-                    mb.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
-                    mb.setDefaultButton(QtGui.QMessageBox.Save)
-                    rc = mb.exec_()
-                    if rc == QtGui.QMessageBox.Save:
-                        f=open(path,'w')
-                        if not f:
-                            utils.errorMessage('Cannot write file: {}'.format(path))
-                            return
-                        f.write(doc.toPlainText())
-                        f.close()
-                    elif rc == QtGui.QMessageBox.Cancel:
-                        return
-                del self.editors[path]
-                self.central.removeTab(index)
-            
+            self.closeTab(index)
 
     def showWorkspacePane(self):
         """ Creates a docking pane that shows a list of source files """
