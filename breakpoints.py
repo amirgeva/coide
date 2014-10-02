@@ -13,6 +13,9 @@ class BreakpointsDB(QtCore.QObject):
         super(BreakpointsDB,self).__init__()
         self.breakpoints={}
         
+    def clear(self):
+        self.breakpoints.clear()
+        
     def printall(self):
         print self.breakpoints
         

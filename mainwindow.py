@@ -748,6 +748,10 @@ class MainWindow(QtGui.QMainWindow):
             self.timer.stop()
         
     def clearBreakpoints(self):
+        self.breakpoints.clear()
+        n=self.central.count()
+        for i in xrange(0,n):
+            self.central.widget(i).bpMarks={}
         if self.debugger:
             self.debugger.clearBreakpoints()
 
