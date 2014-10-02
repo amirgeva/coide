@@ -180,6 +180,7 @@ class MainWindow(QtGui.QMainWindow):
         #m.addAction(QtGui.QAction('&Clear',self,triggered=self.clearBreakpoints))
         m=bar.addMenu('&Settings')
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
+        m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
 
     def setupToolbar(self,rootDir):
         """ Creates the application main toolbar """
@@ -199,6 +200,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def exitApp(self):
         self.close()
+
+    def settingsEditor(self):
+        from settings import EditorSettingsDialog
+        d=EditorSettingsDialog()
+        if d.exec_():
+            d.save()
 
     def settingsFonts(self):
         """ Edit the font settings for the code window and various panes """
