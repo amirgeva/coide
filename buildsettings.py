@@ -40,14 +40,51 @@ def setCombo(cb,value):
         if cb.itemText(i)==value:
             cb.setCurrentIndex(i)
             return
+            
+class CompileSettingsDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(CompileSettingsDialog,self).__init__(parent)
+        uis.loadDialog('compile_settings',self)
+        self.settingsGroup.setDisabled(True)
+        self.defaults.stateChanged.connect(self.defaultsToggled)
+
+    def defaultsToggled(self,state):
+        if state==QtCore.Qt.Checked:
+            self.settingsGroup.setDisabled(True)
+        else:
+            self.settingsGroup.setEnabled(True)
+        
+    def load(self,props):
+        if check(self.defaults,getBool(props,'DEFAULTS',True)):
+            self.settingsGroup.setDisabled(True)
+        else:
+            self.settingsGroup.setEnabled(True)
+        setCombo(self.optCB,getStr(props,'OPT','-O2'))
+        setCombo(self.warnCB,getStr(props,'WARN','Default'))
+        check(self.pedantic,getBool(props,'PEDANTIC',False))
+        check(self.warnErrors,getBool(props,'WARNERR',False))
+        self.customFlags.setPlainText(getStr(props,'CUSTOM',''))
+
+    def save(self,props):
+        setBool(props,'DEFAULTS',getCheck(self.defaults))
+        setStr(props,'OPT',self.optCB.currentText())
+        setStr(props,'WARN',self.warnCB.currentText())
+        setBool(props,'PEDANTIC',getCheck(self.pedantic))
+        setBool(props,'WARNERR',getCheck(self.warnErrors))
+        setStr(props,'CUSTOM',self.customFlags.toPlainText())
+
+
                 
 class BuildSettingsDialog(QtGui.QDialog):
     def __init__(self,mainwin,startPath,parent=None):
         super(BuildSettingsDialog,self).__init__(parent)
         self.mainWindow=mainwin
         uis.loadDialog('build_settings',self)
-        self.settingsGroup.setDisabled(True)
-        self.defaults.stateChanged.connect(self.defaultsToggled)
+        self.tabWidget.clear()
+        self.tabs=[]
+        self.tabs.append(('Compile',CompileSettingsDialog()))
+        for (name,tab) in self.tabs:
+            self.tabWidget.addTab(tab,name)
         self.workspaceItem=QtGui.QTreeWidgetItem(['Workspace'])
         self.mainWindow.workspaceTree.addProjectsToTree(self.workspaceItem)
         self.workspaceDir=self.workspaceItem.data(0,DirectoryRole).toString()
@@ -84,12 +121,6 @@ class BuildSettingsDialog(QtGui.QDialog):
         self.save(self.prevPath)
         self.close()
         
-    def defaultsToggled(self,state):
-        if state==QtCore.Qt.Checked:
-            self.settingsGroup.setDisabled(True)
-        else:
-            self.settingsGroup.setEnabled(True)
-        
     def selectionChanged(self):
         if self.prevPath:
             self.save(self.prevPath)
@@ -101,23 +132,12 @@ class BuildSettingsDialog(QtGui.QDialog):
         
     def load(self,path):
         props=Properties(path)
-        if check(self.defaults,getBool(props,'DEFAULTS',True)):
-            self.settingsGroup.setDisabled(True)
-        else:
-            self.settingsGroup.setEnabled(True)
-        setCombo(self.optCB,getStr(props,'OPT','-O2'))
-        setCombo(self.warnCB,getStr(props,'WARN','Default'))
-        check(self.pedantic,getBool(props,'PEDANTIC',False))
-        check(self.warnErrors,getBool(props,'WARNERR',False))
-        self.customFlags.setPlainText(getStr(props,'CUSTOM',''))
+        for (name,tab) in self.tabs:
+            tab.load(props)
         
     def save(self,path):
         props=Properties(path)
-        setBool(props,'DEFAULTS',getCheck(self.defaults))
-        setStr(props,'OPT',self.optCB.currentText())
-        setStr(props,'WARN',self.warnCB.currentText())
-        setBool(props,'PEDANTIC',getCheck(self.pedantic))
-        setBool(props,'WARNERR',getCheck(self.warnErrors))
-        setStr(props,'CUSTOM',self.customFlags.toPlainText())
+        for (name,tab) in self.tabs:
+            tab.save(props)
         props.save(path)
         

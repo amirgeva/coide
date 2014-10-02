@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>464</width>
-    <height>387</height>
+    <width>662</width>
+    <height>459</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <x>10</x>
      <y>10</y>
      <width>161</width>
-     <height>321</height>
+     <height>385</height>
     </rect>
    </property>
    <property name="headerHidden">
@@ -31,172 +31,11 @@
     </property>
    </column>
   </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>192</x>
-     <y>48</y>
-     <width>101</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Optimization</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>192</x>
-     <y>80</y>
-     <width>81</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Warnings</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="defaults">
-   <property name="geometry">
-    <rect>
-     <x>192</x>
-     <y>16</y>
-     <width>151</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Use Defaults</string>
-   </property>
-  </widget>
-  <widget class="QGroupBox" name="settingsGroup">
-   <property name="geometry">
-    <rect>
-     <x>176</x>
-     <y>32</y>
-     <width>289</width>
-     <height>305</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QComboBox" name="optCB">
-    <property name="geometry">
-     <rect>
-      <x>176</x>
-      <y>16</y>
-      <width>101</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>-O2</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>-O0</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>-O1</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>-O3</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Custom</string>
-     </property>
-    </item>
-   </widget>
-   <widget class="QComboBox" name="warnCB">
-    <property name="geometry">
-     <rect>
-      <x>176</x>
-      <y>48</y>
-      <width>101</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>Default</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>None (-w)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>All (-Wall)</string>
-     </property>
-    </item>
-   </widget>
-   <widget class="QCheckBox" name="pedantic">
-    <property name="geometry">
-     <rect>
-      <x>16</x>
-      <y>80</y>
-      <width>161</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Pedantic</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="warnErrors">
-    <property name="geometry">
-     <rect>
-      <x>16</x>
-      <y>112</y>
-      <width>201</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Warnings as errors</string>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="customFlags">
-    <property name="geometry">
-     <rect>
-      <x>16</x>
-      <y>208</y>
-      <width>257</width>
-      <height>91</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_3">
-    <property name="geometry">
-     <rect>
-      <x>16</x>
-      <y>176</y>
-      <width>191</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Custom Flags</string>
-    </property>
-   </widget>
-  </widget>
   <widget class="QPushButton" name="closeButton">
    <property name="geometry">
     <rect>
-     <x>352</x>
-     <y>352</y>
+     <x>32</x>
+     <y>416</y>
      <width>98</width>
      <height>27</height>
     </rect>
@@ -205,12 +44,26 @@
     <string>Close</string>
    </property>
   </widget>
-  <zorder>settingsGroup</zorder>
-  <zorder>projTree</zorder>
-  <zorder>label</zorder>
-  <zorder>label_2</zorder>
-  <zorder>defaults</zorder>
-  <zorder>closeButton</zorder>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>192</x>
+     <y>16</y>
+     <width>449</width>
+     <height>433</height>
+    </rect>
+   </property>
+   <widget class="QWidget" name="tab">
+    <attribute name="title">
+     <string>Tab 1</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="tab_2">
+    <attribute name="title">
+     <string>Tab 2</string>
+    </attribute>
+   </widget>
+  </widget>
  </widget>
  <resources/>
  <connections/>

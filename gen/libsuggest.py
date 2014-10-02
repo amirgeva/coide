@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uis/libsuggest.ui'
 #
-# Created: Tue Sep 30 19:39:29 2014
+# Created: Thu Oct  2 11:48:38 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
