@@ -60,6 +60,7 @@ def getLibrarySymbols():
         (libSyms,wsSyms,wsLibs)=scanq.get()
         scannerProcess.join()
         scannerProcess=None
+        scanq.close()
         scanq=None
         import symbolscanner
         symbolscanner.setInitialResults(workspacePath,libSyms,wsSyms,wsLibs)
