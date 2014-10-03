@@ -123,6 +123,8 @@ class Scanner:
                 for l in s:
                     sys.stdout.write("  "+l)
                 sys.stdout.write('\n')
+        self.packages={}
+        self.libraryMap={}
         return symbols
         
     def scanWorkspaceDirectory(self,dir,files=[]):
