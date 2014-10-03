@@ -341,9 +341,10 @@ class MainWindow(QtGui.QMainWindow):
     def timer1000(self):
         self.autoGenerate() 
         if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
-            from system import scanq
-            if scanq and not scanq.empty():
+            import system
+            if system.scanq and not system.scanq.empty():
                 self.statusBar().showMessage('Ready')
+                system.getLibrarySymbols()
         
     def generateAll(self):
         genmake.generateTree(self.workspaceTree.root)
