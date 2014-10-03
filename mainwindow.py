@@ -206,6 +206,7 @@ class MainWindow(QtGui.QMainWindow):
         d=EditorSettingsDialog()
         if d.exec_():
             d.save()
+            self.updateEditorsSettings()
 
     def settingsFonts(self):
         """ Edit the font settings for the code window and various panes """
@@ -235,6 +236,12 @@ class MainWindow(QtGui.QMainWindow):
         #self.loadFont('watchesfont',self.stackList)
         self.loadFont('watchesfont',self.outputEdit)
         self.loadFont('sourcesfont',self.workspaceTree)
+        
+    def updateEditorsSettings(self):
+        s=QtCore.QSettings()
+        indent=(s.value('indent',2).toInt())[0]
+        for e in self.editors:
+            self.editors.get(e).indentWidth=indent
 
     def findUndefinedReferences(self,output):
         undefined=set()
@@ -492,6 +499,7 @@ class MainWindow(QtGui.QMainWindow):
                 lines=f.readlines()
                 if lines:
                     firstLine=lines[0]
+                    s=QtCore.QSettings()
     
                     editor=Qutepart()
                     editor.setPath(path)
@@ -500,6 +508,7 @@ class MainWindow(QtGui.QMainWindow):
                     editor.drawIncorrectIndentation = True
                     editor.drawAnyWhitespace = False
                     editor.indentUseTabs = False
+                    editor.indentWidth = (s.value('indent',2).toInt())[0]
                     editor.text="".join(lines)
                     editor.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
                     index=self.central.addTab(editor,os.path.basename(path))

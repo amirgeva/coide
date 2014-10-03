@@ -1,6 +1,6 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-
+import uis
 
 class FontSettingsDialog(QtGui.QDialog):
     def __init__(self,parent=None):
@@ -58,3 +58,24 @@ class FontSettingsDialog(QtGui.QDialog):
             settings.setValue(name,arr)
         settings.sync()
         super(FontSettingsDialog,self).accept()
+
+
+class EditorSettingsDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(EditorSettingsDialog,self).__init__(parent)
+        uis.loadDialog('editor_settings',self)
+        s=QtCore.QSettings()
+        self.indentSpaces.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp('\d+')))
+        self.indentSpaces.setText(s.value('indent','2').toString())
+        
+    def save(self):
+        s=QtCore.QSettings()
+        indent=2
+        try:
+            indent=int(self.indentSpaces.text())
+        except ValueError:
+            pass
+        s.setValue('indent',indent)
+        s.sync()
+        
+        

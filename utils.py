@@ -49,6 +49,8 @@ def appendColorLine(output,line,color):
     
 
 def appendLine(output,line):
+    if line.find('Nothing to be done for')>0:
+        return
     if line!='':
         parts=line.split(' ')
         color='#000000'
