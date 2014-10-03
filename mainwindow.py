@@ -39,7 +39,7 @@ class MainWindow(QtGui.QMainWindow):
         self.breakpoints=BreakpointsDB()
         
         self.setWindowTitle("Coide")
-        self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','C64.png')))
+        self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','coide.png')))
 
         self.generateQueue=set()        
         self.editors={}
