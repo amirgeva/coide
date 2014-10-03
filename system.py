@@ -21,25 +21,35 @@ def symbolScan(q,ws):
     import symbolscanner
     q.put(symbolscanner.getLibrarySymbols(ws))
 
+noMP=False
 scanq=Queue()
 workspacePath=''
 scannerProcess=None
 scanStarted=False
     
-def startSymbolScan(ws):
-    global scannerProcess
-    global scanStarted
-    global workspacePath
-    if scanq and not scanStarted:
-        scanStarted=True
-        workspacePath=ws
-        scannerProcess=Process(target=symbolScan,args=(scanq,workspacePath))
-        scannerProcess.start()
-    
+
 libSyms=None
 wsSyms=None
 wsLibs=None
 
+
+def startSymbolScan(ws):
+    if not noMP:
+        global scannerProcess
+        global scanStarted
+        global workspacePath
+        if scanq and not scanStarted:
+            scanStarted=True
+            workspacePath=ws
+            scannerProcess=Process(target=symbolScan,args=(scanq,workspacePath))
+            scannerProcess.start()
+    else:
+        global libSyms
+        global wsSyms
+        global wsLibs
+        import symbolscanner
+        (libSyms,wsSyms,wsLibs)=symbolscanner.getLibrarySymbols(workspacePath)
+    
 def getLibrarySymbols():
     global libSyms
     global wsSyms
