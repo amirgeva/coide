@@ -340,13 +340,22 @@ class MainWindow(QtGui.QMainWindow):
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
         
+    def waitForScanner(self):
+        import system
+        import time
+        while not system.isScannerDone():
+            time.sleep(1)
+        
     def timer1000(self):
-        self.autoGenerate() 
-        if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
-            import system
-            if system.scanq and not system.scanq.empty():
+        self.autoGenerate()
+        #if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
+        import system
+        if system.isScannerDone():
+            #if system.scanq and not system.scanq.empty():
+            if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
                 self.statusBar().showMessage('Ready')
-                system.getLibrarySymbols()
+            system.getLibrarySymbols()
+            
         
     def generateAll(self):
         genmake.generateTree(self.workspaceTree.root)
@@ -388,6 +397,10 @@ class MainWindow(QtGui.QMainWindow):
             ws=(d.selectedFiles())[0]
             self.workspaceTree.setWorkspacePath(ws)
             self.generateAll()
+            self.waitForScanner()
+            import symbolscanner
+            symbolscanner.setWorkspacePath(ws)
+                
 
     def saveTabFile(self,index):
         n=self.central.tabBar().count()
