@@ -304,7 +304,9 @@ class MainWindow(QtGui.QMainWindow):
     def buildSettings(self,path=''):
         from buildsettings import BuildSettingsDialog
         if not path:
-            path=self.workspaceTree.root
+            path=self.workspaceTree.mainPath()
+            if not path:
+                path=self.workspaceTree.root
         d=BuildSettingsDialog(self,path)
         d.exec_()
         self.generateAll()
