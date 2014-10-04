@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'uis/compile_settings.ui'
 #
-# Created: Fri Oct  3 00:29:25 2014
+# Created: Sat Oct  4 17:45:44 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -37,7 +37,7 @@ class Ui_CompileSettings(object):
         CompileSettings.label_2.setGeometry(QtCore.QRect(16, 80, 81, 17))
         CompileSettings.label_2.setObjectName(_fromUtf8("label_2"))
         CompileSettings.settingsGroup = QtGui.QGroupBox(CompileSettings)
-        CompileSettings.settingsGroup.setGeometry(QtCore.QRect(0, 32, 289, 305))
+        CompileSettings.settingsGroup.setGeometry(QtCore.QRect(0, 30, 289, 305))
         CompileSettings.settingsGroup.setTitle(_fromUtf8(""))
         CompileSettings.settingsGroup.setObjectName(_fromUtf8("settingsGroup"))
         CompileSettings.optCB = QtGui.QComboBox(CompileSettings.settingsGroup)
@@ -55,10 +55,10 @@ class Ui_CompileSettings(object):
         CompileSettings.warnCB.addItem(_fromUtf8(""))
         CompileSettings.warnCB.addItem(_fromUtf8(""))
         CompileSettings.pedantic = QtGui.QCheckBox(CompileSettings.settingsGroup)
-        CompileSettings.pedantic.setGeometry(QtCore.QRect(16, 80, 161, 22))
+        CompileSettings.pedantic.setGeometry(QtCore.QRect(20, 80, 161, 22))
         CompileSettings.pedantic.setObjectName(_fromUtf8("pedantic"))
         CompileSettings.warnErrors = QtGui.QCheckBox(CompileSettings.settingsGroup)
-        CompileSettings.warnErrors.setGeometry(QtCore.QRect(16, 112, 201, 22))
+        CompileSettings.warnErrors.setGeometry(QtCore.QRect(20, 110, 201, 22))
         CompileSettings.warnErrors.setObjectName(_fromUtf8("warnErrors"))
         CompileSettings.customFlags = QtGui.QPlainTextEdit(CompileSettings.settingsGroup)
         CompileSettings.customFlags.setGeometry(QtCore.QRect(16, 208, 257, 91))
@@ -66,6 +66,9 @@ class Ui_CompileSettings(object):
         CompileSettings.label_3 = QtGui.QLabel(CompileSettings.settingsGroup)
         CompileSettings.label_3.setGeometry(QtCore.QRect(16, 176, 191, 17))
         CompileSettings.label_3.setObjectName(_fromUtf8("label_3"))
+        CompileSettings.cpp11 = QtGui.QCheckBox(CompileSettings.settingsGroup)
+        CompileSettings.cpp11.setGeometry(QtCore.QRect(20, 140, 115, 27))
+        CompileSettings.cpp11.setObjectName(_fromUtf8("cpp11"))
 
         self.retranslateUi(CompileSettings)
         QtCore.QMetaObject.connectSlotsByName(CompileSettings)
@@ -86,4 +89,5 @@ class Ui_CompileSettings(object):
         CompileSettings.pedantic.setText(_translate("CompileSettings", "Pedantic", None))
         CompileSettings.warnErrors.setText(_translate("CompileSettings", "Warnings as errors", None))
         CompileSettings.label_3.setText(_translate("CompileSettings", "Custom Flags", None))
+        CompileSettings.cpp11.setText(_translate("CompileSettings", "C++ 11", None))
 
