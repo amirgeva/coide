@@ -32,6 +32,10 @@ libSyms=None
 wsSyms=None
 wsLibs=None
 
+def isScannerDone():
+    if scanq:
+        return not scanq.empty()
+    return True
 
 def startSymbolScan(ws):
     if not noMP:
