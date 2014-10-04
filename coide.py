@@ -59,6 +59,9 @@ def main():
     #w.setDebugger(dbg)
     w.show()
     app.exec_()
+    import system
+    if not system.isScannerDone():
+        print "Hold on a few seconds..."
     for cb in callbacks.closeCallbacks:
         cb()
 
