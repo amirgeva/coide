@@ -63,6 +63,7 @@ class CompileSettingsDialog(QtGui.QDialog):
         setCombo(self.warnCB,getStr(props,'WARN','Default'))
         check(self.pedantic,getBool(props,'PEDANTIC',False))
         check(self.warnErrors,getBool(props,'WARNERR',False))
+        check(self.cpp11,getBool(props,'CPP11',True))
         self.customFlags.setPlainText(getStr(props,'CUSTOM',''))
 
     def save(self,props):
@@ -71,6 +72,7 @@ class CompileSettingsDialog(QtGui.QDialog):
         setStr(props,'WARN',self.warnCB.currentText())
         setBool(props,'PEDANTIC',getCheck(self.pedantic))
         setBool(props,'WARNERR',getCheck(self.warnErrors))
+        setBool(props,'CPP11',getCheck(self.cpp11))
         setStr(props,'CUSTOM',self.customFlags.toPlainText())
 
 
