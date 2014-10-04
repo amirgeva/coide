@@ -56,7 +56,7 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>32</y>
+     <y>30</y>
      <width>289</width>
      <height>305</height>
     </rect>
@@ -127,7 +127,7 @@
    <widget class="QCheckBox" name="pedantic">
     <property name="geometry">
      <rect>
-      <x>16</x>
+      <x>20</x>
       <y>80</y>
       <width>161</width>
       <height>22</height>
@@ -140,8 +140,8 @@
    <widget class="QCheckBox" name="warnErrors">
     <property name="geometry">
      <rect>
-      <x>16</x>
-      <y>112</y>
+      <x>20</x>
+      <y>110</y>
       <width>201</width>
       <height>22</height>
      </rect>
@@ -171,6 +171,19 @@
     </property>
     <property name="text">
      <string>Custom Flags</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="cpp11">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>140</y>
+      <width>115</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>C++ 11</string>
     </property>
    </widget>
   </widget>
