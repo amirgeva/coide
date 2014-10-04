@@ -303,6 +303,7 @@ class WorkSpace(QtGui.QTreeWidget):
     def setWorkspacePath(self,path):
         self.saveBreakpoints()
         self.root=path
+        self.wsini=os.path.join(self.root,'settings.ini')
         s=QtCore.QSettings()
         s.setValue('workspace',path)
         s.sync()
