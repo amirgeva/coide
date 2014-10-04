@@ -149,7 +149,10 @@ class Generator:
         o.write('CPP_{}=g++\n'.format(cfg))
         o.write('INC_{}=-I{} {}\n'.format(cfg,self.globalInc,cfgInclude))
         warn=extractFlags(props.get("BUILD_WARN",""))
-        cflags='-c {} -std=c++11 $(OPT_{}) $(INC_{}) '.format(warn,cfg,cfg)
+        std=''
+        if props.get("BUILD_CPP11")=="True":
+            std='-std=c++11'
+        cflags='-c {} {} $(OPT_{}) $(INC_{}) '.format(warn,std,cfg,cfg)
         if props.get("BUILD_PEDANTIC")=="True":
             cflags=cflags+" -pedantic-errors "
         if props.get("BUILD_WARNERR")=="True":
