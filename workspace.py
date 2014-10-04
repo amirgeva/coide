@@ -26,6 +26,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
         self.actCreateFolder = QtGui.QAction('Create Folder',self,triggered=self.createFolder)
         self.actCreateFile = QtGui.QAction('Create File',self,triggered=self.createFile)
+        self.actRefresh = QtGui.QAction('Refresh',self,triggered=self.refreshWorkspace)
         self.main=None
         self.src=None
         self.debug=('','')
@@ -59,6 +60,7 @@ class WorkSpace(QtGui.QTreeWidget):
                 menu.addSeparator()
             menu.addAction(self.actCreateFolder)
             menu.addAction(self.actCreateFile)
+            menu.addAction(self.actRefresh)
         if menu:
             menu.exec_(event.globalPos())
         
@@ -262,6 +264,9 @@ class WorkSpace(QtGui.QTreeWidget):
         mainitem=self.findDirectoryItem(mainpath)
         self.setMainItem(mainitem,save=False)
         self.loadMainProjectInfo()
+
+    def refreshWorkspace(self):
+        self.update()
         
     def update(self):
         self.main=None
