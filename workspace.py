@@ -274,7 +274,6 @@ class WorkSpace(QtGui.QTreeWidget):
             return
         items={}
         for (dir,subdirs,files) in os.walk(self.root):
-            #dir=dir[2:]
             if dir and not dir[0]=='.':
                 if not dir in items:
                     topItem=QtGui.QTreeWidgetItem([dir])
