@@ -2,12 +2,20 @@
 import sys
 import os
 
-import sip
-sip.setapi('QString', 2)
+try:
+    import sip
+    sip.setapi('QString', 2)
+except ImportError:
+    print "sip not installed.  try:   sudo apt-get install python-sip"
+    sys.exit(1)
 
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-#from gdbwrapper import GDBWrapper
+try:
+    from PyQt4 import QtCore
+    from PyQt4 import QtGui
+except ImportError:
+    print "PyQt4 not installed.  try:   sudo apt-get install python-qt4"
+    sys.exit(1)
+    
 from mainwindow import MainWindow
 import callbacks
 
