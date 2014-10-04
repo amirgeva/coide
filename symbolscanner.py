@@ -36,6 +36,8 @@ class Scanner:
             self.packages=listAllPackages()
             self.libraryMap=self.mapLibrariesToPackages()
             self.librarySymbols=self.querySymbols()
+            self.workspaceLibSyms={}
+            self.workspaceSymbols={}
             self.scanWorkspaceSymbols()
 
     def mapLibrariesToPackages(self):
@@ -146,8 +148,8 @@ class Scanner:
                     self.workspaceLibSyms.get(libname).add(word)
 
     def scanWorkspaceSymbols(self,printOut=False):
-        self.workspaceSymbols={}
-        self.workspaceLibSyms={}
+        self.workspaceSymbols.clear()
+        self.workspaceLibSyms.clear()
         for dir,subdirs,files in os.walk(os.path.join(self.ws,'src')):
             if isLibraryDir(dir):
                 self.scanWorkspaceDirectory(dir,files)
@@ -159,6 +161,10 @@ class Scanner:
                 for d in dirs:
                     print>>f, '    '+d
             f.close()
+            
+    def setWorkspacePath(self,ws):
+        self.ws=ws
+        self.scanWorkspaceSymbols()
         
     def removeLibRefs(self,libname):
         if libname.count('/')>0:
@@ -186,7 +192,12 @@ def rescanOnFileSave(filepath):
     dir=os.path.dirname(filepath)
     if Scanner.instance and isLibraryDir(dir):
         Scanner.instance.scanWorkspaceDirectory(dir)
-        
+
+def setWorkspacePath(ws):
+    if Scanner.instance:
+        Scanner.instance.setWorkspacePath(ws)
+        return True
+    return False
 
 if __name__=='__main__':
     s=Scanner('/home/amir/workspace')
