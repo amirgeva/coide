@@ -115,15 +115,25 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow,self).closeEvent(event)
         
     def saveDebugWindowState(self):
+        """
+        Save the state of the tool docks, like watches
+        and call stack
+        """
         settings = QtCore.QSettings()
         settings.setValue("debugWindowState", self.saveState())
         settings.sync()
         
     def loadDebugWindowState(self):
+        """
+        Restore previous debug windows layout
+        """
         settings = QtCore.QSettings()
         self.restoreState(settings.value("debugWindowState").toByteArray())
         
     def loadWindowSettings(self):
+        """
+        Restore the window size settings from the previous session
+        """
         settings = QtCore.QSettings()
         self.restoreGeometry(settings.value("geometry").toByteArray())
         self.restoreState(settings.value("windowState").toByteArray())
@@ -202,6 +212,7 @@ class MainWindow(QtGui.QMainWindow):
         self.close()
 
     def settingsEditor(self):
+        """ Show the editor settings """
         from settings import EditorSettingsDialog
         d=EditorSettingsDialog()
         if d.exec_():
@@ -238,12 +249,17 @@ class MainWindow(QtGui.QMainWindow):
         self.loadFont('sourcesfont',self.workspaceTree)
         
     def updateEditorsSettings(self):
+        """ Apply editor settings to all open tabs """
         s=QtCore.QSettings()
         indent=(s.value('indent',2).toInt())[0]
         for e in self.editors:
             self.editors.get(e).indentWidth=indent
 
     def findUndefinedReferences(self,output):
+        """
+        Search the linker output to find undefined reference
+        errors, and collect the missing symbol names
+        """
         undefined=set()
         for line in output:
             p=line.find('undefined reference to ')
@@ -265,7 +281,7 @@ class MainWindow(QtGui.QMainWindow):
         
     def attemptUndefResolution(self,undefs):
         from system import getLibrarySymbols, getWorkspaceSymbols
-        print "Undefs={}".format(undefs)
+        #print "Undefs={}".format(undefs)
         suggested={}
         syms=getLibrarySymbols()
         wsSyms=getWorkspaceSymbols()
@@ -279,7 +295,7 @@ class MainWindow(QtGui.QMainWindow):
                         n=suggested.get(l)+1
                         suggested[l]=n
             if sym in wsSyms:
-                print "Found '{}' in workspace".format(sym)
+                #print "Found '{}' in workspace".format(sym)
                 s=wsSyms.get(sym)
                 for l in s:
                     if not l in suggested:
