@@ -41,7 +41,6 @@ def generate():
         f=open(outpath,"w")
         f.write(''.join(lines))
         f.close()
-        #call(['sed','-i','s/self\\.\\([^retranslateUi]\\)/{}.\\1/g'.format(dlg),outpath])
         
 if __name__=='__main__':
     generate()
