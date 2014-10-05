@@ -54,9 +54,7 @@ def main():
         root=os.path.join(sys.prefix,"share/coide")
     if not os.path.exists(os.path.join(root,"parsers")):
         root=os.path.dirname(os.path.realpath(__file__))
-    #dbg=GDBWrapper(root,sys.argv[1:])
     w=MainWindow(root)
-    #w.setDebugger(dbg)
     w.show()
     app.exec_()
     import system
