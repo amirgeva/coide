@@ -35,11 +35,7 @@ def checkVersion():
 def main():
     """ Creates the main window and runs the application
     
-    In package deployment, root usually gets a value of:
-    /usr/share/debugui
-    (depending on sys.prefix)
-    
-    For development, use the DEBUGUI env var to indicate the 
+    For development, use the COIDE env var to override the 
     directory where the 'parsers' and 'icons' sub-dirs are
     
     """
@@ -51,8 +47,6 @@ def main():
     checkVersion()
     root=os.getenv('COIDE','')
     if len(root)==0:
-        root=os.path.join(sys.prefix,"share/coide")
-    if not os.path.exists(os.path.join(root,"parsers")):
         root=os.path.dirname(os.path.realpath(__file__))
     w=MainWindow(root)
     w.show()
