@@ -5,7 +5,6 @@ import os
 import stat
 from subprocess import call
 
-
 from qutepart import Qutepart
 from workspace import WorkSpace
 import output
@@ -29,6 +28,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self,rootDir,parent=None):
         """ Initialize.  rootDir indicates where data files are located """
         super(MainWindow,self).__init__(parent)
+
         self.setMinimumSize(QtCore.QSize(1024,768))
 
         self.currentLine=0

@@ -16,8 +16,8 @@ def loadIcon(name):
     if not name.endswith('.png'):
         name=name+".png"
     path=os.path.join(iconsDir,name)
-    #print "Loading '{}'".format(path)
-    return QtGui.QIcon(path)
+    icon=QtGui.QIcon(path)
+    return icon
 
 def message(msg):
     m=QtGui.QMessageBox()
