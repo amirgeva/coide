@@ -38,8 +38,8 @@ class MainWindow(QtGui.QMainWindow):
         self.debugger=None
         self.breakpoints=BreakpointsDB()
         
+        self.setWindowIcon(utils.loadIcon('coide'))
         self.setWindowTitle("Coide")
-        self.setWindowIcon(QtGui.QIcon(os.path.join(rootDir,'icons','coide.png')))
 
         self.generateQueue=set()        
         self.editors={}
@@ -206,7 +206,6 @@ class MainWindow(QtGui.QMainWindow):
         tb.addAction(utils.loadIcon('cont.png'),'Continue').triggered.connect(self.actCont)
         tb.addAction(utils.loadIcon('break.png'),'Break').triggered.connect(self.actBreak)
         tb.addAction(utils.loadIcon('stop.png'),'Stop').triggered.connect(self.actStop)
-        #self.addToolBar(tb)
 
     def exitApp(self):
         self.close()
