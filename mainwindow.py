@@ -667,11 +667,19 @@ class MainWindow(QtGui.QMainWindow):
         self.outputEdit.ensureCursorVisible()
         
     def tempScriptPath(self):
+        """
+        Generate a temporary script name.  Used for running programs
+        with an additional wait for key at the end.
+        """
         from time import time
         t=int(time()*10)
         return '/tmp/coide_{}.sh'.format(t)
         
     def removeTempScripts(self):
+        """
+        Remove all temporary script files.  Called before program
+        exit
+        """
         files=os.listdir('/tmp')
         files=[f for f in files if f.startswith('coide_')]
         for f in files:
