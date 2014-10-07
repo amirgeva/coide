@@ -65,6 +65,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setAllFonts()
         self.loadWindowSettings()
         
+        # Debugger timer that is supposed to periodically check 
+        # if the program has stopped at a breakpoint
         self.timer=QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
         self.debugger=None
@@ -179,15 +181,6 @@ class MainWindow(QtGui.QMainWindow):
         ma=m.addMenu('&Breakpoints')
         ma.addAction(QtGui.QAction('&Clear',self,triggered=self.clearBreakpoints))
         
-        #m=bar.addMenu('&Debug')
-        #m.addAction(QtGui.QAction('&Step',self,shortcut='F11',triggered=self.actStep))
-        #m.addAction(QtGui.QAction('&Next',self,shortcut='F10',triggered=self.actNext))
-        #m.addAction(QtGui.QAction('Step &Out',self,shortcut='Shift+F11',triggered=self.actOut))
-        #m.addAction(QtGui.QAction('&Continue',self,shortcut='F5',triggered=self.actCont))
-        #m.addAction(QtGui.QAction('&Break',self,shortcut='Ctrl+C',triggered=self.actBreak))
-        #m.addAction(QtGui.QAction('Sto&p',self,shortcut='Shift+F5',triggered=self.actStop))
-        #m=bar.addMenu('&Breakpoints')
-        #m.addAction(QtGui.QAction('&Clear',self,triggered=self.clearBreakpoints))
         m=bar.addMenu('&Settings')
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
@@ -562,6 +555,12 @@ class MainWindow(QtGui.QMainWindow):
             self.openSourceFile(path)
 
     def goToSource(self,path,row,col,color=''):
+        """
+        Given a file path, and a position within, open a tab
+        or switch to an already open tab, and scroll to that
+        position.  Usually useful to find references or 
+        compiler error positions
+        """
         path=self.fixPath(path)
         if self.openSourceFile(path):
             editor=self.editors.get(path)
@@ -583,6 +582,7 @@ class MainWindow(QtGui.QMainWindow):
         self.stackList=QtGui.QListWidget(self.paneStack)
         self.paneStack.setWidget(self.stackList)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneStack)
+        self.loadFont('watchesfont',self.stackList)
     
     def showWatchesPane(self):
         self.paneWatches=QtGui.QDockWidget("Watches",self)
@@ -593,6 +593,7 @@ class MainWindow(QtGui.QMainWindow):
         self.watchesTree.setHeaderLabels(['Name','Value'])
         self.paneWatches.setWidget(self.watchesTree)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneWatches)
+        self.loadFont('watchesfont',self.watchesTree)
         
         self.watchesTree.addTopLevelItem(QtGui.QTreeWidgetItem(['* Double-Click for new watch']))
         self.watchesTree.resizeColumnToContents(0)
