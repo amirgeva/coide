@@ -205,7 +205,8 @@ class Generator:
         else:
             outfile="{}/{}".format(reloutdir,name)
             o.write('OUTPUT_PATH_{}={}\n\n'.format(cfg,outfile))
-            cleanlibs='clean_'+' clean_'.join(liblist)
+            if len(liblist)>0:
+                cleanlibs='clean_'+' clean_'.join(liblist)
             liblist=' '.join(liblist)
             o.write('{}: $(OBJS_{}) {}\n'.format(outfile,cfg,liblist))
             o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
