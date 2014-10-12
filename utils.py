@@ -1,12 +1,11 @@
 import os
-import sys
+import time
 import subprocess
 import select
 #from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 iconsDir='.'
-
 
 def setIconsDir(dir):
     global iconsDir
@@ -84,21 +83,30 @@ def execute(output,dir,cmd,*args):
     output.clear()
     cmdlist=[cmd]+list(args)
     text=[]
+    pdone=False
+    act=1
     p = subprocess.Popen(cmdlist, shell=False, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
-    while True:
+    while not pdone or act>0:
         reads=[p.stdout.fileno(),p.stderr.fileno()]
+        act=0
         rc=select.select(reads,[],[])
         for fd in rc[0]:
             if fd==p.stdout.fileno():
                 line=p.stdout.readline().strip()
                 appendLine(output,line)
                 text.append(line)
+                if len(line)>0:
+                    act=act+1
             if fd==p.stderr.fileno():
                 line=p.stderr.readline().strip()
                 appendLine(output,line)
                 text.append(line)
-        if p.poll() != None:
-            break
+                if len(line)>0:
+                    act=act+1
+        if p.poll()!=None:
+            pdone=True
+        else:
+            time.sleep(0.05)
     return text
 
 def findLine(path,prefix,removePrefix=False):
