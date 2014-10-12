@@ -30,6 +30,8 @@ def generate():
         f.close()
         for i in xrange(0,len(lines)):
             line=lines[i]
+            if line.startswith('# Created'):
+                lines[i]='#\n'
             if line.startswith("class Ui_"):
                 dlg=(re.split('\W+',line))[1]
                 dlg=dlg[3:]
