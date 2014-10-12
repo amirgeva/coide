@@ -184,6 +184,7 @@ class MainWindow(QtGui.QMainWindow):
         m=bar.addMenu('&Settings')
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
+        m.addAction(QtGui.QAction('&Templates',self,triggered=self.settingsTemplates))
 
     def setupToolbar(self,rootDir):
         """ Creates the application main toolbar """
@@ -199,9 +200,19 @@ class MainWindow(QtGui.QMainWindow):
         tb.addAction(utils.loadIcon('cont.png'),'Continue').triggered.connect(self.actCont)
         tb.addAction(utils.loadIcon('break.png'),'Break').triggered.connect(self.actBreak)
         tb.addAction(utils.loadIcon('stop.png'),'Stop').triggered.connect(self.actStop)
+        self.createTemplatesCombo(tb)
+        tb.addWidget(self.tmplCombo)
 
     def exitApp(self):
         self.close()
+        
+    def settingsTemplates(self):
+        """ Show the code templates editing dialog """
+        from settings import TemplatesDialog
+        d=TemplatesDialog()
+        if d.exec_():
+            d.save()
+            self.updateTemplates()
 
     def settingsEditor(self):
         """ Show the editor settings """
@@ -246,6 +257,15 @@ class MainWindow(QtGui.QMainWindow):
         indent=(s.value('indent',2).toInt())[0]
         for e in self.editors:
             self.editors.get(e).indentWidth=indent
+            
+    def updateTemplates(self):
+        self.tmplCombo.clear()
+        self.tmplCombo.addItem("= Templates =")
+        s=QtCore.QSettings()
+        templates=s.value('templates','').toString().split(',')
+        for t in templates:
+            self.tmplCombo.addItem(t)
+        
 
     def findUndefinedReferences(self,output):
         """
@@ -642,6 +662,10 @@ class MainWindow(QtGui.QMainWindow):
         configCombo.addItem("Release")
         configCombo.currentIndexChanged.connect(self.configChanged)
         return configCombo
+        
+    def createTemplatesCombo(self,parent):
+        self.tmplCombo=QtGui.QComboBox(parent)
+        self.updateTemplates()
         
     def configChanged(self,index):
         configs=['Debug','Release']
