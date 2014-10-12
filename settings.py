@@ -79,3 +79,54 @@ class EditorSettingsDialog(QtGui.QDialog):
         s.sync()
         
         
+class TemplatesDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(TemplatesDialog,self).__init__(parent)
+        uis.loadDialog('templates',self)
+        s=QtCore.QSettings()
+        templates=s.value('templates','').toString().split(',')
+        templates=[t for t in templates if t] # remove empty labels
+        if len(templates)>0:
+            self.templatesList.addItems(templates)
+        self.templatesList.itemSelectionChanged.connect(self.selChanged)
+        self.curEdit=''
+        self.addButton.clicked.connect(self.addClicked)
+        self.delButton.clicked.connect(self.delClicked)
+
+    def addClicked(self):
+        (label,ok)=QtGui.QInputDialog.getText(self,"New Template","Template Name")
+        if ok:
+            self.templatesList.addItem(label)
+        
+    def delClicked(self):
+        if self.curEdit:
+            item=(self.templatesList.selectedItems())[0]
+            self.templatesList.removeItemWidget(item)
+            self.curEdit=''
+
+    def selChanged(self):
+        s=QtCore.QSettings()
+        if self.curEdit:
+            s.setValue('template_'+self.curEdit,self.codeEdit.toPlainText())
+        sel=self.templatesList.selectedItems()
+        if len(sel)==1:
+            item=sel[0]
+            label=item.text()
+            code=s.value("template_"+label,'').toString()
+            self.codeEdit.setPlainText(code)
+            self.curEdit=label
+        
+    def accept(self):
+        s=QtCore.QSettings()
+        if self.curEdit:
+            s.setValue('template_'+self.curEdit,self.codeEdit.toPlainText())
+        n=self.templatesList.count()
+        labels=[]
+        for i in xrange(0,n):
+            item=self.templatesList.item(i)
+            labels.append(item.text())
+        s.setValue('templates',','.join(labels))
+        super(TemplatesDialog,self).accept()
+        
+    def save(self):
+        pass
