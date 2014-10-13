@@ -596,7 +596,7 @@ class MainWindow(QtGui.QMainWindow):
                     bps=self.breakpoints.pathBreakpoints(path)
                     editor._bpMarks=bps
                     return True
-            except IOError,e:
+            except IOError:
                 return False
         return False
 
@@ -772,9 +772,12 @@ class MainWindow(QtGui.QMainWindow):
         if len(path)>0 and self.getCurrentFile()!=path:
             self.openSourceFile(path)
         e=self.editors.get(path)
-        if e:
+        if changed and e:
             e.colorLine(line,'#0080ff')
-        #self.editor.code.setCurrentLine(self.currentFile,self.currentLine)
+            e.cursorPosition=(line-1,1)
+            self.currentLine=line
+            e.ensureCursorVisible()
+            
         
     def saveWatches(self):
         """ Save all watches to settings, for future sessions """
