@@ -3,8 +3,8 @@ from PyQt4 import QtGui
 
 import os
 import stat
-from subprocess import call
 
+#from subprocess import call
 from qutepart import Qutepart
 from workspace import WorkSpace
 import output
@@ -12,6 +12,7 @@ from consts import *
 from gdbwrapper import *
 from watchestree import WatchesTree
 from breakpoints import BreakpointsDB
+from properties import Properties
 import utils
 import genmake
 import uis
@@ -496,6 +497,37 @@ class MainWindow(QtGui.QMainWindow):
         if n>0:
             index=self.central.currentIndex()
             self.closeTab(index)
+            
+    def currentEditor(self):
+        if self.central.count()>0:
+            cur=self.central.currentIndex()
+            path=self.central.tabToolTip(cur)
+            if path in self.editors:
+                return (self.editors.get(path),path)
+        return (None,None)
+
+    def templateSelected(self,index):
+        (editor,path)=self.currentEditor()
+        if index>0 and editor:
+            template=self.tmplCombo.itemText(index)
+            s=QtCore.QSettings()
+            code=s.value("template_"+template,'').toString()
+            if code:
+                cursor=editor.textCursor()
+                props=Properties()
+                props.assign('PATH',path)
+                base=os.path.basename(path)
+                props.assign('FILENAME',base)
+                p=base.find('.')
+                if (p>0):
+                    props.assign('FILEBASE',base[0:p])
+                props.assign('SELECTION',cursor.selectedText())
+                cursor.removeSelectedText()
+                import templates
+                text=templates.generateCode(code,props)
+                cursor.insertText(text)
+                
+                
 
     def showWorkspacePane(self):
         """ Creates a docking pane that shows a list of source files """
@@ -665,6 +697,7 @@ class MainWindow(QtGui.QMainWindow):
         
     def createTemplatesCombo(self,parent):
         self.tmplCombo=QtGui.QComboBox(parent)
+        self.tmplCombo.currentIndexChanged.connect(self.templateSelected)
         self.updateTemplates()
         
     def configChanged(self,index):
