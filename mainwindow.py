@@ -526,7 +526,7 @@ class MainWindow(QtGui.QMainWindow):
                 import templates
                 text=templates.generateCode(code,props)
                 cursor.insertText(text)
-                
+        self.tmplCombo.setCurrentIndex(0)        
                 
 
     def showWorkspacePane(self):
