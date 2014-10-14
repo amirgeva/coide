@@ -48,6 +48,12 @@
      <height>401</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Monospace</family>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
   </widget>
   <widget class="QPushButton" name="addButton">
    <property name="geometry">
