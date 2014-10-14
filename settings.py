@@ -90,6 +90,7 @@ class TemplatesDialog(QtGui.QDialog):
             self.templatesList.addItems(templates)
         self.templatesList.itemSelectionChanged.connect(self.selChanged)
         self.curEdit=''
+        self.codeEdit.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
         self.addButton.clicked.connect(self.addClicked)
         self.delButton.clicked.connect(self.delClicked)
 
