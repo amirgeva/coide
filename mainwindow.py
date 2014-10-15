@@ -38,6 +38,7 @@ class MainWindow(QtGui.QMainWindow):
         utils.setIconsDir(os.path.join(rootDir,"icons"))
         self.debugger=None
         self.breakpoints=BreakpointsDB()
+        self.findDetails=None
         
         self.setWindowIcon(utils.loadIcon('coide'))
         self.setWindowTitle("Coide")
@@ -238,7 +239,25 @@ class MainWindow(QtGui.QMainWindow):
             from finddlg import FindDialog
             d=FindDialog()
             if d.exec_():
-                pass
+                self.findDetails=d.details
+                self.findNext()
+        
+    def findNext(self):
+        (e,p)=self.currentEditor()
+        if e and self.findDetails:
+            flags=QtGui.QTextDocument.FindFlags()
+            if not self.findDetails.get('find_case'):
+                flags = flags | QtGui.QTextDocument.FindCaseSensitively
+            if self.findDetails.get('find_words'):
+                flags = flags | QtGui.QTextDocument.FindWholeWords
+            if self.findDetails.get('find_back'):
+                flags = flags | QtGui.QTextDocument.FindBackward
+            text=self.findDetails.get('find_text')
+            replaceText=self.findDetails.get('find_replace_text')
+            replace=self.findDetails.get('find_replace')
+            if e.find(text,flags):
+                if replace:
+                    e.textCursor().insertText(replaceText)
         
     def settingsTemplates(self):
         """ Show the code templates editing dialog """
