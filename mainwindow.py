@@ -74,6 +74,9 @@ class MainWindow(QtGui.QMainWindow):
         self.debugger=None
         self.runningWidget=None
         
+        self.asyncPollTimer=QtCore.QTimer(self)
+        self.asyncPollTimer.timeout.connect(self.pollAsync)
+        
         self.generateTimer=QtCore.QTimer()
         self.generateTimer.timeout.connect(self.timer1000)
         self.generateTimer.start(1000)
@@ -397,11 +400,21 @@ class MainWindow(QtGui.QMainWindow):
         d.exec_()
         self.generateAll()
         
+    def pollAsync(self):
+        if not utils.pollAsync():
+            self.asyncPollTimer.stop()
+        
     def buildSpecific(self,path):
         self.saveAll()
         self.autoGenerate()
         if len(path)>0:
-            output=utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
+            s=QtCore.QSettings()
+            if s.value('parallel_make',False).toBool():
+                output=utils.execute(self.outputEdit,path,'/usr/bin/make','-j',self.config)
+            else:
+                output=utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
+            if not self.asyncPollTimer.isActive():
+                self.asyncPollTimer.start(100)
             undefs=self.findUndefinedReferences(output)
             if len(undefs)>0:
                 self.attemptUndefResolution(undefs)
