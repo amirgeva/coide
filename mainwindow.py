@@ -169,8 +169,7 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('C&ut',self,shortcut='Ctrl+X',triggered=self.onCut))
         m.addAction(QtGui.QAction('&Paste',self,shortcut='Ctrl+V',triggered=self.onPaste))
         m.addSeparator()
-        m.addAction(QtGui.QAction('&Find',self,shortcut='Ctrl+F',triggered=self.onFind))
-        m.addAction(QtGui.QAction('&Replace',self,shortcut='Ctrl+H',triggered=self.onReplace))
+        m.addAction(QtGui.QAction('&Find/Replace',self,shortcut='Ctrl+F',triggered=self.onFindReplace))
         
         m=bar.addMenu('&Build')
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
@@ -233,15 +232,13 @@ class MainWindow(QtGui.QMainWindow):
         if e:
             e.paste()
         
-    def onFind(self):
+    def onFindReplace(self):
         (e,p)=self.currentEditor()        
         if e:
-            pass
-        
-    def onReplace(self):
-        (e,p)=self.currentEditor()        
-        if e:
-            pass
+            from finddlg import FindDialog
+            d=FindDialog()
+            if d.exec_():
+                pass
         
     def settingsTemplates(self):
         """ Show the code templates editing dialog """
