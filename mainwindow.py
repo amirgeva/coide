@@ -494,6 +494,7 @@ class MainWindow(QtGui.QMainWindow):
         d.setOption(QtGui.QFileDialog.ShowDirsOnly)
         if d.exec_():
             ws=(d.selectedFiles())[0]
+            self.closeAllTabs()
             self.workspaceTree.setWorkspacePath(ws)
             self.generateAll()
             self.waitForScanner()
@@ -538,6 +539,11 @@ class MainWindow(QtGui.QMainWindow):
     def saveAsFile(self):
         pass
     
+    def closeAllTabs(self):
+        while self.central.count()>0:
+            if not self.closeTab(0):
+                return
+    
     def closeTab(self,index):
         path=self.central.tabToolTip(index)
         editor=self.editors.get(path)
@@ -554,13 +560,15 @@ class MainWindow(QtGui.QMainWindow):
                     f=open(path,'w')
                     if not f:
                         utils.errorMessage('Cannot write file: {}'.format(path))
-                        return
+                        return False
                     f.write(doc.toPlainText())
                     f.close()
                 elif rc == QtGui.QMessageBox.Cancel:
-                    return
+                    return False
             del self.editors[path]
             self.central.removeTab(index)
+            return True
+        return False
 
     def closeFile(self):
         n=self.central.tabBar().count()
