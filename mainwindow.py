@@ -163,6 +163,14 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('Save &As',self,triggered=self.saveAsFile))
         m.addAction(QtGui.QAction('&Close File',self,shortcut='Ctrl+F4',triggered=self.closeFile))
         m.addAction(QtGui.QAction('E&xit',self,shortcut='Ctrl+Q',triggered=self.exitApp))
+
+        m=bar.addMenu('&Edit')
+        m.addAction(QtGui.QAction('&Copy',self,shortcut='Ctrl+C',triggered=self.onCopy))
+        m.addAction(QtGui.QAction('C&ut',self,shortcut='Ctrl+X',triggered=self.onCut))
+        m.addAction(QtGui.QAction('&Paste',self,shortcut='Ctrl+V',triggered=self.onPaste))
+        m.addSeparator()
+        m.addAction(QtGui.QAction('&Find',self,shortcut='Ctrl+F',triggered=self.onFind))
+        m.addAction(QtGui.QAction('&Replace',self,shortcut='Ctrl+H',triggered=self.onReplace))
         
         m=bar.addMenu('&Build')
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
@@ -206,6 +214,32 @@ class MainWindow(QtGui.QMainWindow):
 
     def exitApp(self):
         self.close()
+        
+
+    def onCopy(self):
+        e=self.currentEditor()        
+        if e:
+            e.copy()
+        
+    def onCut(self):
+        e=self.currentEditor()        
+        if e:
+            e.cut()
+        
+    def onPaste(self):
+        e=self.currentEditor()        
+        if e:
+            e.paste()
+        
+    def onFind(self):
+        e=self.currentEditor()        
+        if e:
+            pass
+        
+    def onReplace(self):
+        e=self.currentEditor()        
+        if e:
+            pass
         
     def settingsTemplates(self):
         """ Show the code templates editing dialog """
