@@ -118,5 +118,4 @@ def findLine(path,prefix,removePrefix=False):
                 return line
             return line[len(prefix):]
     return ''
-    
-    
+       
