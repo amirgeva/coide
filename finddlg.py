@@ -22,6 +22,7 @@ class FindDialog(QtGui.QDialog):
         check(self.caseCB,s.value('find_case',False).toBool())
         check(self.backCB,s.value('find_back',False).toBool())
         check(self.wordsCB,s.value('find_words',False).toBool())
+        check(self.allCB,s.value('find_all',False).toBool())
         self.findEdit.setText(s.value('find_text','').toString())
         self.replaceEdit.setText(s.value('find_replace_text','').toString())
         self.findEdit.setFocus(QtCore.Qt.OtherFocusReason)
@@ -32,6 +33,7 @@ class FindDialog(QtGui.QDialog):
             'find_case':getCheck(self.caseCB),
             'find_words':getCheck(self.wordsCB),
             'find_back':getCheck(self.backCB),
+            'find_all':getCheck(self.allCB),
             'find_text':self.findEdit.text(),
             'find_replace_text':self.replaceEdit.text(),
         }
