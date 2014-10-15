@@ -82,6 +82,8 @@ class BuildSettingsDialog(QtGui.QDialog):
         super(BuildSettingsDialog,self).__init__(parent)
         self.mainWindow=mainwin
         uis.loadDialog('build_settings',self)
+        s=QtCore.QSettings()
+        check(self.parallelCB,s.value('parallel_make',False).toBool())
         self.tabWidget.clear()
         self.tabs=[]
         self.tabs.append(('Compile',CompileSettingsDialog()))
@@ -121,6 +123,9 @@ class BuildSettingsDialog(QtGui.QDialog):
         
     def closeClicked(self):
         self.save(self.prevPath)
+        s=QtCore.QSettings()
+        s.setValue('parallel_make',getCheck(self.parallelCB))
+        s.sync()
         self.close()
         
     def selectionChanged(self):
