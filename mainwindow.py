@@ -217,27 +217,29 @@ class MainWindow(QtGui.QMainWindow):
         
 
     def onCopy(self):
-        e=self.currentEditor()        
+        print "Trying to copy"
+        (e,p)=self.currentEditor()        
         if e:
+            print "Calling slot"
             e.copy()
         
     def onCut(self):
-        e=self.currentEditor()        
+        (e,p)=self.currentEditor()        
         if e:
             e.cut()
         
     def onPaste(self):
-        e=self.currentEditor()        
+        (e,p)=self.currentEditor()        
         if e:
             e.paste()
         
     def onFind(self):
-        e=self.currentEditor()        
+        (e,p)=self.currentEditor()        
         if e:
             pass
         
     def onReplace(self):
-        e=self.currentEditor()        
+        (e,p)=self.currentEditor()        
         if e:
             pass
         
