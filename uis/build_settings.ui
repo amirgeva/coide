@@ -19,7 +19,7 @@
      <x>10</x>
      <y>10</y>
      <width>161</width>
-     <height>385</height>
+     <height>361</height>
     </rect>
    </property>
    <property name="headerHidden">
@@ -63,6 +63,19 @@
      <string>Tab 2</string>
     </attribute>
    </widget>
+  </widget>
+  <widget class="QCheckBox" name="parallelCB">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>380</y>
+     <width>141</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Parallel Make</string>
+   </property>
   </widget>
  </widget>
  <resources/>
