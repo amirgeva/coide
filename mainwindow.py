@@ -255,7 +255,11 @@ class MainWindow(QtGui.QMainWindow):
             text=self.findDetails.get('find_text')
             replaceText=self.findDetails.get('find_replace_text')
             replace=self.findDetails.get('find_replace')
-            if e.find(text,flags):
+            all=self.findDetails.get('find_all')
+            if all and replace:
+                while e.find(text,flags):
+                    e.textCursor().insertText(replaceText)
+            elif e.find(text,flags):
                 if replace:
                     e.textCursor().insertText(replaceText)
         
