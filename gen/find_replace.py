@@ -27,11 +27,6 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName(_fromUtf8("Dialog"))
         Dialog.resize(400, 300)
-        Dialog.buttonBox = QtGui.QDialogButtonBox(Dialog)
-        Dialog.buttonBox.setGeometry(QtCore.QRect(220, 260, 171, 32))
-        Dialog.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        Dialog.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
-        Dialog.buttonBox.setObjectName(_fromUtf8("buttonBox"))
         Dialog.label = QtGui.QLabel(Dialog)
         Dialog.label.setGeometry(QtCore.QRect(10, 10, 57, 15))
         Dialog.label.setObjectName(_fromUtf8("label"))
@@ -56,10 +51,18 @@ class Ui_Dialog(object):
         Dialog.allCB = QtGui.QCheckBox(Dialog)
         Dialog.allCB.setGeometry(QtCore.QRect(10, 170, 131, 20))
         Dialog.allCB.setObjectName(_fromUtf8("allCB"))
+        Dialog.findButton = QtGui.QPushButton(Dialog)
+        Dialog.findButton.setGeometry(QtCore.QRect(130, 260, 79, 25))
+        Dialog.findButton.setDefault(True)
+        Dialog.findButton.setObjectName(_fromUtf8("findButton"))
+        Dialog.replaceButton = QtGui.QPushButton(Dialog)
+        Dialog.replaceButton.setGeometry(QtCore.QRect(220, 260, 79, 25))
+        Dialog.replaceButton.setObjectName(_fromUtf8("replaceButton"))
+        Dialog.cancelButton = QtGui.QPushButton(Dialog)
+        Dialog.cancelButton.setGeometry(QtCore.QRect(310, 260, 79, 25))
+        Dialog.cancelButton.setObjectName(_fromUtf8("cancelButton"))
 
         self.retranslateUi(Dialog)
-        QtCore.QObject.connect(Dialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
-        QtCore.QObject.connect(Dialog.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Dialog.reject)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
@@ -70,4 +73,7 @@ class Ui_Dialog(object):
         Dialog.wordsCB.setText(_translate("Dialog", "Whole Words", None))
         Dialog.backCB.setText(_translate("Dialog", "Find Backwards", None))
         Dialog.allCB.setText(_translate("Dialog", "Replace All", None))
+        Dialog.findButton.setText(_translate("Dialog", "Find", None))
+        Dialog.replaceButton.setText(_translate("Dialog", "Replace", None))
+        Dialog.cancelButton.setText(_translate("Dialog", "Cancel", None))
 
