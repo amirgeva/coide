@@ -171,6 +171,7 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Paste',self,shortcut='Ctrl+V',triggered=self.onPaste))
         m.addSeparator()
         m.addAction(QtGui.QAction('&Find/Replace',self,shortcut='Ctrl+F',triggered=self.onFindReplace))
+        m.addAction(QtGui.QAction('Find/Replace &Next',self,shortcut='F3',triggered=self.onFindNext))
         
         m=bar.addMenu('&Build')
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
@@ -237,12 +238,12 @@ class MainWindow(QtGui.QMainWindow):
         (e,p)=self.currentEditor()        
         if e:
             from finddlg import FindDialog
-            d=FindDialog()
+            d=FindDialog(self)
             if d.exec_():
                 self.findDetails=d.details
-                self.findNext()
+                self.onFindNext()
         
-    def findNext(self):
+    def onFindNext(self):
         (e,p)=self.currentEditor()
         if e and self.findDetails:
             flags=QtGui.QTextDocument.FindFlags()
