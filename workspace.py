@@ -335,3 +335,20 @@ class WorkSpace(QtGui.QTreeWidget):
         root.setData(0,DirectoryRole,self.root)
         if self.src:
             addSubItems(self.src,root)
+
+    def saveTabs(self,tabs):
+        ws=self.settings()
+        if (tabs.count()>0):
+            cur=tabs.currentIndex()
+            path=tabs.tabToolTip(cur)
+            ws.setValue('curtab',path)
+            n=tabs.count()
+            opentabs=[]
+            for i in xrange(0,n):
+                path=tabs.tabToolTip(i)
+                opentabs.append(path)
+            ws.setValue('opentabs',','.join(opentabs))
+        else:
+            ws.setValue('curtab','')
+            ws.setValue('opentabs','')
+        ws.sync()
