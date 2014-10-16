@@ -2,7 +2,7 @@ import os
 import re
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from consts import *
+from consts import DirectoryRole,FileRole
 from properties import Properties
 from depsdlg import DependenciesDialog
 import utils
