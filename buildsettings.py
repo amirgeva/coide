@@ -2,7 +2,7 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 import os
 import uis
-from consts import *
+from consts import DirectoryRole
 from properties import Properties
 
 def buildName(name):
