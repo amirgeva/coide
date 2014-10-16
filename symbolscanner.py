@@ -42,19 +42,22 @@ class Scanner:
 
     def mapLibrariesToPackages(self):
         libmap={}
-        for package in self.packages:
-            out,err=utils.call('.','pkg-config','--libs',package)
-            for token in out.split():
-                if token.startswith('-l'):
-                    libname='lib{}'.format(token[2:])
-                    static=libname+'.a'
-                    dynamic=libname+'.so'
-                    if not static in libmap:
-                        libmap[static]=set()
-                    libmap.get(static).add(package)                    
-                    if not dynamic in libmap:
-                        libmap[dynamic]=set()
-                    libmap.get(dynamic).add(package)
+        try:
+            for package in self.packages:
+                out,err=utils.call('.','pkg-config','--libs',package)
+                for token in out.split():
+                    if token.startswith('-l'):
+                        libname='lib{}'.format(token[2:])
+                        static=libname+'.a'
+                        dynamic=libname+'.so'
+                        if not static in libmap:
+                            libmap[static]=set()
+                        libmap.get(static).add(package)                    
+                        if not dynamic in libmap:
+                            libmap[dynamic]=set()
+                        libmap.get(dynamic).add(package)
+        except OSError:
+            pass
         return libmap
     
     def parseStatic(self,path,symbols,f):

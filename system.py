@@ -10,11 +10,14 @@ def libraryDirs():
 
 def listAllPackages():
     res=set()
-    all,err=utils.call('.','pkg-config','--list-all')
-    lines=all.splitlines()
-    for line in lines:
-        name=(line.split(' '))[0]
-        res.add(name)
+    try:
+        all,err=utils.call('.','pkg-config','--list-all')
+        lines=all.splitlines()
+        for line in lines:
+            name=(line.split(' '))[0]
+            res.add(name)
+    except OSError:
+        pass
     return res
 
 def symbolScan(q,ws):
@@ -61,10 +64,17 @@ def getLibrarySymbols():
     global scannerProcess
     global scanq
     if not libSyms:
-        (libSyms,wsSyms,wsLibs)=scanq.get()
-        scannerProcess.join()
+        if not scanq:
+            libSyms={}
+            wsSyms={}
+            wsLibs={}
+        else:
+            (libSyms,wsSyms,wsLibs)=scanq.get()
+        if scannerProcess:
+            scannerProcess.join()
         scannerProcess=None
-        scanq.close()
+        if scanq:
+            scanq.close()
         scanq=None
         import symbolscanner
         symbolscanner.setInitialResults(workspacePath,libSyms,wsSyms,wsLibs)

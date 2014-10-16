@@ -323,16 +323,17 @@ class MainWindow(QtGui.QMainWindow):
         errors, and collect the missing symbol names
         """
         undefined=set()
-        for line in output:
-            p=line.find('undefined reference to ')
-            if p>0:
-                name=line[p+24:]
-                p=name.find('(')
+        if output:
+            for line in output:
+                p=line.find('undefined reference to ')
                 if p>0:
-                    name=name[0:p]
-                else:
-                    name=name[0:len(name)-1]
-                undefined.add(name)
+                    name=line[p+24:]
+                    p=name.find('(')
+                    if p>0:
+                        name=name[0:p]
+                    else:
+                        name=name[0:len(name)-1]
+                    undefined.add(name)
         return undefined
 
     def toggleAdded(self,item):
