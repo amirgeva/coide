@@ -4,12 +4,12 @@ from PyQt4 import QtGui
 import os
 import stat
 
-#from subprocess import call
 from qutepart import Qutepart
 from workspace import WorkSpace
 import output
-from consts import *
-from gdbwrapper import *
+from consts import FileRole
+from gdbwrapper import GDBWrapper
+import parseutils
 from watchestree import WatchesTree
 from breakpoints import BreakpointsDB
 from properties import Properties
@@ -193,7 +193,6 @@ class MainWindow(QtGui.QMainWindow):
         """ Creates the application main toolbar """
         tb=self.addToolBar('Actions')
         tb.setObjectName("Toolbar")
-        dir=os.path.join(rootDir,'icons')
         tb.addAction(utils.loadIcon('gear'),'Generate Makefiles').triggered.connect(self.generate)
         self.configCombo=self.createConfigCombo(tb)
         tb.addWidget(self.configCombo)
