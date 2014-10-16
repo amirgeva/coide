@@ -96,21 +96,7 @@ class MainWindow(QtGui.QMainWindow):
         self.generateTimer.stop()
         if self.debugger:
             self.debugger.closingApp()
-        ws=self.workspaceTree.settings()
-        if (self.central.count()>0):
-            cur=self.central.currentIndex()
-            path=self.central.tabToolTip(cur)
-            ws.setValue('curtab',path)
-            n=self.central.count()
-            opentabs=[]
-            for i in xrange(0,n):
-                path=self.central.tabToolTip(i)
-                opentabs.append(path)
-            ws.setValue('opentabs',','.join(opentabs))
-        else:
-            ws.setValue('curtab','')
-            ws.setValue('opentabs','')
-        ws.sync()
+        self.workspaceTree.saveTabs(self.central)
             
         while self.central.count()>0:
             self.closeFile()
@@ -144,6 +130,10 @@ class MainWindow(QtGui.QMainWindow):
         settings = QtCore.QSettings()
         self.restoreGeometry(settings.value("geometry").toByteArray())
         self.restoreState(settings.value("windowState").toByteArray())
+        self.loadTabs()
+        
+    def loadTabs(self):
+        self.closeAllTabs()
         ws=self.workspaceTree.settings()
         opentabs=ws.value('opentabs','').toString()
         opentabs=opentabs.split(',')
@@ -494,9 +484,11 @@ class MainWindow(QtGui.QMainWindow):
         d.setOption(QtGui.QFileDialog.ShowDirsOnly)
         if d.exec_():
             ws=(d.selectedFiles())[0]
+            self.workspaceTree.saveTabs(self.central)
             self.closeAllTabs()
             self.workspaceTree.setWorkspacePath(ws)
             self.generateAll()
+            self.loadTabs()
             self.waitForScanner()
             import symbolscanner
             symbolscanner.setWorkspacePath(ws)
