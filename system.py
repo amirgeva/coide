@@ -18,7 +18,7 @@ def listAllPackages():
             res.add(name)
     except OSError:
         pass
-    return res
+    return sorted(list(res))
 
 def symbolScan(q,ws):
     import symbolscanner
@@ -41,6 +41,7 @@ def isScannerDone():
     return True
 
 def startSymbolScan(ws):
+    utils.timestamp('start scan process')
     if not noMP:
         global scannerProcess
         global scanStarted
@@ -69,9 +70,13 @@ def getLibrarySymbols():
             wsSyms={}
             wsLibs={}
         else:
+            utils.timestamp('Getting scan results from queue')
             (libSyms,wsSyms,wsLibs)=scanq.get()
+            utils.timestamp('Done queue get')
         if scannerProcess:
+            utils.timestamp('Joining scan process')
             scannerProcess.join()
+            utils.timestamp('Done join')
         scannerProcess=None
         if scanq:
             scanq.close()
