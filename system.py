@@ -40,6 +40,16 @@ def isScannerDone():
         return not scanq.empty()
     return True
 
+def disableSymbolScan():
+    global libSyms
+    global wsSyms
+    global wsLibs
+    global scanq
+    libSyms={}
+    wsSyms={}
+    wsLibs={}
+    scanq=None
+
 def startSymbolScan(ws):
     utils.timestamp('start scan process')
     if not noMP:
