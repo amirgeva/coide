@@ -1,3 +1,4 @@
+from PyQt4 import QtCore
 import sys
 import os
 import re
@@ -34,11 +35,67 @@ class Scanner:
             self.workspaceLibSyms=wsLibs
         else:
             self.packages=listAllPackages()
-            self.libraryMap=self.mapLibrariesToPackages()
-            self.librarySymbols=self.querySymbols()
+            if self.isPackageListChanged():
+                self.libraryMap=self.mapLibrariesToPackages()
+                self.librarySymbols=self.querySymbols()
+                self.saveLists()
+                self.libraryMap={}
+            else:
+                utils.timestamp('load library lists')
+                self.loadLists()
+                utils.timestamp('Done load')
             self.workspaceLibSyms={}
             self.workspaceSymbols={}
             self.scanWorkspaceSymbols()
+
+    def isPackageListChanged(self):
+        s=QtCore.QSettings()
+        if s.contains('all_packages'):
+            old_packages=s.value('all_packages').toString().split(',')
+            return old_packages != self.packages
+        return True
+        
+    def saveLists(self):
+        s=QtCore.QSettings()
+        s.setValue('all_packages',','.join(self.packages))
+        index={}
+        for i in xrange(0,len(self.packages)):
+            index[self.packages[i]]=i
+        all=[]
+        for sym in self.librarySymbols:
+            refsIdx=[]
+            refs=self.librarySymbols.get(sym)
+            for r in refs:
+                if r in index:
+                    refsIdx.append(str(index.get(r)))
+                else:
+                    refsIdx.append(r)
+            all.append(sym+"."+','.join(refsIdx))
+        s.setValue('library_symbols',';'.join(all))
+        #s.setValue('library_symbols',pickle.dumps(self.librarySymbols))
+        s.sync()
+        
+    def loadLists(self):
+        s=QtCore.QSettings()
+        utils.timestamp('load from settings')
+        ls=s.value('library_symbols').toString()
+        utils.timestamp('deserialize')
+        #self.librarySymbols=pickle.loads(ls)
+        self.librarySymbols={}
+        all=ls.split(';')
+        for s in all:
+            if s:
+                pos=s.find('.')
+                if pos>0:
+                    sym=s[0:pos]
+                    refs=s[pos+1:].split(',')
+                    rset=set()
+                    self.librarySymbols[sym]=rset
+                    for r in refs:
+                        try:
+                            rset.add(self.packages[int(r)])
+                        except ValueError:
+                            rset.add(r)
 
     def mapLibrariesToPackages(self):
         libmap={}
@@ -128,8 +185,6 @@ class Scanner:
                 for l in s:
                     sys.stdout.write("  "+l)
                 sys.stdout.write('\n')
-        self.packages={}
-        self.libraryMap={}
         return symbols
         
     def scanWorkspaceDirectory(self,dir,files=[]):
