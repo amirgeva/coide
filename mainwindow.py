@@ -30,6 +30,9 @@ class MainWindow(QtGui.QMainWindow):
         """ Initialize.  rootDir indicates where data files are located """
         super(MainWindow,self).__init__(parent)
 
+        s=QtCore.QSettings()
+
+        self.symbolScan=s.value('symbol_scan',True).toBool()
         self.setMinimumSize(QtCore.QSize(1024,768))
 
         self.currentLine=0
@@ -57,7 +60,6 @@ class MainWindow(QtGui.QMainWindow):
         self.buildProcess=None        
         
 
-        s=QtCore.QSettings()
         self.config=s.value("config").toString()
         if self.config=='':
             self.config="Debug"
@@ -343,6 +345,8 @@ class MainWindow(QtGui.QMainWindow):
             self.added.remove(item.text())
         
     def attemptUndefResolution(self,undefs):
+        if not self.symbolScan:
+            return
         from system import getLibrarySymbols, getWorkspaceSymbols
         #print "Undefs={}".format(undefs)
         suggested={}
@@ -437,20 +441,22 @@ class MainWindow(QtGui.QMainWindow):
         self.generateQueue.clear()
         
     def waitForScanner(self):
-        import system
-        import time
-        while not system.isScannerDone():
-            time.sleep(1)
+        if self.symbolScan:
+            import system
+            import time
+            while not system.isScannerDone():
+                time.sleep(1)
         
     def timer1000(self):
         self.autoGenerate()
         #if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
-        import system
-        if system.isScannerDone():
-            #if system.scanq and not system.scanq.empty():
-            if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
-                self.statusBar().showMessage('Ready')
-            system.getLibrarySymbols()
+        if self.symbolScan:
+            import system
+            if system.isScannerDone():
+                #if system.scanq and not system.scanq.empty():
+                if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
+                    self.statusBar().showMessage('Ready')
+                system.getLibrarySymbols()
             
         
     def generateAll(self):
@@ -519,10 +525,11 @@ class MainWindow(QtGui.QMainWindow):
                     dir=os.path.dirname(path)
                     #print "Adding '{}' to generate queue".format(dir)
                     self.generateQueue.add(dir)
-                    from system import getLibrarySymbols
-                    getLibrarySymbols()
-                    from symbolscanner import rescanOnFileSave
-                    rescanOnFileSave(path)
+                    if self.symbolScan:
+                        from system import getLibrarySymbols
+                        getLibrarySymbols()
+                        from symbolscanner import rescanOnFileSave
+                        rescanOnFileSave(path)
 
 
     def saveFile(self):
@@ -619,8 +626,12 @@ class MainWindow(QtGui.QMainWindow):
         self.updateWorkspace()
         self.workspaceTree.doubleClicked.connect(self.docDoubleClicked)
         self.statusBar().showMessage(MainWindow.LIBRARY_SCAN)
-        from system import startSymbolScan
-        startSymbolScan(self.workspaceTree.root)
+        if self.symbolScan:
+            from system import startSymbolScan
+            startSymbolScan(self.workspaceTree.root)
+        else:
+            from system import disableSymbolScan
+            disableSymbolScan()
         
     def updateWorkspace(self):
         self.workspaceTree.update()
