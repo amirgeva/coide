@@ -388,15 +388,18 @@ class Completer(QObject):
             cmd=['clang','-xc++','-w','-fsyntax-only','-Xclang']
             cmd.append('-code-completion-at=-:{}:{}'.format(row+1,col+1))
             cmd.append('-')
-            import subprocess
-            p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir)
-            text=self._qpart.text
-            out,err=p.communicate(text)
-            words=self.parseClang(out)
-            if len(words)>0:
-                self.invokeCompletion()
-                if self._widget:
-                    self._widget.model().setDotWords(words)
+            try:
+                import subprocess
+                p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir)
+                text=self._qpart.text
+                out,err=p.communicate(text)
+                words=self.parseClang(out)
+                if len(words)>0:
+                    self.invokeCompletion()
+                    if self._widget:
+                        self._widget.model().setDotWords(words)
+            except OSError:
+                pass
 
     def _updateWordSet(self):
         """Make a set of words, which shall be completed, from text
