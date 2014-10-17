@@ -28,7 +28,7 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.setObjectName(_fromUtf8("BuildSettingsDialog"))
         BuildSettingsDialog.resize(662, 459)
         BuildSettingsDialog.projTree = QtGui.QTreeWidget(BuildSettingsDialog)
-        BuildSettingsDialog.projTree.setGeometry(QtCore.QRect(10, 10, 161, 361))
+        BuildSettingsDialog.projTree.setGeometry(QtCore.QRect(10, 10, 161, 341))
         BuildSettingsDialog.projTree.setHeaderHidden(True)
         BuildSettingsDialog.projTree.setObjectName(_fromUtf8("projTree"))
         BuildSettingsDialog.projTree.headerItem().setText(0, _fromUtf8("1"))
@@ -47,6 +47,9 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.parallelCB = QtGui.QCheckBox(BuildSettingsDialog)
         BuildSettingsDialog.parallelCB.setGeometry(QtCore.QRect(10, 380, 141, 20))
         BuildSettingsDialog.parallelCB.setObjectName(_fromUtf8("parallelCB"))
+        BuildSettingsDialog.symscanCB = QtGui.QCheckBox(BuildSettingsDialog)
+        BuildSettingsDialog.symscanCB.setGeometry(QtCore.QRect(10, 360, 171, 20))
+        BuildSettingsDialog.symscanCB.setObjectName(_fromUtf8("symscanCB"))
 
         self.retranslateUi(BuildSettingsDialog)
         QtCore.QMetaObject.connectSlotsByName(BuildSettingsDialog)
@@ -57,4 +60,5 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.tabWidget.setTabText(BuildSettingsDialog.tabWidget.indexOf(BuildSettingsDialog.tab), _translate("BuildSettingsDialog", "Tab 1", None))
         BuildSettingsDialog.tabWidget.setTabText(BuildSettingsDialog.tabWidget.indexOf(BuildSettingsDialog.tab_2), _translate("BuildSettingsDialog", "Tab 2", None))
         BuildSettingsDialog.parallelCB.setText(_translate("BuildSettingsDialog", "Parallel Make", None))
+        BuildSettingsDialog.symscanCB.setText(_translate("BuildSettingsDialog", "Symbol Scan (Restart)", None))
 
