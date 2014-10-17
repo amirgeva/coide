@@ -2,10 +2,13 @@ import os
 import time
 import subprocess
 import select
-#from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 iconsDir='.'
+
+def timestamp(title):
+    #print "{}: {}".format(int(round(time.time()*1000)),title)
+    pass
 
 def setIconsDir(dir):
     global iconsDir
@@ -116,7 +119,9 @@ async_executes=[]
         
 def execute(output,dir,cmd,*args):
     cmdlist=[cmd]+list(args)
-    async_executes.append(AsyncExecute(output,dir,cmdlist))
+    ae=AsyncExecute(output,dir,cmdlist)
+    async_executes.append(ae)
+    return ae
     
 def pollAsync():
     n=len(async_executes)
