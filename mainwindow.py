@@ -54,7 +54,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setupToolbar(rootDir)
         self.showWorkspacePane()
         self.showOutputPane()
-        
+        self.buildProcess=None        
         
 
         s=QtCore.QSettings()
@@ -391,23 +391,30 @@ class MainWindow(QtGui.QMainWindow):
         self.generateAll()
         
     def pollAsync(self):
+        if self.buildProcess:
+            if self.buildProcess.poll():
+                self.processBuildOutput(self.buildProcess.text)
+                self.buildProcess=None
         if not utils.pollAsync():
             self.asyncPollTimer.stop()
         
     def buildSpecific(self,path):
+        self.outputEdit.clear()
         self.saveAll()
         self.autoGenerate()
         if len(path)>0:
             s=QtCore.QSettings()
             if s.value('parallel_make',False).toBool():
-                output=utils.execute(self.outputEdit,path,'/usr/bin/make','-j',self.config)
+                self.buildProcess=utils.execute(self.outputEdit,path,'/usr/bin/make','-j',self.config)
             else:
-                output=utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
+                self.buildProcess=utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
             if not self.asyncPollTimer.isActive():
                 self.asyncPollTimer.start(100)
-            undefs=self.findUndefinedReferences(output)
-            if len(undefs)>0:
-                self.attemptUndefResolution(undefs)
+                
+    def processBuildOutput(self,output):
+        undefs=self.findUndefinedReferences(output)
+        if len(undefs)>0:
+            self.attemptUndefResolution(undefs)
         
     def build(self):
         self.buildSpecific(self.workspaceTree.mainPath())
