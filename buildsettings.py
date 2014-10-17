@@ -84,6 +84,7 @@ class BuildSettingsDialog(QtGui.QDialog):
         uis.loadDialog('build_settings',self)
         s=QtCore.QSettings()
         check(self.parallelCB,s.value('parallel_make',False).toBool())
+        check(self.symscanCB,s.value('symbol_scan',True).toBool())
         self.tabWidget.clear()
         self.tabs=[]
         self.tabs.append(('Compile',CompileSettingsDialog()))
@@ -125,6 +126,7 @@ class BuildSettingsDialog(QtGui.QDialog):
         self.save(self.prevPath)
         s=QtCore.QSettings()
         s.setValue('parallel_make',getCheck(self.parallelCB))
+        s.setValue('symbol_scan',getCheck(self.symscanCB))
         s.sync()
         self.close()
         
