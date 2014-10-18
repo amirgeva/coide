@@ -77,7 +77,26 @@ class EditorSettingsDialog(QtGui.QDialog):
             pass
         s.setValue('indent',indent)
         s.sync()
-        
+     
+class MacrosHelpDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(MacrosHelpDialog,self).__init__(parent)
+        uis.loadDialog('macros_help',self)
+        helpData={
+            '${SELECTION}':'Substitute for the text selected in the editor when the template is activated',
+            '${FILEPATH}':'Substitute for the full path of the current editor file',
+            '${FILEBASE}':'Substitute for the current editor file name without an extension'
+        }
+        self.macrosTable.setRowCount(len(helpData))
+        self.macrosTable.setColumnCount(2)
+        row=0
+        for m in helpData:
+            self.macrosTable.setItem(row,0,QtGui.QTableWidgetItem(m))
+            self.macrosTable.setItem(row,1,QtGui.QTableWidgetItem(helpData.get(m)))
+            row=row+1
+        self.macrosTable.setHorizontalHeaderItem(0,QtGui.QTableWidgetItem('Macro'))
+        self.macrosTable.setHorizontalHeaderItem(1,QtGui.QTableWidgetItem('Description'))
+        self.macrosTable.resizeRowsToContents()
         
 class TemplatesDialog(QtGui.QDialog):
     def __init__(self,parent=None):
@@ -93,6 +112,10 @@ class TemplatesDialog(QtGui.QDialog):
         self.codeEdit.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
         self.addButton.clicked.connect(self.addClicked)
         self.delButton.clicked.connect(self.delClicked)
+        self.macrosButton.clicked.connect(self.macrosClicked)
+        
+    def macrosClicked(self):
+        MacrosHelpDialog().exec_()
 
     def addClicked(self):
         (label,ok)=QtGui.QInputDialog.getText(self,"New Template","Template Name")
