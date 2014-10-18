@@ -212,10 +212,8 @@ class MainWindow(QtGui.QMainWindow):
         
 
     def onCopy(self):
-        print "Trying to copy"
         (e,p)=self.currentEditor()        
         if e:
-            print "Calling slot"
             e.copy()
         
     def onCut(self):
@@ -348,7 +346,6 @@ class MainWindow(QtGui.QMainWindow):
         if not self.symbolScan:
             return
         from system import getLibrarySymbols, getWorkspaceSymbols
-        #print "Undefs={}".format(undefs)
         suggested={}
         syms=getLibrarySymbols()
         wsSyms=getWorkspaceSymbols()
@@ -362,7 +359,6 @@ class MainWindow(QtGui.QMainWindow):
                         n=suggested.get(l)+1
                         suggested[l]=n
             if sym in wsSyms:
-                #print "Found '{}' in workspace".format(sym)
                 s=wsSyms.get(sym)
                 for l in s:
                     if not l in suggested:
@@ -394,12 +390,14 @@ class MainWindow(QtGui.QMainWindow):
         d.exec_()
         self.generateAll()
         
-    def pollAsync(self):
+    def checkBuildOutput(self):
         if self.buildProcess:
-            if self.buildProcess.poll():
-                self.processBuildOutput(self.buildProcess.text)
-                self.buildProcess=None
+            self.processBuildOutput(self.buildProcess.text)
+            self.buildProcess=None
+
+    def pollAsync(self):
         if not utils.pollAsync():
+            self.checkBuildOutput()
             self.asyncPollTimer.stop()
         
     def buildSpecific(self,path):
@@ -436,7 +434,6 @@ class MainWindow(QtGui.QMainWindow):
         
     def autoGenerate(self):
         for path in self.generateQueue:
-            print "Generating makefile for '{}'".format(path)
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
         
@@ -523,7 +520,6 @@ class MainWindow(QtGui.QMainWindow):
                     f.close()
                     doc.setModified(False)
                     dir=os.path.dirname(path)
-                    #print "Adding '{}' to generate queue".format(dir)
                     self.generateQueue.add(dir)
                     if self.symbolScan:
                         from system import getLibrarySymbols
@@ -795,7 +791,6 @@ class MainWindow(QtGui.QMainWindow):
         s.setValue("config",self.config)
         s.sync()
         self.workspaceTree.setConfig(self.config)
-        #print "Config changed to: {}".format(configs[index])
         
     def addOutputText(self,added):
         """ Append the new text captured
