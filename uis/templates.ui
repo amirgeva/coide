@@ -81,6 +81,19 @@
     <string>Delete</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="macrosButton">
+   <property name="geometry">
+    <rect>
+     <x>258</x>
+     <y>420</y>
+     <width>101</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Macros Help</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
