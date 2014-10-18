@@ -48,6 +48,9 @@ class Ui_Dialog(object):
         Dialog.delButton = QtGui.QPushButton(Dialog)
         Dialog.delButton.setGeometry(QtCore.QRect(96, 432, 81, 32))
         Dialog.delButton.setObjectName(_fromUtf8("delButton"))
+        Dialog.macrosButton = QtGui.QPushButton(Dialog)
+        Dialog.macrosButton.setGeometry(QtCore.QRect(258, 420, 101, 25))
+        Dialog.macrosButton.setObjectName(_fromUtf8("macrosButton"))
 
         self.retranslateUi(Dialog)
         QtCore.QObject.connect(Dialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
@@ -58,4 +61,5 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Code Templates", None))
         Dialog.addButton.setText(_translate("Dialog", "Add", None))
         Dialog.delButton.setText(_translate("Dialog", "Delete", None))
+        Dialog.macrosButton.setText(_translate("Dialog", "Macros Help", None))
 
