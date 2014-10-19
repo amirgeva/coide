@@ -3,6 +3,13 @@ from PyQt4 import QtGui
 import uis
 
 class FontSettingsDialog(QtGui.QDialog):
+    """
+    Dialog for selection of fonts for the various windows and panes
+    Currently 3 window groups are supported:
+      * Code in the text editor
+      * Tool windows, such as watches and call stack
+      * Workspace tree
+    """
     def __init__(self,parent=None):
         super(FontSettingsDialog,self).__init__(parent)
         self.fontsDict={}
