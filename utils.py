@@ -82,6 +82,12 @@ def run(dir,cmd,*args):
 def call(dir,cmd,*args):
     return runcmd(dir,[cmd]+list(args)).communicate()
 
+def shellrun(dir,cmd):
+    return subprocess.Popen(['-c',cmd],shell=True, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
+    
+def shellcall(dir,cmd):
+    return shellrun(dir,cmd).communicate()
+
 class AsyncExecute:
     def __init__(self,output,dir,cmdlist):
         self.output=output
