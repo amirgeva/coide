@@ -3,7 +3,8 @@ import os
 import re
 from properties import Properties
 from system import listAllPackages
-
+import utils
+import templates
 
 
 root=os.path.abspath('.')
@@ -146,8 +147,11 @@ class Generator:
         cfgInclude=''
         
         #o = open(output,'w')
+        mkProps=Properties()
         o.write('CPP_{}=g++\n'.format(cfg))
+        mkProps.assign('CPP_{}'.format(cfg),'g++')
         o.write('INC_{}=-I{} {}\n'.format(cfg,self.globalInc,cfgInclude))
+        mkProps.assign('INC_{}'.format(cfg),'-I{} {}'.format(self.globalInc,cfgInclude))
         warn=extractFlags(props.get("BUILD_WARN",""))
         std=''
         if props.get("BUILD_CPP11")=="True":
@@ -215,7 +219,19 @@ class Generator:
         o.write('{}: {}\n\n'.format(cfg,outfile))
             
         for i in xrange(0,len(objs)):
-            o.write('{}: {}\n'.format(objs[i],os.path.join(absdir,srcs[i])))
+            hdeps=[]
+            src=os.path.join(absdir,srcs[i])
+            depcmd='g++ {} -E {}'.format(cflags,src)
+            depcmd=depcmd+' | grep {} | grep -v {}'.format(self.root,src)
+            depcmd=templates.generateMkCommand(depcmd,mkProps)
+            (out,err)=utils.shellcall(dir,depcmd)
+            for line in out.split('\n'):
+                parts=line.split('"')
+                if len(parts)>1:
+                    hpath=parts[1]
+                    if hpath.startswith(self.root) and not hpath.endswith('/'):
+                        hdeps.append(hpath)
+            o.write('{}: {} {}\n'.format(objs[i],src,' '.join(hdeps)))
             o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
         
         return True
@@ -245,6 +261,7 @@ class Generator:
         self.generateConfig(dir,files,"Release",o,props)
         if self.generateConfig(dir,files,"Debug",o,props):
             pass
+        o.close()
         
 
 def generateTree(root):
