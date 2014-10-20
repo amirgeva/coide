@@ -1,10 +1,11 @@
 import re
 
 varPattern=re.compile('(\$\{[^\}]+\})')
+mkvarPattern=re.compile('(\$\([^\)]+\))')
 
-def generateCode(code,props):
+def replaceMacros(pat,code,props):
     while True:
-        m=re.search(varPattern,code)
+        m=re.search(pat,code)
         if m is None:
             break
         s=(m.groups())[0]
@@ -14,3 +15,8 @@ def generateCode(code,props):
     return code
 
 
+def generateCode(code,props):
+    return replaceMacros(varPattern,code,props)
+    
+def generateMkCommand(code,props):
+    return replaceMacros(mkvarPattern,code,props)
