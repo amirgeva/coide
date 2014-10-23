@@ -32,6 +32,11 @@ class GDBWrapper:
         self.initializeParsers(os.path.join(dataRoot,"parsers"))
         self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         fcntl.fcntl(self.gdb.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
+        
+        self.outputFileName="/tmp/{}.coide".format(int(time.time()))
+        self.outputFile=None
+        self.outputText=[]
+        
         # re for finding location pattern in backtrace
         #       #0  print_str (s=...) at /home/user/main.cpp:42
         self.btPattern=re.compile('at (.+):(\d+)')
@@ -50,7 +55,8 @@ class GDBWrapper:
         self.recursiveTypes={'map','vector','struct'}
         
         self.pid=''
-        self.write('start')
+                     
+        self.write('start > {}'.format(self.outputFileName))
         self.read()
         self.write('info inferior')
         lines,ok=self.read()
@@ -64,6 +70,7 @@ class GDBWrapper:
         if len(self.pid)==0:
             QtGui.QMessageBox.critical(self,'Problem','Failed to get debugged program PID')
         self.setBreakpoints()
+        self.outputFile=os.open(self.outputFileName,os.O_RDONLY | os.O_NONBLOCK)
 
     def initializePrettyPrints(self,dataRoot):
         """ Installs the python extension for pretty printing """
@@ -84,6 +91,10 @@ class GDBWrapper:
             self.actStop()
         self.write('quit')
         self.gdb.wait()
+        if self.outputFile:
+            os.close(self.outputFile)
+            self.outputFile=None
+        os.remove(self.outputFileName)
         
     def closingApp(self):
         """ Called before the application window is closed
@@ -97,6 +108,10 @@ class GDBWrapper:
 
     def update(self):
         """ Polls the gdb to see if it stopped at a breakpoint or finished """
+        if self.outputFile:
+            s=os.read(self.outputFile,1024)
+            if len(s)>0:
+                self.outputText.append(s)
         if self.active:
             lines,ok=self.read(1)
             if ok:
@@ -105,8 +120,16 @@ class GDBWrapper:
                         self.running=False
                 self.active=False
                 return ''
-            return lines
+            #return lines
         return ''
+        
+    def hasOutput(self):
+        return len(self.outputText)>0
+        
+    def getOutput(self):
+        s=''.join(self.outputText)
+        self.outputText=[]
+        return s
 
     def getBackTrace(self):
         if self.active:
@@ -347,7 +370,6 @@ class GDBWrapper:
     def actCont(self):
         """ Continue running the program (until done, or breakpoint) """
         if not self.running:
-            #self.setBreakpoints()
             self.write('run')
             self.running=True
             self.active=True
