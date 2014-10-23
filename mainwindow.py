@@ -924,6 +924,7 @@ class MainWindow(QtGui.QMainWindow):
         self.breakpoints.toggleBreakpoint(path,line)
         
     def startDebug(self):
+        self.outputEdit.setPlainText('')
         if self.debugger:
             self.actCont()
             return
@@ -992,9 +993,11 @@ class MainWindow(QtGui.QMainWindow):
         
         """
         if self.debugger:
-            text=self.debugger.update()
-            if len(text)>0:
-                self.addOutputText(text)
+            self.debugger.update()
+            #if len(text)>0:
+            #    self.addOutputText(text)
+            if self.debugger.hasOutput():
+                self.addOutputText(self.debugger.getOutput())
             if self.debugger.changed:
                 self.updatePosition()
                 self.updateWatches()
