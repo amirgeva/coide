@@ -924,10 +924,10 @@ class MainWindow(QtGui.QMainWindow):
         self.breakpoints.toggleBreakpoint(path,line)
         
     def startDebug(self):
-        self.outputEdit.setPlainText('')
         if self.debugger:
             self.actCont()
             return
+        self.outputEdit.setPlainText('')
         cmd=[self.workspaceTree.getExecutablePath()]
         args=self.workspaceTree.getDebugParams().split()
         for a in args:
@@ -1013,6 +1013,11 @@ class MainWindow(QtGui.QMainWindow):
                 from running import RunningWidget
                 self.runningWidget=RunningWidget(self)
                 self.runningWidget.show()
-        elif not self.runningWidget is None:
-            self.runningWidget.close()
-            self.runningWidget=None
+            s=self.outputEdit.getInput()
+            if len(s)>0:
+                self.debugger.sendInput(''.join(s))
+        else:
+            self.outputEdit.clearInput()
+            if not self.runningWidget is None:
+                self.runningWidget.close()
+                self.runningWidget=None
