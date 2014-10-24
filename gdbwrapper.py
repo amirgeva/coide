@@ -123,6 +123,9 @@ class GDBWrapper:
             #return lines
         return ''
         
+    def sendInput(self,s):
+        self.gdb.stdin.write(s)
+        
     def hasOutput(self):
         return len(self.outputText)>0
         
