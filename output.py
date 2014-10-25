@@ -1,5 +1,5 @@
 import re
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 posStrPattern=re.compile('(.+):(\d+):(\d+):')
 
@@ -8,6 +8,10 @@ class OutputWidget(QtGui.QPlainTextEdit):
         super(OutputWidget,self).__init__(pane)
         self.mainWindow=mainwin
         self.input=[]
+        self.blinking=False
+        self.cursorVisible=False
+        self.cursorTimer=QtCore.QTimer(self)
+        self.cursorTimer.timeout.connect(self.updateCursor)
         
     def mouseDoubleClickEvent(self,event):
         c=self.textCursor()
@@ -38,3 +42,30 @@ class OutputWidget(QtGui.QPlainTextEdit):
         
     def clearInput(self):
         self.input=[]
+        
+    def setBlinkingCursor(self,state):
+        if state!=self.blinking:
+            self.blinking=state
+            if state:
+                self.cursorTimer.start(500)
+            else:
+                self.cursorTimer.stop()
+                if self.cursorVisible:
+                    self.updateCursor()
+                
+    def paintEvent(self,event):
+        super(OutputWidget,self).paintEvent(event)
+        if self.cursorVisible:
+            qp=QtGui.QPainter(self.viewport())
+            r=self.cursorRect()
+            r.setWidth(10)
+            if self.hasFocus():
+                qp.fillRect(r,QtCore.Qt.SolidPattern)
+            else:
+                qp.drawRect(r)
+                
+    def updateCursor(self):
+        self.cursorVisible=not self.cursorVisible
+        self.viewport().update()
+        
+        
