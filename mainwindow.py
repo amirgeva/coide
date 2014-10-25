@@ -1015,7 +1015,9 @@ class MainWindow(QtGui.QMainWindow):
                 self.runningWidget.show()
             s=self.outputEdit.getInput()
             if len(s)>0:
-                self.debugger.sendInput(''.join(s))
+                text=''.join(s)
+                self.debugger.sendInput(text)
+                self.addOutputText(text)
         else:
             self.outputEdit.clearInput()
             if not self.runningWidget is None:
