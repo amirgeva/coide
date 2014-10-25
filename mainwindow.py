@@ -1013,6 +1013,7 @@ class MainWindow(QtGui.QMainWindow):
                 from running import RunningWidget
                 self.runningWidget=RunningWidget(self)
                 self.runningWidget.show()
+            self.outputEdit.setBlinkingCursor(True)
             s=self.outputEdit.getInput()
             if len(s)>0:
                 text=''.join(s)
@@ -1020,6 +1021,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.addOutputText(text)
         else:
             self.outputEdit.clearInput()
+            self.outputEdit.setBlinkingCursor(False)
             if not self.runningWidget is None:
                 self.runningWidget.close()
                 self.runningWidget=None
