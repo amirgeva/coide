@@ -6,7 +6,7 @@ import os.path
 import logging
 import platform
 
-from PyQt4.QtCore import QRect, Qt, pyqtSignal
+from PyQt4.QtCore import QRect, Qt, pyqtSignal, QSettings
 from PyQt4.QtGui import QAction, QApplication, QColor, QBrush, \
                         QDialog, QFont, \
                         QIcon, QKeySequence, QPainter, QPen, QPalette, \
@@ -255,6 +255,7 @@ class Qutepart(QPlainTextEdit):
 
         self.completionThreshold = self._DEFAULT_COMPLETION_THRESHOLD
         self.completionEnabled = self._DEFAULT_COMPLETION_ENABLED
+        self.clangCompletion = QSettings().value("clangCompletion",True).toBool()
         self._completer = Completer(self)
 
         self._initActions()
