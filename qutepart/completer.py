@@ -384,7 +384,7 @@ class Completer(QObject):
         """Text in the qpart changed. Update word set"""
         self._globalUpdateWordSetTimer.schedule(self._updateWordSet)
         (dot,row,col)=self._isDot()
-        if self._qpart.completionEnabled and dot:
+        if self._qpart.clangCompletion and dot:
             cmd=['clang','-xc++','-w','-fsyntax-only','-Xclang']
             cmd.append('-code-completion-at=-:{}:{}'.format(row+1,col+1))
             cmd.append('-')
