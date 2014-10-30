@@ -38,6 +38,9 @@ class Ui_EditorSettingsDialog(object):
         EditorSettingsDialog.label = QtGui.QLabel(EditorSettingsDialog)
         EditorSettingsDialog.label.setGeometry(QtCore.QRect(20, 20, 151, 22))
         EditorSettingsDialog.label.setObjectName(_fromUtf8("label"))
+        EditorSettingsDialog.clangCB = QtGui.QCheckBox(EditorSettingsDialog)
+        EditorSettingsDialog.clangCB.setGeometry(QtCore.QRect(16, 64, 321, 27))
+        EditorSettingsDialog.clangCB.setObjectName(_fromUtf8("clangCB"))
 
         self.retranslateUi(EditorSettingsDialog)
         QtCore.QObject.connect(EditorSettingsDialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), EditorSettingsDialog.accept)
@@ -47,4 +50,5 @@ class Ui_EditorSettingsDialog(object):
     def retranslateUi(self, EditorSettingsDialog):
         EditorSettingsDialog.setWindowTitle(_translate("EditorSettingsDialog", "Editor Settings", None))
         EditorSettingsDialog.label.setText(_translate("EditorSettingsDialog", "Indent Spaces", None))
+        EditorSettingsDialog.clangCB.setText(_translate("EditorSettingsDialog", "Clang auto-complete", None))
 
