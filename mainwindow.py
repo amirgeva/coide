@@ -305,8 +305,10 @@ class MainWindow(QtGui.QMainWindow):
         """ Apply editor settings to all open tabs """
         s=QtCore.QSettings()
         indent=(s.value('indent',2).toInt())[0]
+        clang=s.value('clangCompletion',True).toBool()
         for e in self.editors:
             self.editors.get(e).indentWidth=indent
+            self.editors.get(e).clangCompletion=clang
             
     def updateTemplates(self):
         self.tmplCombo.clear()
