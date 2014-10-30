@@ -74,6 +74,7 @@ class EditorSettingsDialog(QtGui.QDialog):
         s=QtCore.QSettings()
         self.indentSpaces.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp('\d+')))
         self.indentSpaces.setText(s.value('indent','2').toString())
+        self.clangCB.setCheckState(QtCore.Qt.Checked if s.value('clangCompletion',True).toBool() else QtCore.Qt.Unchecked)
         
     def save(self):
         s=QtCore.QSettings()
@@ -83,6 +84,7 @@ class EditorSettingsDialog(QtGui.QDialog):
         except ValueError:
             pass
         s.setValue('indent',indent)
+        s.setValue('clangCompletion',(self.clangCB.checkState() == QtCore.Qt.Checked))
         s.sync()
      
 class MacrosHelpDialog(QtGui.QDialog):
