@@ -82,12 +82,12 @@
     <rect>
      <x>10</x>
      <y>360</y>
-     <width>171</width>
+     <width>161</width>
      <height>20</height>
     </rect>
    </property>
    <property name="text">
-    <string>Symbol Scan (Restart)</string>
+    <string>Symbol Scan</string>
    </property>
   </widget>
  </widget>
