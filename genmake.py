@@ -174,8 +174,15 @@ class Generator:
                 if lib in self.wsLibs:
                     rel=self.wsLibs.get(lib)
                     libdir=os.path.join(self.root,'out',rel,cfg)
-                    lflags=lflags+' -L{} -l{} '.format(libdir,lib)
-                    libdeps[lib]=os.path.join(self.root,'src',rel)
+                    libDir=os.path.join(self.root,'src',rel)
+                    libProps=Properties(os.path.join(libDir,"mk.cfg"))
+                    wPrefix=''
+                    wSuffix=''
+                    if libProps.get('BUILD_WHOLE_ARCHIVE','False')=='True':
+                        wPrefix='-Wl,--whole-archive'
+                        wSuffix='-Wl,--no-whole-archive'
+                    lflags=lflags+' {} -L{} -l{} {} '.format(wPrefix,libdir,lib,wSuffix)
+                    libdeps[lib]=libDir
                 else:
                     lflags=lflags+' -l{} '.format(lib)
         o.write('CFLAGS_{}={}\n'.format(cfg,cflags))
