@@ -235,6 +235,14 @@ class Generator:
             o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
         
         return True
+        
+    def assignDefaults(props):
+        props.assign("BUILD_WARNERR","False")
+        props.assign("BUILD_PEDANTIC","False")
+        props.assign("BUILD_WARN","None (-w)")
+        props.assign("BUILD_CPP11","True")
+        props.assign("BUILD_CUSTOM","")
+        props.assign("BUILD_OPT","-O2")
             
     def generate(self,dir,files):
         #props=mkProps(Properties(),root)
@@ -246,6 +254,7 @@ class Generator:
                 break
             curdir=os.path.abspath(os.path.join(curdir,'..'))
         props=Properties()
+        self.assignDefaults(props)
         while len(stack)>0:
             props=mkProps(props,stack[-1])
             del stack[-1]
