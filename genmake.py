@@ -236,7 +236,7 @@ class Generator:
         
         return True
         
-    def assignDefaults(props):
+    def assignDefaults(self,props):
         props.assign("BUILD_WARNERR","False")
         props.assign("BUILD_PEDANTIC","False")
         props.assign("BUILD_WARN","None (-w)")
