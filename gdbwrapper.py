@@ -114,12 +114,12 @@ class GDBWrapper:
                 self.outputText.append(s)
         if self.active:
             lines,ok=self.read(1)
-            if ok:
-                for line in lines:
-                    if line.find('exited normally')>0:
-                        self.running=False
-                self.active=False
-                return ''
+            #if ok:
+            #    for line in lines:
+            #        if line.find('exited normally')>0:
+            #            self.running=False
+            #    self.active=False
+            #    return ''
             #return lines
         return ''
         
@@ -284,6 +284,12 @@ class GDBWrapper:
                     res=res.split('\n')
                     del res[-1]
                     self.log('<<{}'.format('\n'.join(res)))
+
+                    for line in res:
+                        if line.find('exited normally')>0:
+                            self.running=False
+                    self.active=False
+
                     return (res,True)
             except IOError:
                 time.sleep(0.01)
