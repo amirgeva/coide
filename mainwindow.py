@@ -942,11 +942,16 @@ class MainWindow(QtGui.QMainWindow):
         
     def stopDebugger(self):
         if self.debugger:
+            for path in self.editors:
+                e=self.editors.get(path)
+                e.colorLine(0,'')
             self.saveDebugWindowState()
             self.debugger.quitDebugger()
             self.debugger=None
             self.paneWatches.close()
+            self.paneWatches=None
             self.paneStack.close()
+            self.paneStack=None
             self.timer.stop()
         
     def clearBreakpoints(self):
@@ -960,14 +965,20 @@ class MainWindow(QtGui.QMainWindow):
     def actStep(self):
         if self.debugger:
             self.debugger.actStep()
+            if not self.debugger.running:
+                self.stopDebugger()
 
     def actNext(self):
         if self.debugger:
             self.debugger.actNext()
+            if not self.debugger.running:
+                self.stopDebugger()
 
     def actOut(self):
         if self.debugger:
             self.debugger.actOut()
+            if not self.debugger.running:
+                self.stopDebugger()
 
     def actCont(self):
         if self.debugger:
