@@ -285,6 +285,7 @@ def generateTree(root):
     for (dir,subdirs,files) in os.walk(os.path.join(root,"src")):
         if isSourceDir(dir,files):
             g.generate(dir,files)
+            subdirs[:]=[]  # do not recurse down project subdirs
             
 def generateDirectory(root,dir):
     g=Generator(root)
