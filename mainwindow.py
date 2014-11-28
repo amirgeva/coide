@@ -398,7 +398,12 @@ class MainWindow(QtGui.QMainWindow):
             self.buildProcess=None
 
     def pollAsync(self):
-        if not utils.pollAsync():
+        rcs=utils.pollAsync()
+        if len(rcs)>0:
+            if rcs[0]==0:
+                utils.appendColorLine(self.outputEdit,"Success...",'#008020')
+            else:
+                utils.appendColorLine(self.outputEdit,"= Failed ({}) =".format(rcs[0]),'#ff0000')
             self.checkBuildOutput()
             self.asyncPollTimer.stop()
         
