@@ -94,6 +94,7 @@ class AsyncExecute:
         self.pdone=False
         self.text=[]
         self.act=1
+        self.rc=None
         self.process=subprocess.Popen(cmdlist, shell=False, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
         
     def poll(self):
@@ -116,6 +117,7 @@ class AsyncExecute:
                 if len(line)>0:
                     self.act=self.act+1
         if self.process.poll()!=None:
+            self.rc=self.process.returncode
             self.pdone=True
         if self.pdone and self.act==0:
             return True
@@ -130,13 +132,15 @@ def execute(output,dir,cmd,*args):
     return ae
     
 def pollAsync():
+    res=[]
     n=len(async_executes)
     for i in xrange(0,n):
         ae=async_executes[i]
         if ae.poll():
+            res.append(async_executes[i].rc)
             del async_executes[i]
-            return pollAsync()
-    return n>0
+            return res+pollAsync()
+    return res
         
 
 def old_execute(output,dir,cmd,*args):
