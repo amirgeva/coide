@@ -120,6 +120,13 @@ class Generator:
                     dirname=(dir.split('/'))[-1]
                     self.wsLibs[dirname]=os.path.relpath(dir,self.srcDir)
                     
+    def findAllSubdirs(self,files):
+        res=[]
+        for f in files:
+            d=os.path.dirname(f)
+            if not d in res:
+                res.append(d)
+        return res
 
     def generateConfig(self,dir,files,cfg,o,props):
         name=os.path.basename(dir)
@@ -137,8 +144,11 @@ class Generator:
         if len(type)==0:
             return False
         srcs=filterSources(files)
+        subdirs=self.findAllSubdirs(srcs)
         intr=os.path.join(dir.replace(self.srcDir,self.intrDir),cfg)
         verifyDir(intr)
+        for sd in subdirs:
+            verifyDir(os.path.join(intr,sd))
         outdir=os.path.join(dir.replace(self.srcDir,self.outDir),cfg)
         verifyDir(outdir)
         #reloutdir=os.path.relpath(outdir,dir)
@@ -253,6 +263,10 @@ class Generator:
             
     def generate(self,dir,files):
         #props=mkProps(Properties(),root)
+        for d,subs,subfiles in os.walk(dir):
+            if d!=dir:
+                for f in subfiles:
+                    files.append(os.path.join(os.path.relpath(d,dir),f))
         stack=[]
         curdir=dir
         while True:
