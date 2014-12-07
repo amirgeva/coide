@@ -313,10 +313,12 @@ class MainWindow(QtGui.QMainWindow):
     def updateTemplates(self):
         self.tmplCombo.clear()
         self.tmplCombo.addItem("= Templates =")
-        s=QtCore.QSettings()
-        templates=s.value('templates','').toString().split(',')
-        for t in templates:
-            self.tmplCombo.addItem(t)
+        d=QtCore.QSettings().value('tmplDir','').toString()
+        if d:
+            templates=os.listdir(d)
+            templates=[os.path.splitext(t)[0] for t in templates if t.endswith('.template')]
+            for t in templates:
+                self.tmplCombo.addItem(t)
         
 
     def findUndefinedReferences(self,output):
@@ -597,22 +599,28 @@ class MainWindow(QtGui.QMainWindow):
         (editor,path)=self.currentEditor()
         if index>0 and editor:
             template=self.tmplCombo.itemText(index)
-            s=QtCore.QSettings()
-            code=s.value("template_"+template,'').toString()
-            if code:
-                cursor=editor.textCursor()
-                props=Properties()
-                props.assign('PATH',path)
-                base=os.path.basename(path)
-                props.assign('FILENAME',base)
-                p=base.find('.')
-                if (p>0):
-                    props.assign('FILEBASE',base[0:p])
-                props.assign('SELECTION',cursor.selectedText())
-                cursor.removeSelectedText()
-                import templates
-                text=templates.generateCode(code,props)
-                cursor.insertText(text)
+            d=QtCore.QSettings().value('tmplDir','').toString()
+            if d:
+                path=os.path.join(d,template+".template")
+                try:
+                    f=open(path,'r')
+                    code=f.read()
+                    if code:
+                        cursor=editor.textCursor()
+                        props=Properties()
+                        props.assign('PATH',path)
+                        base=os.path.basename(path)
+                        props.assign('FILENAME',base)
+                        p=base.find('.')
+                        if (p>0):
+                            props.assign('FILEBASE',base[0:p])
+                        props.assign('SELECTION',cursor.selectedText())
+                        cursor.removeSelectedText()
+                        import templates
+                        text=templates.generateCode(code,props)
+                        cursor.insertText(text)
+                except IOError:
+                    utils.errorMessage("Cannot read file: {}".format(path))
         self.tmplCombo.setCurrentIndex(0)        
                 
 
