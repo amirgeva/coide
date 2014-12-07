@@ -1,6 +1,8 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 import uis
+import os
+import utils
 
 class FontSettingsDialog(QtGui.QDialog):
     """
@@ -112,24 +114,45 @@ class TemplatesDialog(QtGui.QDialog):
         super(TemplatesDialog,self).__init__(parent)
         uis.loadDialog('templates',self)
         s=QtCore.QSettings()
-        templates=s.value('templates','').toString().split(',')
-        templates=[t for t in templates if t] # remove empty labels
-        if len(templates)>0:
-            self.templatesList.addItems(templates)
+        self.dir=s.value('tmplDir','').toString()
+        self.tmplDir.setText(self.dir)
+        self.updateTemplates()
         self.templatesList.itemSelectionChanged.connect(self.selChanged)
         self.curEdit=''
         self.codeEdit.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
         self.addButton.clicked.connect(self.addClicked)
         self.delButton.clicked.connect(self.delClicked)
         self.macrosButton.clicked.connect(self.macrosClicked)
+        self.tmplDirBrowseButton.clicked.connect(self.browseTmplDir)
+        
+    def updateTemplates(self):        
+        self.templatesList.clear()
+        templates=[]
+        if self.dir:
+            templates=os.listdir(self.dir)
+            templates=[os.path.splitext(t)[0] for t in templates if t.endswith('.template')]
+        if len(templates)>0:
+            self.templatesList.addItems(templates)
+        self.codeEdit.setPlainText('')
         
     def macrosClicked(self):
         MacrosHelpDialog().exec_()
+    
+    def browseTmplDir(self):
+        d=QtGui.QFileDialog.getExistingDirectory(directory=self.dir)
+        if d:
+            self.dir=d
+            self.tmplDir.setText(d)
+            QtCore.QSettings().setValue('tmplDir',d)
+            self.updateTemplates()
 
     def addClicked(self):
-        (label,ok)=QtGui.QInputDialog.getText(self,"New Template","Template Name")
-        if ok:
-            self.templatesList.addItem(label)
+        if not self.dir:
+            utils.errorMessage('Please set template directory first')
+        else:
+            (label,ok)=QtGui.QInputDialog.getText(self,"New Template","Template Name")
+            if ok:
+                self.templatesList.addItem(label)
         
     def delClicked(self):
         if self.curEdit:
@@ -138,16 +161,26 @@ class TemplatesDialog(QtGui.QDialog):
             self.curEdit=''
 
     def selChanged(self):
-        s=QtCore.QSettings()
         if self.curEdit:
-            s.setValue('template_'+self.curEdit,self.codeEdit.toPlainText())
+            oldpath=os.path.join(self.dir,self.curEdit+".template")
+            try:
+                f=open(oldpath,'w')
+                f.write(self.codeEdit.toPlainText())
+                f.close()
+            except IOError:
+                utils.errorMessage('Cannot write file: {}'.format(oldpath))
         sel=self.templatesList.selectedItems()
         if len(sel)==1:
             item=sel[0]
             label=item.text()
-            code=s.value("template_"+label,'').toString()
-            self.codeEdit.setPlainText(code)
-            self.curEdit=label
+            path=os.path.join(self.dir,label+".template")
+            try:
+                f=open(path,'r')
+                code=f.read()
+                self.codeEdit.setPlainText(code)
+                self.curEdit=label
+            except IOError:
+                utils.errorMessage('Cannot read file: {}'.format(path))
         
     def accept(self):
         s=QtCore.QSettings()
