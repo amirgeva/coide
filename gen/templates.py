@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'uis/templates.ui'
 #
 #
-#      by: PyQt4 UI code generator 4.10.4
+#      by: PyQt4 UI code generator 4.11.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -33,10 +33,10 @@ class Ui_Dialog(object):
         Dialog.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
         Dialog.buttonBox.setObjectName(_fromUtf8("buttonBox"))
         Dialog.templatesList = QtGui.QListWidget(Dialog)
-        Dialog.templatesList.setGeometry(QtCore.QRect(16, 16, 161, 401))
+        Dialog.templatesList.setGeometry(QtCore.QRect(16, 64, 161, 353))
         Dialog.templatesList.setObjectName(_fromUtf8("templatesList"))
         Dialog.codeEdit = QtGui.QPlainTextEdit(Dialog)
-        Dialog.codeEdit.setGeometry(QtCore.QRect(192, 13, 433, 401))
+        Dialog.codeEdit.setGeometry(QtCore.QRect(192, 61, 433, 353))
         font = QtGui.QFont()
         font.setFamily(_fromUtf8("Monospace"))
         font.setPointSize(12)
@@ -51,6 +51,15 @@ class Ui_Dialog(object):
         Dialog.macrosButton = QtGui.QPushButton(Dialog)
         Dialog.macrosButton.setGeometry(QtCore.QRect(258, 420, 101, 25))
         Dialog.macrosButton.setObjectName(_fromUtf8("macrosButton"))
+        Dialog.label = QtGui.QLabel(Dialog)
+        Dialog.label.setGeometry(QtCore.QRect(16, 16, 161, 17))
+        Dialog.label.setObjectName(_fromUtf8("label"))
+        Dialog.tmplDir = QtGui.QLineEdit(Dialog)
+        Dialog.tmplDir.setGeometry(QtCore.QRect(192, 16, 369, 27))
+        Dialog.tmplDir.setObjectName(_fromUtf8("tmplDir"))
+        Dialog.tmplDirBrowseButton = QtGui.QPushButton(Dialog)
+        Dialog.tmplDirBrowseButton.setGeometry(QtCore.QRect(577, 16, 49, 32))
+        Dialog.tmplDirBrowseButton.setObjectName(_fromUtf8("tmplDirBrowseButton"))
 
         self.retranslateUi(Dialog)
         QtCore.QObject.connect(Dialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
@@ -62,4 +71,6 @@ class Ui_Dialog(object):
         Dialog.addButton.setText(_translate("Dialog", "Add", None))
         Dialog.delButton.setText(_translate("Dialog", "Delete", None))
         Dialog.macrosButton.setText(_translate("Dialog", "Macros Help", None))
+        Dialog.label.setText(_translate("Dialog", "Templates Directory:", None))
+        Dialog.tmplDirBrowseButton.setText(_translate("Dialog", "...", None))
 
