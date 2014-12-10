@@ -601,9 +601,9 @@ class MainWindow(QtGui.QMainWindow):
             template=self.tmplCombo.itemText(index)
             d=QtCore.QSettings().value('tmplDir','').toString()
             if d:
-                path=os.path.join(d,template+".template")
+                tpath=os.path.join(d,template+".template")
                 try:
-                    f=open(path,'r')
+                    f=open(tpath,'r')
                     code=f.read()
                     if code:
                         cursor=editor.textCursor()
