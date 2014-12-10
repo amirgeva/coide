@@ -153,6 +153,13 @@ class TemplatesDialog(QtGui.QDialog):
             (label,ok)=QtGui.QInputDialog.getText(self,"New Template","Template Name")
             if ok:
                 self.templatesList.addItem(label)
+                try:
+                    f=open(os.path.join(self.dir,label+".template"),'w')
+                    f.write("\n")
+                    f.close()
+                except IOError:
+                    utils.errorMessage('Could not write template file at: {}'.format(self.dir))
+                
         
     def delClicked(self):
         if self.curEdit:
@@ -160,7 +167,7 @@ class TemplatesDialog(QtGui.QDialog):
             self.templatesList.removeItemWidget(item)
             self.curEdit=''
 
-    def selChanged(self):
+    def saveCurrent(self):
         if self.curEdit:
             oldpath=os.path.join(self.dir,self.curEdit+".template")
             try:
@@ -169,6 +176,9 @@ class TemplatesDialog(QtGui.QDialog):
                 f.close()
             except IOError:
                 utils.errorMessage('Cannot write file: {}'.format(oldpath))
+
+    def selChanged(self):
+        self.saveCurrent()
         sel=self.templatesList.selectedItems()
         if len(sel)==1:
             item=sel[0]
@@ -183,15 +193,7 @@ class TemplatesDialog(QtGui.QDialog):
                 utils.errorMessage('Cannot read file: {}'.format(path))
         
     def accept(self):
-        s=QtCore.QSettings()
-        if self.curEdit:
-            s.setValue('template_'+self.curEdit,self.codeEdit.toPlainText())
-        n=self.templatesList.count()
-        labels=[]
-        for i in xrange(0,n):
-            item=self.templatesList.item(i)
-            labels.append(item.text())
-        s.setValue('templates',','.join(labels))
+        self.saveCurrent()
         super(TemplatesDialog,self).accept()
         
     def save(self):
