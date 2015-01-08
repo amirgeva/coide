@@ -18,7 +18,7 @@ class GDBWrapper:
     
     """
 
-    def __init__(self,bps,args):
+    def __init__(self,bps,args,dir):
         """ Start gdb.  dataRoot indicates location of parsers """
         self.breakpoints=bps
         dataRoot=os.path.dirname(os.path.abspath(__file__))
@@ -30,7 +30,7 @@ class GDBWrapper:
         if len(os.getenv('COIDE',''))>0:
             self.dumpLog=open('dump.log','w')
         self.initializeParsers(os.path.join(dataRoot,"parsers"))
-        self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
         fcntl.fcntl(self.gdb.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
         
         self.outputFileName="/tmp/{}.coide".format(int(time.time()))
