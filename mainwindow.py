@@ -945,9 +945,10 @@ class MainWindow(QtGui.QMainWindow):
         self.outputEdit.setPlainText('')
         cmd=[self.workspaceTree.getExecutablePath()]
         args=self.workspaceTree.getDebugParams().split()
+        cwd=self.workspaceTree.getDebugDirectory()
         for a in args:
             cmd.append(a)
-        self.debugger=GDBWrapper(self.breakpoints,cmd)
+        self.debugger=GDBWrapper(self.breakpoints,cmd,cwd)
         self.showWatchesPane()
         self.showCallStackPane()
         self.loadDebugWindowState()
