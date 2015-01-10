@@ -21,6 +21,7 @@ class GDBWrapper:
     def __init__(self,bps,args,dir):
         """ Start gdb.  dataRoot indicates location of parsers """
         self.breakpoints=bps
+        self.breakpoints.breakpointsChanged.connect(self.setBreakpoints)
         dataRoot=os.path.dirname(os.path.abspath(__file__))
         #print "Starting debugger for: {}".format(args)
         self.args=['gdb']+args
@@ -68,7 +69,7 @@ class GDBWrapper:
                     self.pid=g[0]
                     self.running=True
         if len(self.pid)==0:
-            QtGui.QMessageBox.critical(self,'Problem','Failed to get debugged program PID')
+            QtGui.QMessageBox.critical(None,'Problem','Failed to get debugged program PID')
         self.setBreakpoints()
         self.outputFile=os.open(self.outputFileName,os.O_RDONLY | os.O_NONBLOCK)
 
@@ -177,32 +178,6 @@ class GDBWrapper:
         self.allFiles=files
         return sorted(list(files))
         
-    def updateBreakpoints(self):
-        """ Queries and updates the breakpoints dict """
-        if not self.active:
-            allBps={}
-            self.write('info break')
-            lines,ok=self.read()
-            if ok:
-                n=len(lines)
-                for i in xrange(0,n):
-                    parts=lines[i].split()
-                    if parts[1]=='breakpoint':
-                        index=int(parts[0])
-                        enabled=(parts[3]=='y')
-                        if parts[-2]=='at':
-                            parts=parts[-1].split(':')
-                        else:
-                            parts=lines[i+1].strip().split()
-                            parts=parts[-1].split(':')
-                        path=parts[0]
-                        line=int(parts[1])
-                        self.log("{}: ({}) Breakpoint '{}':{}".format(index,enabled,path,line))
-                        if not allBps.has_key(path):
-                            allBps[path]={}
-                        bps=allBps.get(path)
-                        bps[line]=Breakpoint(enabled,index)
-                self.breakpoints.loadFeedback(allBps)
 
     
     def updatePath(self,name):
@@ -301,58 +276,20 @@ class GDBWrapper:
         self.write("delete")
         self.read()
         
-    #def getBreakpoints(self,path):
-    #    if not self.breakpoints.has_key(path):
-    #        name=os.path.basename(path)
-    #        if not self.breakpoints.has_key(name):
-    #            return {}
-    #        return self.breakpoints.get(name)
-    #    return self.breakpoints.get(path)
-    
     def setBreakpoint(self,path,line):    
         self.write('break {}:{}'.format(path,line))
         self.read()
         self.changed=True
     
-    def toggleBreakpoint(self,path,line):
-        if not self.active:
-            self.log("Toggling breakpoint at '{}' : {}".format(path,line))
-            self.write('clear {}:{}'.format(path,line))
-            lines,ok=self.read()
-            if not ok:
-                return
-            resp=''.join(lines)
-            self.log("clear resp='{}'".format(resp))
-            if resp.find('Deleted breakpoint')<0:
-                self.write('break {}:{}'.format(path,line))
-                self.read()
-            self.changed=True
-    
-    def ableBreakpoint(self,path,line):
-        """ Enables/Disables a breakpoint """
-        if not self.active and self.breakpoints.has_key(path):
-            bps=self.breakpoints[path]
-            if bps.has_key(line):
-                self.log("Abling breakpoint at '{}' : {}".format(path,line))
-                bp=bps[line]
-                if bp.enabled:
-                    self.write('disable {}'.format(bp.index))
-                else:
-                    self.write('enable {}'.format(bp.index))
-                lines,ok=self.read()
-                if ok:
-                    bp.enabled=not bp.enabled
-
     def setBreakpoints(self):
         self.clearBreakpoints()
         for path in self.breakpoints.paths():
             bps=self.breakpoints.pathBreakpoints(path)
             for line in bps:
                 bp=bps.get(line)
-                line=line+1
-                self.setBreakpoint(path,line)
-                if not bp.enabled:
-                    self.ableBreakpoint(path,line)
+                if bp.enabled:
+                    line=line+1
+                    self.setBreakpoint(path,line)
     
     def actStep(self):
         """ Single steps going into function calls """
