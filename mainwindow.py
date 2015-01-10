@@ -1001,6 +1001,7 @@ class MainWindow(QtGui.QMainWindow):
             e=self.getCurrentEditor()
             if e:
                 e.colorLine(0,'')
+                self.currentLine=-1
             self.debugger.actCont()
 
     def actBreak(self):
