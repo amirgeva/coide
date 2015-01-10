@@ -419,14 +419,44 @@ class GDBWrapper:
             lines='\n'.join(lines)
         while lines.find('  ')>=0:
             lines=lines.replace('  ',' ')
+        nameValuePair=self.extractVariableValue(lines)
+        return nameValuePair[1]
+        
+    def extractVariableValue(self,lines):
+        var=lines[0:lines.find(' ')]
         for k in self.replaces.keys():
             lines=lines.replace(k,self.replaces.get(k))
         self.log("Parsing:\n"+lines)
         res=self.parsePrintout(lines)
         self.log(str(res))
-        return res
+        return (var,res)
             
-    
+    def getLocals(self):
+        res={}
+        if self.active or not self.running:
+            return res
+        ch=self.changed
+        self.write('info locals')
+        lines,ok=self.read()
+        self.changed=ch
+        if not ok: 
+            #print "Failed to evaluate {}".format(var)
+            return res
+        if type(lines) is list:
+            lines='\n'.join(lines)
+        #open("locals.txt","w").write(lines)
+        lines=lines.split('\n')
+        groups=[]
+        for line in lines:
+            if line[0]!=' ':
+                groups.append([])
+            groups[-1].append(line)
+        for group in groups:
+            all='\n'.join(group)
+            (var,val)=self.extractVariableValue(all)
+            res[var]=val
+        return res
+        
 
 
 if __name__ == '__main__':
