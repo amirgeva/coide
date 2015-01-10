@@ -946,6 +946,8 @@ class MainWindow(QtGui.QMainWindow):
         cmd=[self.workspaceTree.getExecutablePath()]
         args=self.workspaceTree.getDebugParams().split()
         cwd=self.workspaceTree.getDebugDirectory()
+        if len(cwd)<1:
+            cwd=self.workspaceTree.mainPath()
         for a in args:
             cmd.append(a)
         self.debugger=GDBWrapper(self.breakpoints,cmd,cwd)
