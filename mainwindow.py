@@ -57,6 +57,9 @@ class MainWindow(QtGui.QMainWindow):
         self.setupToolbar(rootDir)
         self.showWorkspacePane()
         self.showOutputPane()
+        self.showWatchesPane()
+        self.showLocalsPane()
+        self.showCallStackPane()
         self.buildProcess=None        
         
 
@@ -84,6 +87,10 @@ class MainWindow(QtGui.QMainWindow):
         self.generateTimer.start(1000)
         
         self.generateAll()
+        
+        self.paneWatches.hide()
+        self.paneLocals.hide()
+        self.paneStack.hide()
         
 
     def closeEvent(self, event):
@@ -735,6 +742,20 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneStack)
         self.loadFont('watchesfont',self.stackList)
     
+    def showLocalsPane(self):
+        self.paneLocals=QtGui.QDockWidget("Locals",self)
+        self.paneLocals.setObjectName("Locals")
+        self.paneLocals.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
+        self.localsTree=WatchesTree(self.paneLocals)
+        self.localsTree.setColumnCount(2)
+        self.localsTree.setHeaderLabels(['Name','Value'])
+        self.paneLocals.setWidget(self.localsTree)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneLocals)
+        self.loadFont('watchesfont',self.watchesTree)
+        #self.watchesTree.addTopLevelItem(QtGui.QTreeWidgetItem(['* Double-Click for new watch']))
+        #self.watchesTree.resizeColumnToContents(0)
+        #self.watchesTree.itemDoubleClicked.connect(lambda item,column : self.watchDoubleClicked(item,column))
+    
     def showWatchesPane(self):
         self.paneWatches=QtGui.QDockWidget("Watches",self)
         self.paneWatches.setObjectName("Watches")
@@ -749,7 +770,6 @@ class MainWindow(QtGui.QMainWindow):
         self.watchesTree.addTopLevelItem(QtGui.QTreeWidgetItem(['* Double-Click for new watch']))
         self.watchesTree.resizeColumnToContents(0)
         self.watchesTree.itemDoubleClicked.connect(lambda item,column : self.watchDoubleClicked(item,column))
-        self.loadWatches()
         
         
     def showOutputPane(self):        
@@ -905,6 +925,16 @@ class MainWindow(QtGui.QMainWindow):
                     res.append(QtGui.QTreeWidgetItem([watch]))
                 self.watchesTree.insertTopLevelItems(0,res)
         
+    def updateLocals(self):
+        locals=self.debugger.getLocals()
+        self.localsTree.clear()
+        for var in locals.keys():
+            item=QtGui.QTreeWidgetItem([var])
+            self.localsTree.addTopLevelItem(item)
+            res=locals.get(var)
+            if len(res)>0:
+                self.updateWatchValue(res,item)
+        
     def updateWatches(self):
         """ Re-evaluate the value of each watch and update view """
         n=self.watchesTree.topLevelItemCount()-1
@@ -916,18 +946,22 @@ class MainWindow(QtGui.QMainWindow):
             if len(res)==0:
                 item.setText(1,'')
             else:
-                if res[0]=='string' or res[0]=='number':
-                    item.setText(1,res[1])
-                elif res[0]=='vector' or res[0]=='list':
-                    del res[0]
-                    parseutils.addSequence(item,res)
-                elif res[0]=='map':
-                    del res[0]
-                    parseutils.addMapping(item,res)
-                elif res[0]=='struct':
-                    item.setText(1,parseutils.flatten(res))
-                    del res[0]
-                    parseutils.addMapping(item,res)
+                self.updateWatchValue(res,item)
+
+    def updateWatchValue(self,res,item):
+        if res[0]=='string' or res[0]=='number':
+            item.setText(1,res[1])
+        elif res[0]=='vector' or res[0]=='list':
+            del res[0]
+            parseutils.addSequence(item,res)
+        elif res[0]=='map':
+            del res[0]
+            parseutils.addMapping(item,res)
+        elif res[0]=='struct':
+            item.setText(1,parseutils.flatten(res))
+            del res[0]
+            parseutils.addMapping(item,res)
+        
                     
     def updateCallstack(self):
         bt=self.debugger.getBackTrace()
@@ -951,9 +985,11 @@ class MainWindow(QtGui.QMainWindow):
         for a in args:
             cmd.append(a)
         self.debugger=GDBWrapper(self.breakpoints,cmd,cwd)
-        self.showWatchesPane()
-        self.showCallStackPane()
-        self.loadDebugWindowState()
+        #self.showWatchesPane()
+        #self.showCallStackPane()
+        #self.loadDebugWindowState()
+        self.showDebugPanes()
+        self.loadWatches()
         self.timer.start(50)
         
     def stopDebugger(self):
@@ -964,11 +1000,23 @@ class MainWindow(QtGui.QMainWindow):
             self.saveDebugWindowState()
             self.debugger.quitDebugger()
             self.debugger=None
-            self.paneWatches.close()
-            self.paneWatches=None
-            self.paneStack.close()
-            self.paneStack=None
+            #self.paneWatches.close()
+            #self.paneWatches=None
+            #self.paneStack.close()
+            #self.paneStack=None
+            self.hideDebugPanes()
             self.timer.stop()
+    
+    def hideDebugPanes(self):
+        self.paneWatches.hide()
+        self.paneLocals.hide()
+        self.paneStack.hide()
+
+    def showDebugPanes(self):
+        self.paneWatches.show()
+        self.paneLocals.show()
+        self.paneStack.show()
+
         
     def clearBreakpoints(self):
         self.breakpoints.clear()
@@ -1031,6 +1079,7 @@ class MainWindow(QtGui.QMainWindow):
             if self.debugger.changed:
                 self.updatePosition()
                 self.updateWatches()
+                self.updateLocals()
                 self.updateCallstack()
                 self.debugger.changed=False
             if not self.debugger.running:
