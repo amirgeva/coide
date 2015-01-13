@@ -5,6 +5,7 @@ import re
 
 stringPattern=re.compile('\{std::string = (.+)$')
 varPattern=re.compile('(\$\d+ = )')
+cvarPattern=re.compile('[_a-zA-Z][_a-zA-Z0-9]* = ')
 #  (const Block &) @0x7fffffffdee0: 
 refPattern=re.compile('\(.+&\) @0x[0-9a-f]+: ')
 
@@ -62,6 +63,10 @@ def removeVar(s):
     m=re.match(varPattern,s)
     if not m is None:
         s=re.sub(varPattern,'',s,count=1)
+    else:
+        m=re.match(cvarPattern,s)
+        if not m is None:
+            s=re.sub(cvarPattern,'',s,count=1)
     return s
     
 def removeRef(s):
