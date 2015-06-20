@@ -84,7 +84,10 @@ class GDBWrapper:
         path=os.path.join(dataRoot,"gdb_printers","python")
         cmd=("python\nimport sys\nsys.path.insert(0,'{}')\n"+
             "from libstdcxx.v6.printers import register_libstdcxx_printers\n"+
-            "register_libstdcxx_printers(None)\nend").format(path)
+            "register_libstdcxx_printers(None)\n"+
+            "from eigen.printers import register_eigen_printers\n"+
+            "register_eigen_printers(None)\n"+
+            "end").format(path)
         self.write(cmd)
         lines,ok=self.read()
         if not ok:
