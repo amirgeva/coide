@@ -2,6 +2,7 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 import os
+import re
 import stat
 
 from qutepart import Qutepart
@@ -747,6 +748,7 @@ class MainWindow(QtGui.QMainWindow):
         self.paneStack.setWidget(self.stackList)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneStack)
         self.loadFont('watchesfont',self.stackList)
+        self.stackList.itemDoubleClicked.connect(self.stackItemDoubleClicked)
     
     def showLocalsPane(self):
         self.paneLocals=QtGui.QDockWidget("Locals",self)
@@ -772,7 +774,6 @@ class MainWindow(QtGui.QMainWindow):
         self.paneWatches.setWidget(self.watchesTree)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneWatches)
         self.loadFont('watchesfont',self.watchesTree)
-        
         self.watchesTree.addTopLevelItem(QtGui.QTreeWidgetItem(['* Double-Click for new watch']))
         self.watchesTree.resizeColumnToContents(0)
         self.watchesTree.itemDoubleClicked.connect(lambda item,column : self.watchDoubleClicked(item,column))
@@ -786,6 +787,20 @@ class MainWindow(QtGui.QMainWindow):
         self.outputEdit.setReadOnly(True)
         self.paneOutput.setWidget(self.outputEdit)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneOutput)
+
+    def stackItemDoubleClicked(self,item):
+        pat='at (.+):(\d+)'
+        m=re.search(pat,item.text())
+        if m:
+            g=m.groups()
+            path=g[0]
+            line=int(g[1])
+            self.goToSource(path,line,1)
+        else:
+            row=self.stackList.row(item)
+            if row<(self.stackList.count()-1):
+                self.stackItemDoubleClicked(self.stackList.item(row+1))
+        
 
     def watchDoubleClicked(self,item,column):
         """ Edits existing watches, or adds a new watch """
