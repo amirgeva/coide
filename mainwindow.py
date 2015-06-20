@@ -669,6 +669,12 @@ class MainWindow(QtGui.QMainWindow):
             path=os.path.relpath(path,self.rootDir)
         return path
         
+    '''
+    Makes the path given the active source file in the editor.
+    If the file is already open, it is made active.
+    If not, it is opened and made active.
+    Function returns true if the file is found and opened
+    '''
     def openSourceFile(self,path):
         path=self.fixPath(path)
         if self.setActiveSourceFile(path):
@@ -885,10 +891,16 @@ class MainWindow(QtGui.QMainWindow):
         
     def updatePosition(self):
         """ Query current position and update the code view """
-        (path,line)=self.debugger.getCurrentPos()
-        changed=(self.currentLine!=line)
-        if len(path)>0 and self.getCurrentFile()!=path:
-            self.openSourceFile(path)
+        changed=False
+        poslist=self.debugger.getCurrentPos()
+        for (path,line) in poslist:
+            if self.getCurrentFile()==path:
+                if self.currentLine!=line:
+                    changed=True
+                break
+            if self.openSourceFile(path):
+                changed=True
+                break
         e=self.editors.get(path)
         if changed and e:
             e.colorLine(line,'#0080ff')
