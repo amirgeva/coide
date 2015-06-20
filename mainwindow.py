@@ -427,7 +427,7 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 self.buildProcess=utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
             if not self.asyncPollTimer.isActive():
-                self.asyncPollTimer.start(100)
+                self.asyncPollTimer.start(10)
                 
     def processBuildOutput(self,output):
         undefs=self.findUndefinedReferences(output)
