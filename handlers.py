@@ -8,6 +8,9 @@ class Handler(object):
     def addLine(self,line):
         self.lines.append(line)
         self.check()
+        
+    def reset(self):
+        self.lines=[]
 
 
 class SignalHandler(Handler):
