@@ -9,6 +9,7 @@ import imp
 import sys
 import time
 import parseutils
+import handlers
 
 class GDBWrapper:
     """ Wrapper above the GDB process
@@ -30,6 +31,7 @@ class GDBWrapper:
         # During development create a dump log
         if len(os.getenv('COIDE',''))>0:
             self.dumpLog=open('dump.log','w')
+        self.initHandlers()
         self.initializeParsers(os.path.join(dataRoot,"parsers"))
         self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
         fcntl.fcntl(self.gdb.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
@@ -72,6 +74,10 @@ class GDBWrapper:
             QtGui.QMessageBox.critical(None,'Problem','Failed to get debugged program PID')
         self.setBreakpoints()
         self.outputFile=os.open(self.outputFileName,os.O_RDONLY | os.O_NONBLOCK)
+        
+    def initHandlers(self):
+        self.handlers=[]
+        self.handlers.append(handlers.SignalHandler())
 
     def initializePrettyPrints(self,dataRoot):
         """ Installs the python extension for pretty printing """
@@ -195,27 +201,28 @@ class GDBWrapper:
         If none can be found, returns an empty path
         
         """
-        res="","1"
+        res=[("","1")]
         if self.running:
             self.write("bt")
             lines,ok=self.read()
             if ok:
                 self.changed=False
                 ml='\n'.join(lines)
-                m=re.search(self.btPattern,ml)
+                m=re.findall(self.btPattern,ml)
                 if not m is None:
-                    g=m.groups()
-                    path=self.updatePath(g[0])
-                    res=(path,g[1])
-            self.write("info source")
-            lines,ok=self.read()
-            if ok:
-                for line in lines:
-                    m=re.match(self.locPattern,line)
-                    if not m is None:
-                        g=m.groups()
-                        res=(g[0],res[1])
-                        break
+                    res=[]
+                    for i in range(0,len(m)):
+                        r=m[i]
+                        res.append((self.updatePath(r[0]),int(r[1])))
+            #self.write("info source")
+            #lines,ok=self.read()
+            #if ok:
+            #    for line in lines:
+            #        m=re.match(self.locPattern,line)
+            #        if not m is None:
+            #            g=m.groups()
+            #            res=[(g[0],int(g[1]))]
+            #            break
         else:
             self.write("info function main")
             lines,ok=self.read()
@@ -225,8 +232,8 @@ class GDBWrapper:
                 m=re.search(self.curPattern,ml)
                 if not m is None:
                     path=self.updatePath((m.groups())[0])
-                    res=(path,"1")
-        return (res[0],int(res[1]))
+                    res=[(path,1)]
+        return res
         
     def log(self,s):
         """ Logs text during development (DEBUGUI env var) """
@@ -249,10 +256,14 @@ class GDBWrapper:
         """
         res=""
         count=0
+        for h in self.handlers:
+            h.reset()
         while count<tries:
             try:
                 count+=1
                 l=self.gdb.stdout.read()
+                for h in self.handlers:
+                    h.addLine(l)
                 res+=l
                 if res.endswith('(gdb) '):
                     self.changed=True
