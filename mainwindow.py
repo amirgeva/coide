@@ -984,6 +984,9 @@ class MainWindow(QtGui.QMainWindow):
         elif res[0]=='map':
             del res[0]
             parseutils.addMapping(item,res)
+        elif res[0]=='set':
+            del res[0]
+            parseutils.addMapping(item,res)
         elif res[0]=='struct':
             item.setText(1,parseutils.flatten(res))
             del res[0]

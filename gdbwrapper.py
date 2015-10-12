@@ -105,6 +105,7 @@ class GDBWrapper:
             os.close(self.outputFile)
             self.outputFile=None
         os.remove(self.outputFileName)
+        self.gdb=None
         
     def closingApp(self):
         """ Called before the application window is closed
@@ -296,6 +297,8 @@ class GDBWrapper:
         self.changed=True
     
     def setBreakpoints(self):
+        if not self.gdb:
+            return
         self.clearBreakpoints()
         for path in self.breakpoints.paths():
             bps=self.breakpoints.pathBreakpoints(path)
