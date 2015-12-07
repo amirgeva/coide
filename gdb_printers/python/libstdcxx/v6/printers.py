@@ -115,7 +115,7 @@ class SharedPointerPrinter:
                 state = 'expired, weak %d' % weakcount
             else:
                 state = 'count %d, weak %d' % (usecount, weakcount - 1)
-        return '%s (%s) %s' % (self.typename, state, self.val['_M_ptr'])
+        return '%s (%s) %s' % (self.val.type, state, self.val['_M_ptr'])
 
 class UniquePointerPrinter:
     "Print a unique_ptr"
