@@ -261,47 +261,58 @@ class WorkSpace(QtGui.QTreeWidget):
             settings.sync()
             
     def setMainPath(self,mainpath):
-        mainitem=self.findDirectoryItem(mainpath)
-        self.setMainItem(mainitem,save=False)
-        self.loadMainProjectInfo()
+        if mainpath and len(mainpath)>0:
+            #print "Setting main path to: '{}'".format(mainpath)
+            mainitem=self.findDirectoryItem(mainpath)
+            self.setMainItem(mainitem,save=False)
+            self.loadMainProjectInfo()
 
     def refreshWorkspace(self):
         self.update()
         
-    def update(self):
-        self.main=None
-        self.src=None
-        self.clear()
-        folderIcon=utils.loadIcon('folder')
-        docIcon=utils.loadIcon('doc')
-
-        if not os.path.exists(self.root):
-            return
+    def scanDirectory(self,subroot):
         items={}
-        for (dir,subdirs,files) in os.walk(self.root):
+        for (dir,subdirs,files) in os.walk(os.path.join(self.root,subroot)):
             if dir and not dir[0]=='.':
                 if not dir in items:
-                    topItem=QtGui.QTreeWidgetItem([dir])
-                    topItem.setIcon(0,folderIcon)
+                    topItem=QtGui.QTreeWidgetItem([subroot])
+                    topItem.setIcon(0,self.folderIcon)
                     topItem.setData(0,DirectoryRole,dir)
                     items[dir]=topItem
-                    self.addTopLevelItem(topItem)
+                    self.rootItem.addChild(topItem)
                 item=items.get(dir)
                 for sub in subdirs:
                     path=os.path.join(dir,sub)
                     child=QtGui.QTreeWidgetItem([sub])
                     if sub=='src' and self.src is None:
                         self.src=child
-                    child.setIcon(0,folderIcon)
+                    child.setIcon(0,self.folderIcon)
                     child.setData(0,DirectoryRole,path)
                     items[path]=child
                     item.addChild(child)
                 for filename in files:
                     if filename.endswith('.cpp') or filename.endswith('.h'):
                         child=QtGui.QTreeWidgetItem([filename])
-                        child.setIcon(0,docIcon)
+                        child.setIcon(0,self.docIcon)
                         item.addChild(child)
                         child.setData(0,FileRole,os.path.join(dir,filename))
+        
+    def update(self):
+        self.main=None
+        self.src=None
+        self.clear()
+        self.folderIcon=utils.loadIcon('folder')
+        self.docIcon=utils.loadIcon('doc')
+
+        if not os.path.exists(self.root):
+            return
+        self.rootItem=QtGui.QTreeWidgetItem([self.root])
+        self.rootItem.setIcon(0,self.folderIcon)
+        self.rootItem.setData(0,DirectoryRole,self.root)
+        self.addTopLevelItem(self.rootItem)
+        
+        self.scanDirectory('src')
+        self.scanDirectory('include')
         self.loadSettings()
     
     def setWorkspacePath(self,path):
