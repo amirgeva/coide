@@ -64,27 +64,37 @@ def arreplace(a,fr,to):
     for s in a:
         res.append(s.replace(fr,to))
     return res
-    
+
 def verifyDir(dir):
+    '''
+    Check if a directory exists, and if not, create it
+    '''
     if not os.path.exists(dir):
         os.makedirs(dir)
         
 def isSourceFile(f):
+    '''
+    Check if a file is a C++ source file
+    '''
     return f.endswith('.cpp')
 
 def findMain(dir):
-    pat=re.compile('(int|void)( )+main( )*\(')
+    '''
+    Search the directory for a source file that
+    has the `main` function
+    '''
+    pat=re.compile('^(int|void)( )+main( )*\(')
     files=os.listdir(dir)
     for f in files:
         if isSourceFile(f):
             path=os.path.join(dir,f)
             lines=open(path,"r").readlines()
             for line in lines:
-                if re.search(pat,line):
+                if re.search(pat,line.strip()):
                     return True
     return False
 
-flagsPat=re.compile('\((.+)\)')            
+flagsPat=re.compile('\((.+)\)')
 def extractFlags(s):
     m=re.search(flagsPat,s)
     if m:
@@ -129,6 +139,9 @@ class Generator:
         return res
 
     def generateConfig(self,dir,files,cfg,o,props):
+        '''
+        Generate rules for a configuration (Debug/Release)
+        '''
         name=os.path.basename(dir)
         absdir=os.path.abspath(dir)
         pb=Properties(os.path.join(dir,"mk.cfg"))
@@ -176,25 +189,29 @@ class Generator:
             cflags=cflags+" "+custom
         lflags='$(OPT_{}) $(OBJS_{}) '.format(cfg,cfg)
         libdeps={}
-        for lib in libs:
-            if lib in packages:
-                cflags=cflags+' `pkg-config --cflags {}` '.format(lib)
-                lflags=lflags+' `pkg-config --libs {}` '.format(lib)
-            else:
-                if lib in self.wsLibs:
-                    rel=self.wsLibs.get(lib)
-                    libdir=os.path.join(self.root,'out',rel,cfg)
-                    libDir=os.path.join(self.root,'src',rel)
-                    libProps=Properties(os.path.join(libDir,"mk.cfg"))
-                    wPrefix=''
-                    wSuffix=''
-                    if libProps.get('BUILD_WHOLE_ARCHIVE','False')=='True':
-                        wPrefix='-Wl,--whole-archive'
-                        wSuffix='-Wl,--no-whole-archive'
-                    lflags=lflags+' {} -L{} -l{} {} '.format(wPrefix,libdir,lib,wSuffix)
-                    libdeps[lib]=libDir
+        for stage in ['local','package']:
+            for lib in libs:
+                if lib in packages:
+                    if stage=='package':
+                        cflags=cflags+' `pkg-config --cflags {}` '.format(lib)
+                        lflags=lflags+' `pkg-config --libs {}` '.format(lib)
                 else:
-                    lflags=lflags+' -l{} '.format(lib)
+                    if lib in self.wsLibs:
+                        if stage=='local':
+                            rel=self.wsLibs.get(lib)
+                            libdir=os.path.join(self.root,'out',rel,cfg)
+                            libDir=os.path.join(self.root,'src',rel)
+                            libProps=Properties(os.path.join(libDir,"mk.cfg"))
+                            wPrefix=''
+                            wSuffix=''
+                            if libProps.get('BUILD_WHOLE_ARCHIVE','False')=='True':
+                                wPrefix='-Wl,--whole-archive'
+                                wSuffix='-Wl,--no-whole-archive'
+                            lflags=lflags+' {} -L{} -l{} {} '.format(wPrefix,libdir,lib,wSuffix)
+                            libdeps[lib]=libDir
+                    else:
+                        if stage=='package':
+                            lflags=lflags+' -l{} '.format(lib)
         o.write('CFLAGS_{}={}\n'.format(cfg,cflags))
         o.write('LFLAGS_{}={}\n'.format(cfg,lflags))
         objs = arreplace(srcs,'.cpp','.o')
@@ -288,6 +305,7 @@ class Generator:
             opt=""
         o.write('OPT_Release={}\n'.format(opt))
         o.write('OPT_Debug=-g\n')
+        o.write('\ndefault: Release\n\n')
         self.generateConfig(dir,files,"Release",o,props)
         if self.generateConfig(dir,files,"Debug",o,props):
             pass
