@@ -27,6 +27,8 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actCreateFolder = QtGui.QAction('Create Folder',self,triggered=self.createFolder)
         self.actCreateFile = QtGui.QAction('Create File',self,triggered=self.createFile)
         self.actRefresh = QtGui.QAction('Refresh',self,triggered=self.refreshWorkspace)
+        self.actDelete = QtGui.QAction('Delete',self,triggered=self.deletePath)
+        self.actRename = QtGui.QAction('Rename',self,triggered=self.renamePath)
         self.main=None
         self.src=None
         self.debug=('','')
@@ -36,7 +38,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.config="Debug"
         self.itemCollapsed.connect(self.onCollapsed)
         self.itemExpanded.connect(self.onExpanded)
-        
+
     def onClose(self):
         self.saveBreakpoints()
         
@@ -61,6 +63,11 @@ class WorkSpace(QtGui.QTreeWidget):
             menu.addAction(self.actCreateFolder)
             menu.addAction(self.actCreateFile)
             menu.addAction(self.actRefresh)
+        else:
+            filepath=self.currentItem().data(0,FileRole).toString()
+            if os.path.isfile(filepath):
+                menu.addAction(self.actRename)
+                menu.addAction(self.actDelete)
         if menu:
             menu.exec_(event.globalPos())
         
@@ -175,6 +182,31 @@ class WorkSpace(QtGui.QTreeWidget):
             return True
         return False
         
+    def getCurrentItemPath(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        if len(path)==0:
+            path=item.data(0,FileRole).toString()
+        return path
+        
+    def renamePath(self):
+        oldpath=self.getCurrentItemPath()
+        (name,rc)=QtGui.QInputDialog.getText(self,"Rename","New Name")
+        newpath=os.path.dirname(oldpath)
+        newpath=os.path.join(newpath,name)
+        os.rename(oldpath,newpath)
+        self.refreshWorkspace()
+        
+    def deletePath(self):
+        path=self.getCurrentItemPath()
+        res=QtGui.QMessageBox.question(self,'Delete File','Are you sure?',QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
+        if res==QtGui.QMessageBox.Yes:
+            try:
+                os.remove(path)
+                self.refreshWorkspace()
+            except OSError:
+                pass
+        
     def addLibrariesToProject(self,libs):
         if self.main:
             path=self.mainPath()
@@ -225,11 +257,10 @@ class WorkSpace(QtGui.QTreeWidget):
                 self.update()
             except IOError:
                 utils.message("Failed to create file")
-        
 
     def getDebugDirectory(self):
         return self.debug[0]
-        
+
     def getDebugParams(self):
         return self.debug[1]
 
@@ -238,7 +269,6 @@ class WorkSpace(QtGui.QTreeWidget):
         outPath=utils.findLine(mkPath,"OUTPUT_PATH_{}=".format(self.config),True)
         return outPath
 
-        
     def setMain(self):
         self.setMainItem(self.currentItem())
         
