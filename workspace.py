@@ -142,7 +142,7 @@ class WorkSpace(QtGui.QTreeWidget):
     def loadMainProjectInfo(self):
         mkPath=os.path.join(self.mainPath(),"mk.cfg")
         props=Properties(mkPath)
-        self.debug=(props.get("CWD"),props.get("PARAMS"))
+        self.debug=(props.get("DEBUG_CWD"),props.get("DEBUG_PARAMS"))
         
     def mainPath(self):        
         if self.main:
@@ -173,10 +173,10 @@ class WorkSpace(QtGui.QTreeWidget):
         path=item.data(0,DirectoryRole).toString()
         mkPath=os.path.join(path,"mk.cfg")
         props=Properties(mkPath)
-        libs=re.split('\W+',props.get('LIBS'))
+        libs=re.split('\W+',props.get('BUILD_LIBS'))
         d=DependenciesDialog(libs)
         if d.exec_():
-            props.assign("LIBS",",".join(d.libs))
+            props.assign("BUILD_LIBS",",".join(d.libs))
             props.save(mkPath)
             self.depsChanged.emit()
             return True
@@ -212,11 +212,11 @@ class WorkSpace(QtGui.QTreeWidget):
             path=self.mainPath()
             mkPath=os.path.join(path,"mk.cfg")
             props=Properties(mkPath)
-            lst=props.get("LIBS").split(',')
+            lst=props.get("BUILD_LIBS").split(',')
             lst=[x for x in lst if len(x)>0]
             for l in libs:
                 lst.append(l)
-            props.assign("LIBS",",".join(lst))
+            props.assign("BUILD_LIBS",",".join(lst))
             props.save(mkPath)
             self.depsChanged.emit()
         
@@ -226,11 +226,11 @@ class WorkSpace(QtGui.QTreeWidget):
         mkPath=os.path.join(path,"mk.cfg")
         props=Properties(mkPath)
         d=uis.loadDialog('debug_settings')
-        d.cwdEdit.setText(props.get("CWD"))
-        d.paramsEdit.setText(props.get("PARAMS"))
+        d.cwdEdit.setText(props.get("DEBUG_CWD"))
+        d.paramsEdit.setText(props.get("DEBUG_PARAMS"))
         if d.exec_():
-            props.assign('CWD',d.cwdEdit.text())
-            props.assign('PARAMS',d.paramsEdit.text())
+            props.assign('DEBUG_CWD',d.cwdEdit.text())
+            props.assign('DEBUG_PARAMS',d.paramsEdit.text())
             self.debug=(d.cwdEdit.text(),d.paramsEdit.text())
             props.save(mkPath)
             
@@ -306,6 +306,8 @@ class WorkSpace(QtGui.QTreeWidget):
             if dir and not dir[0]=='.':
                 if not dir in items:
                     topItem=QtGui.QTreeWidgetItem([subroot])
+                    if subroot=='src':
+                        self.src=topItem
                     topItem.setIcon(0,self.folderIcon)
                     topItem.setData(0,DirectoryRole,dir)
                     items[dir]=topItem
