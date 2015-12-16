@@ -55,7 +55,7 @@ def save(widget):
     if t=='QLineEdit':
         return widget.text()
     if t=='QPlainTextEdit':
-        return widget.toPlainText()
+        return widget.toPlainText().replace('\n','\\n')
     if t=='QCheckBox':
         return getCheck(widget)
     if t=='QComboBox':
@@ -138,6 +138,7 @@ class BuildSettingsDialog(QtGui.QDialog):
         self.workspaceItem.setExpanded(True)
         self.projTree.itemSelectionChanged.connect(self.selectionChanged)
         self.closeButton.clicked.connect(self.closeClicked)
+        self.resetButton.clicked.connect(self.resetClicked)
         self.prevPath=''
         firstItem=None
         if startPath==self.workspaceDir:
@@ -170,6 +171,14 @@ class BuildSettingsDialog(QtGui.QDialog):
         s.setValue('symbol_scan',getCheck(self.symscanCB))
         s.sync()
         self.close()
+        
+    def resetClicked(self):
+        res=QtGui.QMessageBox.question(self,'Delete File','Delete '+self.prevPath,QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
+        if res==QtGui.QMessageBox.Yes:
+            try:
+                os.remove(self.prevPath)
+            except OSError:
+                pass
         
     def selectionChanged(self):
         if self.prevPath:
