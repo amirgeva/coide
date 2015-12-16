@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'uis/build_settings.ui'
 #
 #
-#      by: PyQt4 UI code generator 4.11.2
+#      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -33,7 +33,7 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.projTree.setObjectName(_fromUtf8("projTree"))
         BuildSettingsDialog.projTree.headerItem().setText(0, _fromUtf8("1"))
         BuildSettingsDialog.closeButton = QtGui.QPushButton(BuildSettingsDialog)
-        BuildSettingsDialog.closeButton.setGeometry(QtCore.QRect(32, 416, 98, 27))
+        BuildSettingsDialog.closeButton.setGeometry(QtCore.QRect(10, 420, 71, 27))
         BuildSettingsDialog.closeButton.setObjectName(_fromUtf8("closeButton"))
         BuildSettingsDialog.tabWidget = QtGui.QTabWidget(BuildSettingsDialog)
         BuildSettingsDialog.tabWidget.setGeometry(QtCore.QRect(192, 16, 449, 433))
@@ -50,6 +50,9 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.symscanCB = QtGui.QCheckBox(BuildSettingsDialog)
         BuildSettingsDialog.symscanCB.setGeometry(QtCore.QRect(10, 360, 161, 20))
         BuildSettingsDialog.symscanCB.setObjectName(_fromUtf8("symscanCB"))
+        BuildSettingsDialog.resetButton = QtGui.QPushButton(BuildSettingsDialog)
+        BuildSettingsDialog.resetButton.setGeometry(QtCore.QRect(100, 420, 71, 27))
+        BuildSettingsDialog.resetButton.setObjectName(_fromUtf8("resetButton"))
 
         self.retranslateUi(BuildSettingsDialog)
         QtCore.QMetaObject.connectSlotsByName(BuildSettingsDialog)
@@ -61,4 +64,5 @@ class Ui_BuildSettingsDialog(object):
         BuildSettingsDialog.tabWidget.setTabText(BuildSettingsDialog.tabWidget.indexOf(BuildSettingsDialog.tab_2), _translate("BuildSettingsDialog", "Tab 2", None))
         BuildSettingsDialog.parallelCB.setText(_translate("BuildSettingsDialog", "Parallel Make", None))
         BuildSettingsDialog.symscanCB.setText(_translate("BuildSettingsDialog", "Symbol Scan", None))
+        BuildSettingsDialog.resetButton.setText(_translate("BuildSettingsDialog", "Reset", None))
 
