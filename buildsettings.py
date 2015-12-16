@@ -2,29 +2,27 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 import os
 import uis
+from build_settings_cfg import tabs
 from consts import DirectoryRole
 from properties import Properties
 
-def buildName(name):
-    return 'BUILD_'+name
-
 def getBool(props,name,default):
-    if not props.has(buildName(name)):
+    if not props.has(name):
         return default
-    return (props.get(buildName(name))=='True')
+    return (props.get(name)=='True')
 
 def setBool(props,name,value):
-    props.assign(buildName(name),'True' if value else 'False')
+    props.assign(name,'True' if value else 'False')
 
 def getStr(props,name,default):
-    value=props.get(buildName(name),default)
+    value=props.get(name,default)
     value=value.replace('\\n','\n')
     return value
 
 def setStr(props,name,value):
     lines=value.split('\n')
     value='\\n'.join(lines)
-    props.assign(buildName(name),value)
+    props.assign(name,value)
         
 def check(checkbox,boolState):
     state = QtCore.Qt.Checked if boolState else QtCore.Qt.Unchecked
@@ -40,42 +38,81 @@ def setCombo(cb,value):
         if cb.itemText(i)==value:
             cb.setCurrentIndex(i)
             return
-            
-class CompileSettingsDialog(QtGui.QDialog):
-    def __init__(self,parent=None):
-        super(CompileSettingsDialog,self).__init__(parent)
-        uis.loadDialog('compile_settings',self)
-        self.settingsGroup.setDisabled(True)
-        self.defaults.stateChanged.connect(self.defaultsToggled)
 
-    def defaultsToggled(self,state):
-        if state==QtCore.Qt.Checked:
-            self.settingsGroup.setDisabled(True)
-        else:
-            self.settingsGroup.setEnabled(True)
+def load(widget,value):
+    t=type(widget).__name__
+    if t=='QLineEdit':
+        widget.setText(value)
+    if t=='QPlainTextEdit':
+        widget.setPlainText(value.replace('\\n','\n'))
+    if t=='QCheckBox':
+        check(widget,value=='True')
+    if t=='QComboBox':
+        setCombo(widget,value)
+
+def save(widget):
+    t=type(widget).__name__
+    if t=='QLineEdit':
+        return widget.text()
+    if t=='QPlainTextEdit':
+        return widget.toPlainText()
+    if t=='QCheckBox':
+        return getCheck(widget)
+    if t=='QComboBox':
+        return widget.itemText(widget.currentIndex())
+
+class SettingsTabDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(SettingsTabDialog,self).__init__(parent)
+        # fields maps setting name to widget
+        self.fields={}
+        
+    def addWidgets(self,desc):
+        '''
+        Add widgets based on the description in desc
+        which is a list of tuples describing individual widgets
+        '''
+        layout=QtGui.QGridLayout()
+        row=0
+        for d in desc:
+            n=len(d)
+            name=d[0]
+            title=d[1]
+            details=d[2]
+            layout.addWidget(QtGui.QLabel(title),row,0)
+            w=None
+            if details=='STR':
+                w=QtGui.QLineEdit()
+                w.setText(d[3])
+            if details=='EDIT':
+                w=QtGui.QPlainTextEdit()
+                w.setPlainText(d[3].replace('\\n','\n'))
+            if details=='CB':
+                w=QtGui.QCheckBox()
+                check(w,d[3])
+            if '|' in details:
+                w=QtGui.QComboBox()
+                opts=details.split('|')
+                for o in opts:
+                    w.addItem(o)
+                setCombo(w,d[3])
+            if (w):
+                self.fields[name]=w
+                layout.addWidget(w,row,1)
+            row=row+1
+        self.setLayout(layout)
         
     def load(self,props):
-        if check(self.defaults,getBool(props,'DEFAULTS',True)):
-            self.settingsGroup.setDisabled(True)
-        else:
-            self.settingsGroup.setEnabled(True)
-        setCombo(self.optCB,getStr(props,'OPT','-O2'))
-        setCombo(self.warnCB,getStr(props,'WARN','Default'))
-        check(self.pedantic,getBool(props,'PEDANTIC',False))
-        check(self.warnErrors,getBool(props,'WARNERR',False))
-        check(self.cpp11,getBool(props,'CPP11',True))
-        self.customFlags.setPlainText(getStr(props,'CUSTOM',''))
-
+        for name in self.fields:
+            w=self.fields.get(name)
+            if props.has(name):
+                load(w,props.get(name))
+    
     def save(self,props):
-        setBool(props,'DEFAULTS',getCheck(self.defaults))
-        setStr(props,'OPT',self.optCB.currentText())
-        setStr(props,'WARN',self.warnCB.currentText())
-        setBool(props,'PEDANTIC',getCheck(self.pedantic))
-        setBool(props,'WARNERR',getCheck(self.warnErrors))
-        setBool(props,'CPP11',getCheck(self.cpp11))
-        setStr(props,'CUSTOM',self.customFlags.toPlainText())
-
-
+        for name in self.fields:
+            w=self.fields.get(name)
+            props.assign(name,save(w))
+            
                 
 class BuildSettingsDialog(QtGui.QDialog):
     def __init__(self,mainwin,startPath,parent=None):
@@ -87,7 +124,11 @@ class BuildSettingsDialog(QtGui.QDialog):
         check(self.symscanCB,s.value('symbol_scan',True).toBool())
         self.tabWidget.clear()
         self.tabs=[]
-        self.tabs.append(('Compile',CompileSettingsDialog()))
+        for t in tabs:
+            desc=tabs.get(t)
+            dlg=SettingsTabDialog()
+            dlg.addWidgets(desc)
+            self.tabs.append((t,dlg))
         for (name,tab) in self.tabs:
             self.tabWidget.addTab(tab,name)
         self.workspaceItem=QtGui.QTreeWidgetItem(['Workspace'])
@@ -150,3 +191,13 @@ class BuildSettingsDialog(QtGui.QDialog):
             tab.save(props)
         props.save(path)
         
+
+if __name__=='__main__':
+    import sys
+    from build_settings_cfg import tabs
+    app=QtGui.QApplication(sys.argv)
+    d=SettingsTabDialog()
+    d.addWidgets(tabs.get('Compile'))
+    d.show()
+    app.exec_()
+    
