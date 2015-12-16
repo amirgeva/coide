@@ -451,10 +451,16 @@ class MainWindow(QtGui.QMainWindow):
         
     def clean(self):
         self.cleanSpecific(self.workspaceTree.mainPath())
+
+    def rebuildSpecific(self,path):
+        if len(path)>0:
+            cfg=self.config
+            self.execute(path,'/usr/bin/make','clean_'+cfg,cfg)
     
     def rebuild(self):
-        self.clean()
-        self.build()
+        self.rebuildSpecific(self.workspaceTree.mainPath())
+        #self.clean()
+        #self.build()
         
     def autoGenerate(self):
         for path in self.generateQueue:
