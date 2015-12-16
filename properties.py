@@ -7,9 +7,12 @@ class Properties:
         if path and os.path.exists(path):
             lines=open(path).readlines()
             for line in lines:
-                parts=line.strip().split('=')
-                if len(parts)==2:
-                    self.props[parts[0]]=parts[1]
+                line=line.strip()
+                p=line.find('=')
+                if p>0:
+                    name=line[0:p]
+                    value=line[p+1:]
+                    self.props[name]=value
     
     def copyFrom(self,props):
         self.props=props.props.copy()
@@ -24,7 +27,10 @@ class Properties:
         
     def assign(self,name,value):
         self.props[name]=value
-        
+
+    def keys(self):
+        return self.props.keys()
+
     def search(self,exp):
         '''
         Returns a list of name that match the regular expression
