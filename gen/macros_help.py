@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'uis/macros_help.ui'
 #
 #
-#      by: PyQt4 UI code generator 4.11.2
+#      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
 
