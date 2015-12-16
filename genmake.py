@@ -8,17 +8,13 @@ import templates
 
 
 root=os.path.abspath('.')
-#print ("ROOT={}".format(root))
 
 def mkProps(props, dir):
     path=os.path.join(dir,'mk.cfg')
     if os.path.exists(path):
         p=Properties(path)
-        if p.get("BUILD_DEFAULTS")!="True":
-            names=p.search('BUILD_.+')
-            for name in names:
-                if name!="BUILD_DEFAULTS":
-                    props.assign(name,p.get(name))
+        for name in p.keys():
+            props.assign(name,p.get(name))
     return props
 
 packages=listAllPackages()
@@ -137,6 +133,35 @@ class Generator:
             if not d in res:
                 res.append(d)
         return res
+        
+    def addSettings(self,flags,props,cfg,prefix):
+        from build_settings_cfg import tabs
+        parenPat=re.compile('.+\((.+)\)')
+        for t in tabs:
+            desc=tabs.get(t)
+            for d in desc:
+                name=d[0]
+                if name.startswith(prefix) or name.startswith('BUILD_'):
+                    value=props.get(name)
+                    if d[2]=='CB':
+                        if value=='True':
+                            flags=flags+' '+d[4]
+                    else:
+                        if value and not value=='Default':
+                            m=re.match(parenPat,value)
+                            if m:
+                                g=m.groups()
+                                value=g[0]
+                            else:
+                                value=value.replace('\\n',' ')
+                            flags=flags+' '+value
+        return flags
+        
+    def addCompileSettings(self,cflags,props,cfg):
+        return self.addSettings(cflags,props,cfg,'COMPILE_')
+
+    def addLinkSettings(self,lflags,props,cfg):
+        return self.addSettings(lflags,props,cfg,'LINK_')
 
     def generateConfig(self,dir,files,cfg,o,props):
         '''
@@ -175,19 +200,12 @@ class Generator:
         mkProps.assign('CPP_{}'.format(cfg),'g++')
         o.write('INC_{}=-I{} {}\n'.format(cfg,self.globalInc,cfgInclude))
         mkProps.assign('INC_{}'.format(cfg),'-I{} {}'.format(self.globalInc,cfgInclude))
-        warn=extractFlags(props.get("BUILD_WARN",""))
-        std=''
-        if props.get("BUILD_CPP11")=="True":
-            std='-std=c++11'
-        cflags='-c {} {} $(OPT_{}) $(INC_{}) '.format(warn,std,cfg,cfg)
-        if props.get("BUILD_PEDANTIC")=="True":
-            cflags=cflags+" -pedantic-errors "
-        if props.get("BUILD_WARNERR")=="True":
-            cflags=cflags+" -Werror "
-        custom=props.get("BUILD_CUSTOM_COMPILE")
-        if custom:
-            cflags=cflags+" "+custom
+
+        cflags='-c $(OPT_{}) $(INC_{}) '.format(cfg,cfg)
+        cflags=self.addCompileSettings(cflags,props,cfg)
+        
         lflags='$(OPT_{}) $(OBJS_{}) '.format(cfg,cfg)
+        lflags=self.addLinkSettings(lflags,props,cfg)
         libdeps={}
         for stage in ['local','package']:
             for lib in libs:
@@ -216,7 +234,6 @@ class Generator:
         o.write('LFLAGS_{}={}\n'.format(cfg,lflags))
         objs = arreplace(srcs,'.cpp','.o')
         for i in xrange(0,len(objs)):
-            #objs[i]=os.path.join(os.path.relpath(intr,dir),objs[i])
             objs[i]=os.path.join(intr,objs[i])
             
         o.write("OBJS_{}=".format(cfg))
