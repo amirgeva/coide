@@ -184,7 +184,7 @@ class Generator:
             cflags=cflags+" -pedantic-errors "
         if props.get("BUILD_WARNERR")=="True":
             cflags=cflags+" -Werror "
-        custom=props.get("BUILD_CUSTOM")
+        custom=props.get("BUILD_CUSTOM_COMPILE")
         if custom:
             cflags=cflags+" "+custom
         lflags='$(OPT_{}) $(OBJS_{}) '.format(cfg,cfg)
@@ -249,7 +249,7 @@ class Generator:
             o.write('{}: $(OBJS_{}) {}\n'.format(outfile,cfg,liblist))
             o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
             
-        o.write('clean_{}: {}\n\trm $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
+        o.write('clean_{}: {}\n\trm -f $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
         o.write('{}: {}\n\n'.format(cfg,outfile))
             
         for i in xrange(0,len(objs)):
@@ -275,7 +275,7 @@ class Generator:
         props.assign("BUILD_PEDANTIC","False")
         props.assign("BUILD_WARN","None (-w)")
         props.assign("BUILD_CPP11","True")
-        props.assign("BUILD_CUSTOM","")
+        props.assign("BUILD_CUSTOM_COMPILE","")
         props.assign("BUILD_OPT","-O2")
             
     def generate(self,dir,files):
