@@ -165,8 +165,9 @@ class WorkSpace(QtGui.QTreeWidget):
         self.mainWindow.cleanSpecific(path)
 
     def rebuildCurrent(self):
-        self.cleanCurrent()
-        self.buildCurrent()
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        self.mainWindow.rebuildSpecific(path)
 
     def editDependencies(self):
         item=self.currentItem()
@@ -316,8 +317,6 @@ class WorkSpace(QtGui.QTreeWidget):
                 for sub in subdirs:
                     path=os.path.join(dir,sub)
                     child=QtGui.QTreeWidgetItem([sub])
-                    if sub=='src' and self.src is None:
-                        self.src=child
                     child.setIcon(0,self.folderIcon)
                     child.setData(0,DirectoryRole,path)
                     items[path]=child
