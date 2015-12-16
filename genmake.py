@@ -152,7 +152,7 @@ class Generator:
             else:
                 type="LIB"
         o.write('TYPE={}\n'.format(type))
-        libs=re.split(',| ',pb.get("LIBS"))
+        libs=re.split(',| ',pb.get("BUILD_LIBS"))
         libs=filter(bool,libs)  # remove empty strings
         if len(type)==0:
             return False
