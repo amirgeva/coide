@@ -94,6 +94,7 @@ class AsyncExecute:
         self.pdone=False
         self.text=[]
         self.act=1
+        self.cmdlist=cmdlist
         self.rc=None
         self.process=subprocess.Popen(cmdlist, shell=False, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
         
@@ -124,7 +125,13 @@ class AsyncExecute:
         return False
 
 async_executes=[]
-        
+
+def pendingAsync():
+    if len(async_executes)>0:
+        print "Pending: {}".format(async_executes[0].cmdlist)
+        return True
+    return False
+
 def execute(output,dir,cmd,*args):
     cmdlist=[cmd]+list(args)
     ae=AsyncExecute(output,dir,cmdlist)
