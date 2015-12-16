@@ -416,19 +416,26 @@ class MainWindow(QtGui.QMainWindow):
                 utils.appendColorLine(self.outputEdit,"= Failed ({}) =".format(rcs[0]),'#ff0000')
             self.checkBuildOutput()
             self.asyncPollTimer.stop()
+            
+    def execute(self,path,cmd,*args):
+        if utils.pendingAsync():
+            self.statusBar().showMessage('Busy')
+            return None
+        self.outputEdit.clear()
+        p=utils.execute(self.outputEdit,path,cmd,*args)
+        if not self.asyncPollTimer.isActive():
+            self.asyncPollTimer.start(10)
+        return p
         
     def buildSpecific(self,path):
-        self.outputEdit.clear()
         self.saveAll()
         self.autoGenerate()
         if len(path)>0:
             s=QtCore.QSettings()
             if s.value('parallel_make',False).toBool():
-                self.buildProcess=utils.execute(self.outputEdit,path,'/usr/bin/make','-j',self.config)
+                self.buildProcess=self.execute(path,'/usr/bin/make','-j',self.config)
             else:
-                self.buildProcess=utils.execute(self.outputEdit,path,'/usr/bin/make',self.config)
-            if not self.asyncPollTimer.isActive():
-                self.asyncPollTimer.start(10)
+                self.buildProcess=self.execute(path,'/usr/bin/make',self.config)
                 
     def processBuildOutput(self,output):
         undefs=self.findUndefinedReferences(output)
@@ -440,7 +447,7 @@ class MainWindow(QtGui.QMainWindow):
             
     def cleanSpecific(self,path):
         if len(path)>0:
-            utils.execute(self.outputEdit,path,'/usr/bin/make','clean_{}'.format(self.config))
+            self.execute(path,'/usr/bin/make','clean_{}'.format(self.config))
         
     def clean(self):
         self.cleanSpecific(self.workspaceTree.mainPath())
