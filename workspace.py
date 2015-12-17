@@ -174,10 +174,10 @@ class WorkSpace(QtGui.QTreeWidget):
         path=item.data(0,DirectoryRole).toString()
         mkPath=os.path.join(path,"mk.cfg")
         props=Properties(mkPath)
-        libs=re.split('\W+',props.get('BUILD_LIBS'))
+        libs=re.split('\W+',props.get('LINK_LIBS'))
         d=DependenciesDialog(libs)
         if d.exec_():
-            props.assign("BUILD_LIBS",",".join(d.libs))
+            props.assign("LINK_LIBS",",".join(d.libs))
             props.save(mkPath)
             self.depsChanged.emit(path)
             return True
@@ -213,11 +213,11 @@ class WorkSpace(QtGui.QTreeWidget):
             path=self.mainPath()
             mkPath=os.path.join(path,"mk.cfg")
             props=Properties(mkPath)
-            lst=props.get("BUILD_LIBS").split(',')
+            lst=props.get("LINK_LIBS").split(',')
             lst=[x for x in lst if len(x)>0]
             for l in libs:
                 lst.append(l)
-            props.assign("BUILD_LIBS",",".join(lst))
+            props.assign("LINK_LIBS",",".join(lst))
             props.save(mkPath)
             self.depsChanged.emit(path)
         
