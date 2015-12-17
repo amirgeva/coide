@@ -62,6 +62,7 @@ class MainWindow(QtGui.QMainWindow):
         self.showLocalsPane()
         self.showCallStackPane()
         self.buildProcess=None        
+        self.timerCall=None
         
 
         self.config=s.value("config").toString()
@@ -455,17 +456,21 @@ class MainWindow(QtGui.QMainWindow):
     def rebuildSpecific(self,path):
         if len(path)>0:
             cfg=self.config
-            self.execute(path,'/usr/bin/make','clean_'+cfg,cfg)
+            self.buildProcess=self.execute(path,'/usr/bin/make','clean_'+cfg,cfg)
     
     def rebuild(self):
         self.rebuildSpecific(self.workspaceTree.mainPath())
-        #self.clean()
-        #self.build()
         
-    def autoGenerate(self):
+    def autoGenerateRun(self):
         for path in self.generateQueue:
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
+        self.statusBar().showMessage('Ready')
+        
+    def autoGenerate(self):
+        if len(self.generateQueue)>0:
+            self.statusBar().showMessage('Generating Makefiles')
+            self.timerCall=self.autoGenerateRun
         
     def waitForScanner(self):
         if self.symbolScan:
@@ -475,6 +480,10 @@ class MainWindow(QtGui.QMainWindow):
                 time.sleep(1)
         
     def timer1000(self):
+        if self.timerCall:
+            f=self.timerCall
+            self.timerCall=None
+            f()
         self.autoGenerate()
         #if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
         if self.symbolScan:
@@ -651,7 +660,7 @@ class MainWindow(QtGui.QMainWindow):
         self.paneWorkspace.setObjectName("Workspace")
         self.paneWorkspace.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
         self.workspaceTree=WorkSpace(self.paneWorkspace,self)
-        self.workspaceTree.depsChanged.connect(self.generateAll)
+        self.workspaceTree.depsChanged.connect(lambda path: self.generateQueue.add(path))
         #self.workspaceTree.itemClicked.connect(lambda item: self.loadItem(item))
         self.paneWorkspace.setWidget(self.workspaceTree)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)
