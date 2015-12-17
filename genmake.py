@@ -266,7 +266,7 @@ class Generator:
             o.write('{}: $(OBJS_{}) {}\n'.format(outfile,cfg,liblist))
             o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
             
-        o.write('clean_{}: {}\n\trm -f $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
+        o.write('clean_{}: {}\n\t@rm -f $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
         o.write('{}: {}\n\n'.format(cfg,outfile))
             
         for i in xrange(0,len(objs)):
