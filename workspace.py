@@ -229,6 +229,7 @@ class WorkSpace(QtGui.QTreeWidget):
         d=uis.loadDialog('debug_settings')
         d.cwdEdit.setText(props.get("DEBUG_CWD"))
         d.paramsEdit.setText(props.get("DEBUG_PARAMS"))
+        d.browseDirButton.clicked.connect(lambda: utils.browseDirectory(d.cwdEdit))
         if d.exec_():
             props.assign('DEBUG_CWD',d.cwdEdit.text())
             props.assign('DEBUG_PARAMS',d.paramsEdit.text())
