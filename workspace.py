@@ -10,7 +10,7 @@ import uis
 
 class WorkSpace(QtGui.QTreeWidget):
 
-    depsChanged=QtCore.pyqtSignal()    
+    depsChanged=QtCore.pyqtSignal(str)
     
     def __init__(self,pane,mainwin):
         super(WorkSpace,self).__init__(pane)
@@ -179,7 +179,7 @@ class WorkSpace(QtGui.QTreeWidget):
         if d.exec_():
             props.assign("BUILD_LIBS",",".join(d.libs))
             props.save(mkPath)
-            self.depsChanged.emit()
+            self.depsChanged.emit(path)
             return True
         return False
         
@@ -219,7 +219,7 @@ class WorkSpace(QtGui.QTreeWidget):
                 lst.append(l)
             props.assign("BUILD_LIBS",",".join(lst))
             props.save(mkPath)
-            self.depsChanged.emit()
+            self.depsChanged.emit(path)
         
     def editDebugSettings(self):
         item=self.currentItem()
