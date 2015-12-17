@@ -19,7 +19,7 @@ except ImportError:
 from mainwindow import MainWindow
 import callbacks
 
-version = '0.11'
+version = '0.20'
 
 def migrateSettings(oldver):
     print "Migrating settings from {} to {}".format(oldver,version)
