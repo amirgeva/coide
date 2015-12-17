@@ -190,3 +190,8 @@ def findLine(path,prefix,removePrefix=False):
             return line[len(prefix):]
     return ''
        
+def browseDirectory(lineedit):
+    cur=lineedit.text()
+    cur=QtGui.QFileDialog.getExistingDirectory(caption="Working Directory",directory=cur)
+    if cur:
+        lineedit.setText(cur)
