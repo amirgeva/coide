@@ -67,12 +67,14 @@ class SettingsTabDialog(QtGui.QDialog):
         # fields maps setting name to widget
         self.fields={}
         
-    def addWidgets(self,desc):
+    def addWidgets(self,desc,main):
         '''
         Add widgets based on the description in desc
         which is a list of tuples describing individual widgets
         '''
         layout=QtGui.QGridLayout()
+        def createCallback(main,name):
+            return lambda: main.onChange(name)
         row=0
         for d in desc:
             n=len(d)
@@ -84,18 +86,22 @@ class SettingsTabDialog(QtGui.QDialog):
             if details=='STR':
                 w=QtGui.QLineEdit()
                 w.setText(d[3])
+                w.textEdited.connect(createCallback(main,name))
             if details=='EDIT':
                 w=QtGui.QPlainTextEdit()
                 w.setPlainText(d[3].replace('\\n','\n'))
+                w.textChanged.connect(createCallback(main,name))
             if details=='CB':
                 w=QtGui.QCheckBox()
                 check(w,d[3])
+                w.stateChanged.connect(createCallback(main,name))
             if '|' in details:
                 w=QtGui.QComboBox()
                 opts=details.split('|')
                 for o in opts:
                     w.addItem(o)
                 setCombo(w,d[3])
+                w.currentIndexChanged.connect(createCallback(main,name))
             if (w):
                 self.fields[name]=w
                 layout.addWidget(w,row,1)
@@ -108,10 +114,11 @@ class SettingsTabDialog(QtGui.QDialog):
             if props.has(name):
                 load(w,props.get(name))
     
-    def save(self,props):
+    def save(self,props,changes):
         for name in self.fields:
-            w=self.fields.get(name)
-            props.assign(name,save(w))
+            if len(changes)==0 or name in changes:
+                w=self.fields.get(name)
+                props.assign(name,save(w))
             
                 
 class BuildSettingsDialog(QtGui.QDialog):
@@ -122,12 +129,13 @@ class BuildSettingsDialog(QtGui.QDialog):
         s=QtCore.QSettings()
         check(self.parallelCB,s.value('parallel_make',False).toBool())
         check(self.symscanCB,s.value('symbol_scan',True).toBool())
+        self.changes=set()
         self.tabWidget.clear()
         self.tabs=[]
         for t in tabs:
             desc=tabs.get(t)
             dlg=SettingsTabDialog()
-            dlg.addWidgets(desc)
+            dlg.addWidgets(desc,self)
             self.tabs.append((t,dlg))
         for (name,tab) in self.tabs:
             self.tabWidget.addTab(tab,name)
@@ -151,6 +159,9 @@ class BuildSettingsDialog(QtGui.QDialog):
         self.projTree.scrollToItem(firstItem)
         dir=firstItem.data(0,DirectoryRole).toString()
         self.prevPath=os.path.join(dir,'mk.cfg')
+        
+    def onChange(self,name):
+        self.changes.add(name)
         
     def findItem(self,parent,path):
         n=parent.childCount()
@@ -176,13 +187,15 @@ class BuildSettingsDialog(QtGui.QDialog):
         res=QtGui.QMessageBox.question(self,'Delete File','Delete '+self.prevPath,QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
         if res==QtGui.QMessageBox.Yes:
             try:
+                self.changes=set()
                 os.remove(self.prevPath)
             except OSError:
                 pass
         
     def selectionChanged(self):
-        if self.prevPath:
+        if self.prevPath and len(self.changes)>0:
             self.save(self.prevPath)
+        self.changes=set()
         item=self.projTree.currentItem()
         dir=item.data(0,DirectoryRole).toString()
         path=os.path.join(dir,'mk.cfg')
@@ -197,7 +210,10 @@ class BuildSettingsDialog(QtGui.QDialog):
     def save(self,path):
         props=Properties(path)
         for (name,tab) in self.tabs:
-            tab.save(props)
+            changes=self.changes
+            if path==self.workspaceDir:
+                changes=set()
+            tab.save(props,changes)
         props.save(path)
         
 
