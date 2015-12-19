@@ -5,6 +5,15 @@ Lightweight C++ IDE for Linux
 
 [Download](https://github.com/amirgeva/coide/releases) the latest release.
 
+Requirements:
+
+* python-qt4
+* python-sip
+* g++ 4.8 or higher
+* recent gdb
+
+To start, run the `coide.py` main script
+
 Or install from the ppa using:
 ```
 sudo apt-add-repository ppa:amirgeva/mlgsoft
