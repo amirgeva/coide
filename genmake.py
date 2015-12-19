@@ -293,7 +293,7 @@ class Generator:
         props.assign("BUILD_WARN","None (-w)")
         props.assign("BUILD_CPP11","True")
         props.assign("BUILD_CUSTOM_COMPILE","")
-        props.assign("BUILD_OPT","-O2")
+        props.assign("OPT_Release","-O2")
             
     def generate(self,dir,files):
         #props=mkProps(Properties(),root)
@@ -315,7 +315,7 @@ class Generator:
             del stack[-1]
         output=os.path.join(dir,"Makefile")
         o=open(output,"w")
-        opt=props.get("BUILD_OPT")
+        opt=props.get("OPT_Release")
         if len(opt)==0:
             opt="-O2"
         if opt=="Custom":
