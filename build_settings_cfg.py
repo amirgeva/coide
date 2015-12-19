@@ -8,7 +8,7 @@
 
 tabs={
     'Compile':[
-        ('BUILD_OPT','Optimization','-O0|-O1|-O2|-O3','-O2'),
+        ('OPT_Release','Optimization','-O0|-O1|-O2|-O3','-O2'),
         ('COMPILE_WARN','Warnings','Default|None (-w)|All (-Wall)','Default'),
         ('COMPILE_PEDANTIC','Pedantic','CB',False,'-pedantic-errors'),
         ('COMPILE_WARNERR','Warning as errors','CB',False,'-Werror'),
