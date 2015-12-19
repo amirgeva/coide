@@ -20,7 +20,7 @@ class GDBWrapper:
     """
 
     def __init__(self,bps,args,dir):
-        """ Start gdb.  dataRoot indicates location of parsers """
+        """ Start gdb. """
         self.breakpoints=bps
         self.breakpoints.breakpointsChanged.connect(self.setBreakpoints)
         dataRoot=os.path.dirname(os.path.abspath(__file__))
@@ -30,9 +30,9 @@ class GDBWrapper:
         self.dumpLog=None
         # During development create a dump log
         if len(os.getenv('COIDE',''))>0:
+            self.parseCount=0
             self.dumpLog=open('dump.log','w')
         self.initHandlers()
-        self.initializeParsers(os.path.join(dataRoot,"parsers"))
         self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
         fcntl.fcntl(self.gdb.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
         
@@ -365,64 +365,8 @@ class GDBWrapper:
             lines,ok=self.read()
             if ok:
                 self.running=False
-
-    def initializeParsers(self,parsersDir):
-        """ Search and load all found parser source (py) files """
-        self.parsers={}
-        self.replaces={}
-        try:
-            files=os.listdir(parsersDir)
-        except OSError:
-            dir=os.path.join(sys.prefix,'share/debugui')
-            if parsersDir!=dir:
-                self.initializeParsers(dir)
-            return
-        for f in files:
-            if f.endswith('.py'):
-                try:
-                    name=(os.path.splitext(f))[0]
-                    mod=imp.load_source(name,os.path.join(parsersDir,f))
-                    funcs=inspect.getmembers(mod,predicate=inspect.isroutine)
-                    found=0
-                    for func in funcs:
-                        if func[0]=='parse':
-                            self.parsers[name]=func[1]
-                            found+=1
-                        if func[0]=='replaces':
-                            fn=func[1]
-                            self.replaces.update(fn())
-                            found+=1
-                    #if found>0:
-                    #    print "Loaded parser {}".format(name)
-                except ImportError:
-                    pass
-
-    def recursiveParse(self,l):
-        """ For complex types, parses the value of a subtree """
-        n=len(l)
-        if n==2 and l[0] in self.recursiveTypes:
-            for i in xrange(0,n):
-                child=l[i]
-                if type(child) is list:
-                    self.recursiveParse(child)
-                else:
-                    pr=self.parsePrintout(child)
-                    if len(pr)>0:
-                        l[i]=pr
-
-    def parsePrintout(self,text):
-        """ Parses the evaluated value of expressions """
-        text=parseutils.removeVar(text)
-        text=parseutils.removeRef(text)
-        for parser in self.parsers.keys():
-            func=self.parsers.get(parser)
-            res=func(text)
-            self.recursiveParse(res)
-            if len(res)>0:
-                return res
-        return []
         
-    def evaluate(self,var):
+    def printVar(self,var):        
         """ Evaluates the value of expression """
         if self.active or not self.running:
             return ''
@@ -438,18 +382,14 @@ class GDBWrapper:
             lines='\n'.join(lines)
         while lines.find('  ')>=0:
             lines=lines.replace('  ',' ')
-        nameValuePair=self.extractVariableValue(lines)
-        return nameValuePair[1]
+        return lines
         
-    def extractVariableValue(self,lines):
-        var=lines[0:lines.find(' ')]
-        for k in self.replaces.keys():
-            lines=lines.replace(k,self.replaces.get(k))
-        self.log("Parsing:\n"+lines)
-        res=self.parsePrintout(lines)
-        self.log(str(res))
-        return (var,res)
-            
+    def evaluate(self,var):
+        import xparse
+        from xparse.xparse import Node
+        lines=self.printVar(var)
+        return xparse.parse(lines)
+        
     def getLocals(self):
         res={}
         if self.active or not self.running:
@@ -472,15 +412,11 @@ class GDBWrapper:
             groups[-1].append(line)
         for group in groups:
             all='\n'.join(group)
-            (var,val)=self.extractVariableValue(all)
-            res[var]=val
+            import xparse
+            from xparse.xparse import Node
+            cur=xparse.parse(all)
+            if cur:
+                res[cur.name]=cur
         return res
         
 
-
-if __name__ == '__main__':
-    s='$7 = {name = "Check", value = 45}'
-    print sys.argv[0]
-    d=GDBWrapper('.',['tst'])
-    res=d.parsePrintout(s)
-    print res
