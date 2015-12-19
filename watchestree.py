@@ -6,7 +6,6 @@ class WatchesTree(QtGui.QTreeWidget):
     def __init__(self,parent=None):
         super(WatchesTree,self).__init__(parent)
         
-        
     def keyPressEvent(self,event):
         if event.key() == QtCore.Qt.Key_Delete:
             for item in self.selectedItems():
