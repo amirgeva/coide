@@ -1,0 +1,2 @@
+# Command to print entire containers
+set print elements 0
