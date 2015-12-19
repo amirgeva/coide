@@ -981,8 +981,8 @@ class MainWindow(QtGui.QMainWindow):
             item=QtGui.QTreeWidgetItem([var])
             self.localsTree.addTopLevelItem(item)
             res=locals.get(var)
-            if len(res)>0:
-                self.updateWatchValue(res,item)
+            if res:
+                self.updateWatchItem(item,res)
         
     def updateWatches(self):
         """ Re-evaluate the value of each watch and update view """
@@ -992,28 +992,19 @@ class MainWindow(QtGui.QMainWindow):
             item.takeChildren()
             expr=item.text(0)
             res=self.debugger.evaluate(expr)
-            if len(res)==0:
-                item.setText(1,'')
-            else:
-                self.updateWatchValue(res,item)
+            if res:
+                self.updateWatchItem(item,res)
 
-    def updateWatchValue(self,res,item):
-        if res[0]=='string' or res[0]=='number':
-            item.setText(1,res[1])
-        elif res[0]=='vector' or res[0]=='list':
-            del res[0]
-            parseutils.addSequence(item,res)
-        elif res[0]=='map':
-            del res[0]
-            parseutils.addMapping(item,res)
-        elif res[0]=='set':
-            del res[0]
-            parseutils.addMapping(item,res)
-        elif res[0]=='struct':
-            item.setText(1,parseutils.flatten(res))
-            del res[0]
-            parseutils.addMapping(item,res)
-        
+    def updateWatchItem(self,item,root):
+        item.setText(1,root.value)
+        def addChildren(item,node):
+            for c in node.children:
+                subitem=QtGui.QTreeWidgetItem([c.name])
+                subitem.setText(1,c.value)
+                item.addChild(subitem)
+                addChildren(subitem,c)
+        addChildren(item,root)
+
                     
     def updateCallstack(self):
         bt=self.debugger.getBackTrace()
