@@ -49,15 +49,14 @@ class Parser:
         name=''
         try:
             while True:
-                t,v=self.lexer.analyze()
+                t,v=self.lexer.analyze(True)
                 if t=='LTAG':
                     tagdepth=tagdepth+1
-                elif t=='RTAG':
+                if t=='RTAG':
                     tagdepth=tagdepth-1
-                else:
-                    name=name+v
                 if tagdepth<1:
                     break
+                name=name+v
         except EndOfText,e:
             t="END"
         return name
@@ -102,18 +101,23 @@ class Parser:
                 break
             if t=='LBRACE':
                 self.lexer.push()
-                child=Node('struct')
+                child=Node(str(count))
+                count=count+1
                 node.add_child(child)
                 self.parse_children(child)
-            if t=='LBRACKET':
+                continue
+            elif t=='LBRACKET':
                 t,name=self.lexer.analyze()
                 self.expect('RBRACKET')
                 self.expect('EQUALS')
                 child=Node(name)
                 v=''
-            if t=='LTAG': 
+            elif t=='LTAG': 
                 # base class
-                child=Node(self.parseName(1))
+                name=self.parseName(1)
+                if name=='No data fields':
+                    continue
+                child=Node(name)
                 self.expect('EQUALS')
                 v=''
             elif t=='IDENT':
