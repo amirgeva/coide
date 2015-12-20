@@ -930,20 +930,21 @@ class MainWindow(QtGui.QMainWindow):
         """ Query current position and update the code view """
         changed=False
         poslist=self.debugger.getCurrentPos()
-        for (path,line) in poslist:
-            if self.getCurrentFile()==path:
-                if self.currentLine!=line:
+        if poslist and len(poslist)>0:
+            for (path,line) in poslist:
+                if self.getCurrentFile()==path:
+                    if self.currentLine!=line:
+                        changed=True
+                    break
+                if self.openSourceFile(path):
                     changed=True
-                break
-            if self.openSourceFile(path):
-                changed=True
-                break
-        e=self.editors.get(path)
-        if changed and e:
-            e.colorLine(line,'#0080ff')
-            e.cursorPosition=(line-1,1)
-            self.currentLine=line
-            e.ensureCursorVisible()
+                    break
+            e=self.editors.get(path)
+            if changed and e:
+                e.colorLine(line,'#0080ff')
+                e.cursorPosition=(line-1,1)
+                self.currentLine=line
+                e.ensureCursorVisible()
             
         
     def saveWatches(self):
