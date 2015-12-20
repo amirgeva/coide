@@ -45,21 +45,44 @@ class Parser:
             raise ParseException("Syntax error.  Expected {}, got {}\n{}".format(token,t,rest))
         return v
         
-    def parse(self,node,initvalue):
-        value=initvalue
+    def parseName(self,tagdepth):
+        name=''
         try:
             while True:
                 t,v=self.lexer.analyze()
-                if not t or t=='COMMA' or t=='RBRACE':
+                if t=='LTAG':
+                    tagdepth=tagdepth+1
+                elif t=='RTAG':
+                    tagdepth=tagdepth-1
+                else:
+                    name=name+v
+                if tagdepth<1:
                     break
-                if t=='LBRACE':
-                    value='struct'
-                    self.lexer.push()
-                    self.parse_children(node)
-                    break
-                if t=='EQUALS':
-                    self.parse_children(node)
-                    break
+        except EndOfText,e:
+            t="END"
+        return name
+        
+    def parse(self,node,initvalue):
+        value=initvalue
+        tagdepth=0
+        try:
+            while True:
+                t,v=self.lexer.analyze()
+                if t=='LTAG':
+                    tagdepth=tagdepth+1
+                if t=='RTAG':
+                    tagdepth=tagdepth-1
+                if tagdepth==0:
+                    if not t or t=='COMMA' or t=='RBRACE':
+                        break
+                    if t=='LBRACE':
+                        value='struct'
+                        self.lexer.push()
+                        self.parse_children(node)
+                        break
+                    if t=='EQUALS':
+                        self.parse_children(node)
+                        break
                 if len(value)>0:
                     value=value+' '
                 value=value+v
@@ -77,11 +100,21 @@ class Parser:
                 continue
             if t=='RBRACE':
                 break
+            if t=='LBRACE':
+                self.lexer.push()
+                child=Node('struct')
+                node.add_child(child)
+                self.parse_children(child)
             if t=='LBRACKET':
                 t,name=self.lexer.analyze()
                 self.expect('RBRACKET')
                 self.expect('EQUALS')
                 child=Node(name)
+                v=''
+            if t=='LTAG': 
+                # base class
+                child=Node(self.parseName(1))
+                self.expect('EQUALS')
                 v=''
             elif t=='IDENT':
                 self.expect('EQUALS')
