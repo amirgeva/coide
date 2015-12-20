@@ -288,11 +288,8 @@ class Generator:
         return True
         
     def assignDefaults(self,props):
-        props.assign("BUILD_WARNERR","False")
-        props.assign("BUILD_PEDANTIC","False")
-        props.assign("BUILD_WARN","None (-w)")
-        props.assign("BUILD_CPP11","True")
-        props.assign("BUILD_CUSTOM_COMPILE","")
+        props.assign("COMPILE_CPP11","-std=c++11")
+        props.assign("COMPILE_CUSTOM","")
         props.assign("OPT_Release","-O2")
             
     def generate(self,dir,files):
