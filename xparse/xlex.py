@@ -56,7 +56,7 @@ class Lexer:
     def get_rest(self):
         return self.text[self.pos:]
         
-    def analyze(self):
+    def analyze(self,include_white_space=False):
         if len(self.queue)>0:
             tokname,tokvalue = self.queue[0]
             del self.queue[0]
@@ -74,8 +74,9 @@ class Lexer:
                 self.pos = m.end()
                 tokname = m.lastgroup
                 tokvalue = m.group(tokname)
-                if tokname=='WS' or tokname=='NEWLINE':
-                    return self.analyze()
+                if not include_white_space:
+                    if tokname=='WS' or tokname=='NEWLINE':
+                        return self.analyze()
         self.lastToken=tokname
         self.lastValue=tokvalue
         return (tokname,tokvalue)
