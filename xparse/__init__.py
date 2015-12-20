@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from xparse import Parser
+from xparse import Parser, ParseException
 from xlex import TokenizerException,EndOfText
 
 def parse(text):
@@ -10,5 +10,7 @@ def parse(text):
         pass
     except EndOfText,e:
         pass
+    except ParseException,e:
+        print "Failed to parse '{}'".format(text)
 
 
