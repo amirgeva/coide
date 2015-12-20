@@ -45,6 +45,15 @@ class Parser:
             raise ParseException("Syntax error.  Expected {}, got {}\n{}".format(token,t,rest))
         return v
         
+    def readUntil(self,token):
+        res=''
+        while True:
+            t,v=self.lexer.analyze(True)
+            if t==token:
+                break
+            res=res+v
+        return res
+        
     def parseName(self,tagdepth):
         name=''
         try:
@@ -121,7 +130,8 @@ class Parser:
                 self.expect('EQUALS')
                 v=''
             elif t=='IDENT':
-                self.expect('EQUALS')
+                v=v+self.readUntil('EQUALS')
+                #self.expect('EQUALS')
                 child=Node(v)
                 v=''
             else:
