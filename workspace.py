@@ -40,7 +40,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.itemExpanded.connect(self.onExpanded)
 
     def onClose(self):
-        self.saveBreakpoints()
+        self.saveSettings()
         
     def setConfig(self,config):
         self.config=config
@@ -124,6 +124,12 @@ class WorkSpace(QtGui.QTreeWidget):
             if item:
                 self.expandItem(item)
         self.loadBreakpoints()
+        
+    def saveSettings(self):
+        self.saveBreakpoints()
+        settings=self.settings()
+        settings.setValue('mainproj',self.main.data(0,DirectoryRole).toString())
+        settings.sync()
         
     def onCollapsed(self,item):
         s=self.settings()
