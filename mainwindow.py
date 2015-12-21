@@ -525,7 +525,8 @@ class MainWindow(QtGui.QMainWindow):
             f.close()
             self.workspaceTree.setWorkspacePath(ws)
             self.workspaceTree.setMainPath(dir)
-            self.generateAll()
+            self.workspaceTree.saveSettings()
+            self.generateAll()            
 
     def openWorkspace(self):
         d=QtGui.QFileDialog()
