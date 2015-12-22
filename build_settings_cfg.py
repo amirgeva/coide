@@ -2,7 +2,9 @@
 # are 'name' and 'title'
 # The third member can be either:
 #   1.  a string containing pipe delimited pulldown options
-#   2.  'CB' for a checkbox, followed by a boolean member for the default, and the flag that is used if true
+#       if an option has parentheses, its contents are the actual flag to be used
+#   2.  'CB' for a checkbox, followed by a boolean member for the default, 
+#       and the flag that is used if true
 #   3.  'STR' for a single-line string value, followed by the string default
 #   4.  'EDIT' for a multi-line string value, followed by the string default
 
@@ -15,6 +17,7 @@ tabs={
         ('COMPILE_CPP11','Standard','Default|-std=c++0x|-std=c++11','-std=c++11')
     ],
     'Link':[
+        ('LINK_PTHREAD','pthread','Default|On (-pthread)','Default')
     ],
     'Advanced':[
         ('COMPILE_CUSTOM','Custom Compile Flags','EDIT',''),
