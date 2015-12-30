@@ -10,7 +10,6 @@ from workspace import WorkSpace
 import output
 from consts import FileRole
 from gdbwrapper import GDBWrapper
-import parseutils
 from watchestree import WatchesTree
 from breakpoints import BreakpointsDB
 from properties import Properties
