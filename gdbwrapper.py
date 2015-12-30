@@ -8,7 +8,6 @@ import inspect
 import imp
 import sys
 import time
-import parseutils
 import handlers
 
 class GDBWrapper:
