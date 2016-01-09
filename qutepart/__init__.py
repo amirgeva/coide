@@ -6,9 +6,10 @@ import os.path
 import logging
 import platform
 
+from PyQt4 import QtGui,QtCore
 from PyQt4.QtCore import QRect, Qt, pyqtSignal, QSettings
 from PyQt4.QtGui import QAction, QApplication, QColor, QBrush, \
-                        QDialog, QFont, \
+                        QDialog, QFont, QHelpEvent,\
                         QIcon, QKeySequence, QPainter, QPen, QPalette, \
                         QPlainTextEdit, \
                         QPrintDialog, QTextCharFormat, QTextCursor, \
@@ -35,6 +36,7 @@ logger.addHandler(consoleHandler)
 
 logger.setLevel(logging.ERROR)
 
+evaluator=None
 
 # After logging setup
 import qutepart.syntax.loader
@@ -273,6 +275,8 @@ class Qutepart(QPlainTextEdit):
         self._lintMarks = {}
         
         self._bpMarks = {}
+        
+        self.setToolTip("stub")
 
         self.blockCountChanged.connect(self._updateLineNumberAreaWidth)
         self.updateRequest.connect(self._updateSideAreas)
@@ -292,6 +296,20 @@ class Qutepart(QPlainTextEdit):
         self.actToggleBreakpoint = QAction('Toggle Breakpoint',self,triggered=self.toggleBreakpoint)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
+
+    def event(self,event):
+        if isinstance(event,QHelpEvent):
+            pos=QtCore.QPoint(event.x() - (self._lineNumberArea.width() + self._markArea.width()), event.y())
+            c=self.cursorForPosition(pos)
+            c.select(QTextCursor.WordUnderCursor)
+            text=c.selectedText()
+            if not evaluator or not text:
+                return True
+            value=evaluator(text)
+            if not value:
+                return True
+            self.setToolTip(value)
+        return super(Qutepart,self).event(event)
 
     def showContextMenu(self,pos):
         menu=self.createStandardContextMenu()
