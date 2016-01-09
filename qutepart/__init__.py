@@ -328,6 +328,7 @@ class Qutepart(QPlainTextEdit):
     def setPath(self,path):
         self.path=path
         self._completer.setDir(os.path.dirname(path))
+        self._completer.setFilename(os.path.basename(path))
 
     def _initActions(self):
         """Init shortcuts for text editing
