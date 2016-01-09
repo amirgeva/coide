@@ -74,13 +74,13 @@ def appendLine(output,line):
             appendColorLine(output,line,color)
 
 def runcmd(dir,cmdlist):
-    return subprocess.Popen(cmdlist, shell=False, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
+    return subprocess.Popen(cmdlist, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,cwd=dir)
     
 def run(dir,cmd,*args):
     return runcmd(dir,[cmd]+list(args))
 
 def call(dir,cmd,*args):
-    return runcmd(dir,[cmd]+list(args)).communicate()
+    return runcmd(dir,[cmd]+list(args)).communicate('')
 
 def shellrun(dir,cmd):
     return subprocess.Popen(['-c',cmd],shell=True, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
