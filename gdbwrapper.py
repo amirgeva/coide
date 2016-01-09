@@ -389,6 +389,25 @@ class GDBWrapper:
         lines=self.printVar(var)
         return xparse.parse(lines)
         
+    def flatten(self,root):
+        if not root:
+            return ''
+        res=root.value
+        if len(root.children)>0:
+            res=res+' { '
+            index=0
+            for c in root.children:
+                if index>0:
+                    res=res+', '
+                res=res+self.flatten(c)
+                index=index+1
+            res=res+' } '
+        return res
+        
+    def evaluateAsText(self,var):
+        root=self.evaluate(var)
+        return self.flatten(root)
+
     def getLocals(self):
         res={}
         if self.active or not self.running:
