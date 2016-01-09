@@ -194,6 +194,7 @@ class MainWindow(QtGui.QMainWindow):
         ma.addAction(QtGui.QAction('&Clear',self,triggered=self.clearBreakpoints))
         
         m=bar.addMenu('&Settings')
+        m.addAction(QtGui.QAction('&General',self,triggered=self.settingsGeneral))
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
         m.addAction(QtGui.QAction('&Templates',self,triggered=self.settingsTemplates))
@@ -271,6 +272,14 @@ class MainWindow(QtGui.QMainWindow):
             d.save()
             self.updateTemplates()
 
+    def settingsGeneral(self):
+        """ Show the general settings """
+        from settings import GeneralSettingsDialog
+        d=GeneralSettingsDialog()
+        if d.exec_():
+            d.save()
+            self.updateGeneralSettings()
+
     def settingsEditor(self):
         """ Show the editor settings """
         from settings import EditorSettingsDialog
@@ -307,6 +316,12 @@ class MainWindow(QtGui.QMainWindow):
         #self.loadFont('watchesfont',self.stackList)
         self.loadFont('watchesfont',self.outputEdit)
         self.loadFont('sourcesfont',self.workspaceTree)
+        
+    def updateGeneralSettings(self):
+        """ Apply general settings """
+        s=QtCore.QSettings()
+        sortFiles=s.value('sortFiles',True).toBool()
+        self.workspaceTree.setSorting(sortFiles)
         
     def updateEditorsSettings(self):
         """ Apply editor settings to all open tabs """
