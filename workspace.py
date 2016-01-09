@@ -33,11 +33,16 @@ class WorkSpace(QtGui.QTreeWidget):
         self.src=None
         self.debug=('','')
         s=QtCore.QSettings()
+        self.sorting=s.value('sortFiles',True).toBool()
         self.root=s.value('workspace').toString()
         self.wsini=os.path.join(self.root,'settings.ini')
         self.config="Debug"
         self.itemCollapsed.connect(self.onCollapsed)
         self.itemExpanded.connect(self.onExpanded)
+        
+    def setSorting(self,sorting):
+        self.sorting=sorting
+        # apply sort
 
     def onClose(self):
         self.saveSettings()
@@ -352,6 +357,8 @@ class WorkSpace(QtGui.QTreeWidget):
         self.scanDirectory('src')
         self.scanDirectory('include')
         self.loadSettings()
+        if self.sorting:
+            self.sortItems(0,QtCore.Qt.AscendingOrder)
     
     def setWorkspacePath(self,path):
         self.saveBreakpoints()
