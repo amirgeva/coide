@@ -97,9 +97,26 @@ def extractFlags(s):
         g=m.groups()
         return g[0]
     return ""
+    
+stdIncludes=[]
+
+def fillStdIncludes():
+    (out,err)=utils.call('.','/usr/bin/env','g++','-E','-x','c++','-','-v')
+    found=False
+    for line in err.split('\n'):
+        line=line.strip()
+        if line == 'End of search list.':
+            found=False
+        if line == '#include <...> search starts here:':
+            found=True
+        else:
+            if found:
+                stdIncludes.append(line)
 
 class Generator:
     def __init__(self,root):
+        if len(stdIncludes)==0:
+            fillStdIncludes()
         self.root=root
         self.globalInc=os.path.join(root,'include')
         self.srcDir=os.path.join(root,'src')
@@ -284,7 +301,7 @@ class Generator:
                         hdeps.append(hpath)
             o.write('{}: {} {}\n'.format(objs[i],src,' '.join(hdeps)))
             o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
-        
+            
         return True
         
     def assignDefaults(self,props):
@@ -317,12 +334,17 @@ class Generator:
             opt="-O2"
         if opt=="Custom":
             opt=""
+        o.write('INC_STD=-I{}\n'.format(' -I'.join(stdIncludes)))
         o.write('OPT_Release={}\n'.format(opt))
         o.write('OPT_Debug=-g\n')
         o.write('\ndefault: Release\n\n')
         self.generateConfig(dir,files,"Release",o,props)
         if self.generateConfig(dir,files,"Debug",o,props):
             pass
+        o.write('\nclang_complete:\n')
+        o.write('\tclang -cc1 -std=c++11 -x c++ $(INC_STD) $(INC_Release) -w -fsyntax-only ')
+        o.write('-code-completion-macros -v -code-completion-at -:$(LINE):$(COL) -\n\n')        
+
         o.close()
         
 
