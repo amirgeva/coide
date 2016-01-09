@@ -5,7 +5,7 @@ import re
 import time
 
 from PyQt4.QtCore import pyqtSignal, QAbstractItemModel, QEvent, QModelIndex, QObject, QSize, Qt, QTimer, Qt
-from PyQt4.QtGui import QCursor, QListView, QStyle
+from PyQt4.QtGui import QCursor, QListView, QStyle, QMessageBox
 
 from qutepart.htmldelegate import HTMLDelegate
 
@@ -362,6 +362,9 @@ class Completer(QObject):
     def setDir(self,dir):
         self.dir=dir
         
+    def setFilename(self,filename):
+        self.filename=filename
+        
     def parseClang(self,text):
         lines=text.split('\n')
         words=set()
@@ -385,9 +388,7 @@ class Completer(QObject):
         self._globalUpdateWordSetTimer.schedule(self._updateWordSet)
         (dot,row,col)=self._isDot()
         if self._qpart.clangCompletion and dot:
-            cmd=['clang','-xc++','-w','-fsyntax-only','-Xclang']
-            cmd.append('-code-completion-at=-:{}:{}'.format(row+1,col+1))
-            cmd.append('-')
+            cmd=['make','LINE={}'.format(row+1),'COL={}'.format(col+1),'clang_complete']
             try:
                 import subprocess
                 p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir)
@@ -398,8 +399,10 @@ class Completer(QObject):
                     self.invokeCompletion()
                     if self._widget:
                         self._widget.model().setDotWords(words)
-            except OSError:
-                pass
+            except OSError,e:
+                if e.errno==2:
+                    QMessageBox.warning(self._qpart,"clang not available","clang not installed.  Disabling completion.")
+                    self._qpart.clangCompletion=False
 
     def _updateWordSet(self):
         """Make a set of words, which shall be completed, from text
