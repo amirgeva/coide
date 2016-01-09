@@ -68,6 +68,18 @@ class FontSettingsDialog(QtGui.QDialog):
         settings.sync()
         super(FontSettingsDialog,self).accept()
 
+class GeneralSettingsDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(GeneralSettingsDialog,self).__init__(parent)
+        uis.loadDialog('general_settings',self)
+        s=QtCore.QSettings()
+        self.sortFilesCB.setCheckState(QtCore.Qt.Checked if s.value('sortFiles',True).toBool() else QtCore.Qt.Unchecked)
+    
+    def save(self):
+        s=QtCore.QSettings()
+        s.setValue('sortFiles',(self.sortFilesCB.checkState() == QtCore.Qt.Checked))
+        s.sync()
+    
 
 class EditorSettingsDialog(QtGui.QDialog):
     def __init__(self,parent=None):
