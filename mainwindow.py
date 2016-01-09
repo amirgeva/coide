@@ -5,7 +5,7 @@ import os
 import re
 import stat
 
-from qutepart import Qutepart
+import qutepart
 from workspace import WorkSpace
 import output
 from consts import FileRole
@@ -77,7 +77,6 @@ class MainWindow(QtGui.QMainWindow):
         # if the program has stopped at a breakpoint
         self.timer=QtCore.QTimer(self)
         self.timer.timeout.connect(self.update)
-        self.debugger=None
         self.runningWidget=None
         
         self.asyncPollTimer=QtCore.QTimer(self)
@@ -712,7 +711,7 @@ class MainWindow(QtGui.QMainWindow):
                     firstLine=lines[0]
                     s=QtCore.QSettings()
     
-                    editor=Qutepart()
+                    editor=qutepart.Qutepart()
                     editor.setPath(path)
                     editor.detectSyntax(sourceFilePath=path, firstLine=firstLine)
                     editor.lineLengthEdge = 1024
@@ -740,6 +739,8 @@ class MainWindow(QtGui.QMainWindow):
         path=item.data(0,FileRole).toString()
         if len(path)>0:
             self.openSourceFile(path)
+            if path in self.editors:
+                self.editors.get(path).setFocus(QtCore.Qt.MouseFocusReason)
 
     def goToSource(self,path,row,col,color=''):
         """
@@ -1005,7 +1006,6 @@ class MainWindow(QtGui.QMainWindow):
                 item.addChild(subitem)
                 addChildren(subitem,c)
         addChildren(item,root)
-
                     
     def updateCallstack(self):
         bt=self.debugger.getBackTrace()
@@ -1035,9 +1035,11 @@ class MainWindow(QtGui.QMainWindow):
         self.showDebugPanes()
         self.loadWatches()
         self.timer.start(50)
+        qutepart.evaluator=self.debugger.evaluateAsText
         
     def stopDebugger(self):
         if self.debugger:
+            qutepart.evaluator=None
             for path in self.editors:
                 e=self.editors.get(path)
                 e.colorLine(0,'')
