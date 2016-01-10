@@ -37,7 +37,7 @@ def appendOutput(output,text):
     #c.movePosition(QtGui.QTextCursor.End)
     #output.setTextCursor(c)
     #output.ensureCursorVisible()
-    output.appendPlainText(text)
+    output.appendLine(text)
 
 def appendColorLine(output,line,color):
     line=line.decode('utf8')
@@ -47,7 +47,7 @@ def appendColorLine(output,line,color):
     f.setForeground(QtGui.QBrush(QtGui.QColor(color)))
     c.setCharFormat(f)
     output.setTextCursor(c)
-    output.appendPlainText(line)
+    output.appendLine(line)
     
 
 def appendLine(output,line):
