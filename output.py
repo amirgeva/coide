@@ -2,6 +2,17 @@ import re
 from PyQt4 import QtGui, QtCore
 
 posStrPattern=re.compile('(.+):(\d+):(\d+):')
+tagPattern=re.compile('<[^<>]*>')
+
+def removeTags(s):
+    while True:
+        m=re.search(tagPattern,s)
+        if m:
+            s=s[0:m.start()]+s[m.end():]
+        else:
+            break
+    return s
+    
 
 class OutputWidget(QtGui.QPlainTextEdit):
     def __init__(self,pane,mainwin):
@@ -12,6 +23,7 @@ class OutputWidget(QtGui.QPlainTextEdit):
         self.cursorVisible=False
         self.cursorTimer=QtCore.QTimer(self)
         self.cursorTimer.timeout.connect(self.updateCursor)
+        self.errors=[]
         
     def mouseDoubleClickEvent(self,event):
         c=self.textCursor()
@@ -42,6 +54,42 @@ class OutputWidget(QtGui.QPlainTextEdit):
         
     def clearInput(self):
         self.input=[]
+        
+    def highlightLine(self,row):
+        c=self.textCursor()
+        c.movePosition(QtGui.QTextCursor.Start,QtGui.QTextCursor.MoveAnchor)
+        c.movePosition(QtGui.QTextCursor.NextBlock,QtGui.QTextCursor.MoveAnchor,row+1)
+        c.movePosition(QtGui.QTextCursor.PreviousBlock,QtGui.QTextCursor.KeepAnchor)
+        self.setTextCursor(c)
+        self.ensureCursorVisible()        
+        
+    def appendLine(self,line):
+        outputRow=self.blockCount()
+        self.appendPlainText(line)
+        p=line.find(' ')
+        if p>0:
+            posStr=line[0:p]
+            rest=line[(p+1):]
+            m=re.match(posStrPattern,posStr)
+            if m:
+                g=m.groups()
+                path=g[0]
+                row=int(g[1])
+                col=int(g[2])
+                msg=removeTags(rest)
+                self.errors.append((path,row,col,msg,outputRow))
+                
+    def getNextError(self):
+        if len(self.errors)==0:
+            return None
+        e=self.errors[0]
+        del self.errors[0]
+        self.errors.append(e)
+        return e
+        
+    def clearAll(self):
+        self.clear()
+        self.errors=[]
         
     def setBlinkingCursor(self,state):
         if state!=self.blinking:
