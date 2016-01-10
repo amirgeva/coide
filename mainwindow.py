@@ -743,6 +743,7 @@ class MainWindow(QtGui.QMainWindow):
                     editor.indentWidth = (s.value('indent',2).toInt())[0]
                     editor.text="".join(lines)
                     editor.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
+                    editor.setWorkspace(self.workspaceTree)
                     index=self.central.addTab(editor,os.path.basename(path))
                     self.central.setTabToolTip(index,path)
                     self.editors[path]=editor
