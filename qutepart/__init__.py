@@ -5,6 +5,7 @@
 import os.path
 import logging
 import platform
+import re
 
 from PyQt4 import QtGui,QtCore
 from PyQt4.QtCore import QRect, Qt, pyqtSignal, QSettings
@@ -41,6 +42,10 @@ evaluator=None
 # After logging setup
 import qutepart.syntax.loader
 binaryParserAvailable = qutepart.syntax.loader.binaryParserAvailable
+
+
+patIdentifier=re.compile('[A-Za-z_0-9]')
+patFilename=re.compile('[A-Za-z0-9_\-\.]')
 
 
 _ICONS_PATH = os.path.join(os.path.dirname(__file__), 'icons')
@@ -294,15 +299,31 @@ class Qutepart(QPlainTextEdit):
         self._updateExtraSelections()
         
         self.actToggleBreakpoint = QAction('Toggle Breakpoint',self,triggered=self.toggleBreakpoint)
+        self.actOpenHeader = QAction('Open Header',self,triggered=self.openHeader)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
+        self.workspace=None
+
+
+    def openHeader(self):
+        if self.workspace:
+            self.workspace.openFile(self.contextFilename)
+    
+    def getTextUnderMouse(self,pos,acceptPattern=patIdentifier):
+        pos=QtCore.QPoint(pos.x() - (self._lineNumberArea.width() + self._markArea.width()), pos.y())
+        c=self.cursorForPosition(pos)
+        c.movePosition(QtGui.QTextCursor.StartOfWord,QtGui.QTextCursor.MoveAnchor)
+        while True:
+            c.movePosition(QtGui.QTextCursor.NextCharacter,QtGui.QTextCursor.KeepAnchor)
+            s=c.selectedText()
+            last=s[-1:]
+            if not re.match(acceptPattern,last):
+                s=s[0:(len(s)-1)]
+                return s
 
     def event(self,event):
         if isinstance(event,QHelpEvent):
-            pos=QtCore.QPoint(event.x() - (self._lineNumberArea.width() + self._markArea.width()), event.y())
-            c=self.cursorForPosition(pos)
-            c.select(QTextCursor.WordUnderCursor)
-            text=c.selectedText()
+            text=self.getTextUnderMouse(event.pos())
             if not evaluator or not text:
                 return True
             value=evaluator(text)
@@ -312,23 +333,32 @@ class Qutepart(QPlainTextEdit):
         return super(Qutepart,self).event(event)
 
     def showContextMenu(self,pos):
+        self.contextFilename=self.getTextUnderMouse(pos,patFilename)
+        if self.workspace:
+            self.contextFilename=self.workspace.exists(self.contextFilename)
         menu=self.createStandardContextMenu()
         acts=menu.actions()
         if len(acts)>0:
             first=acts[0]
             menu.insertAction(first,self.actToggleBreakpoint)
+            if self.contextFilename:
+                menu.insertAction(first,self.actOpenHeader)
             menu.insertSeparator(first)
         else:
             menu.addAction(self.actToggleBreakpoint)
+            if self.contextFilename:
+                menu.addAction(self.actOpenHeader)
         cursor = self.cursorForPosition(pos)
         self.contextMenuLine = cursor.block().blockNumber()
         menu.exec_(self.viewport().mapToGlobal(pos))
-        
         
     def setPath(self,path):
         self.path=path
         self._completer.setDir(os.path.dirname(path))
         self._completer.setFilename(os.path.basename(path))
+        
+    def setWorkspace(self,ws):
+        self.workspace=ws
 
     def _initActions(self):
         """Init shortcuts for text editing
