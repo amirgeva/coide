@@ -180,6 +180,7 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Clean',self,triggered=self.clean))
         m.addAction(QtGui.QAction('&Rebuild',self,shortcut='Shift+F7',triggered=self.rebuild))
         m.addAction(QtGui.QAction('&Settings',self,shortcut='Ctrl+F7',triggered=self.buildSettings))
+        m.addAction(QtGui.QAction('&Next Error',self,shortcut='F4',triggered=self.nextError))
         
         m=bar.addMenu('&Debug')
         m.addAction(QtGui.QAction('&Run',self,shortcut='Ctrl+F5',triggered=self.runProject))
@@ -218,6 +219,12 @@ class MainWindow(QtGui.QMainWindow):
     def exitApp(self):
         self.close()
         
+    def nextError(self):
+        e=self.outputEdit.getNextError()
+        if e:
+            self.statusBar().showMessage(e[3])
+            self.goToSource(e[0],e[1],e[2],'#ff8080')
+            self.outputEdit.highlightLine(e[4])
 
     def onCopy(self):
         (e,p)=self.currentEditor()        
@@ -435,7 +442,7 @@ class MainWindow(QtGui.QMainWindow):
         if utils.pendingAsync():
             self.statusBar().showMessage('Busy')
             return None
-        self.outputEdit.clear()
+        self.outputEdit.clearAll()
         p=utils.execute(self.outputEdit,path,cmd,*args)
         if not self.asyncPollTimer.isActive():
             self.asyncPollTimer.start(10)
