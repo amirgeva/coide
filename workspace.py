@@ -40,6 +40,24 @@ class WorkSpace(QtGui.QTreeWidget):
         self.itemCollapsed.connect(self.onCollapsed)
         self.itemExpanded.connect(self.onExpanded)
         
+    def openFile(self,path):
+        self.mainWindow.openSourceFile(path)
+        
+    def exists(self,filename):
+        def fileExists(root,filename):
+            if root.text(0)==filename:
+                return root.data(0,FileRole).toString()
+            for i in xrange(0,root.childCount()):
+                res=fileExists(root.child(i),filename)
+                if res:
+                    return res
+            return None
+        for i in xrange(0,self.topLevelItemCount()):
+            res=fileExists(self.topLevelItem(i),filename)
+            if res:
+                return res
+        return None
+        
     def setSorting(self,sorting):
         self.sorting=sorting
         # apply sort
