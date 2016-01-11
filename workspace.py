@@ -151,7 +151,8 @@ class WorkSpace(QtGui.QTreeWidget):
     def saveSettings(self):
         self.saveBreakpoints()
         settings=self.settings()
-        settings.setValue('mainproj',self.main.data(0,DirectoryRole).toString())
+        if self.main:
+            settings.setValue('mainproj',self.main.data(0,DirectoryRole).toString())
         settings.sync()
         
     def onCollapsed(self,item):
