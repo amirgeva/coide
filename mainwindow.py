@@ -101,14 +101,17 @@ class MainWindow(QtGui.QMainWindow):
         
         """
         self.workspaceTree.onClose()
+        self.workspaceTree.saveTabs(self.central)
+        while self.central.count()>0:
+            if not self.closeFile():
+                event.ignore()
+                return
+
         self.timer.stop()
         self.generateTimer.stop()
         if self.debugger:
             self.debugger.closingApp()
-        self.workspaceTree.saveTabs(self.central)
             
-        while self.central.count()>0:
-            self.closeFile()
         settings = QtCore.QSettings()
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
@@ -604,7 +607,8 @@ class MainWindow(QtGui.QMainWindow):
     def closeAllTabs(self):
         while self.central.count()>0:
             if not self.closeTab(0):
-                return
+                return False
+        return True
     
     def closeTab(self,index):
         path=self.central.tabToolTip(index)
@@ -628,15 +632,15 @@ class MainWindow(QtGui.QMainWindow):
                 elif rc == QtGui.QMessageBox.Cancel:
                     return False
             del self.editors[path]
-            self.central.removeTab(index)
-            return True
-        return False
+        self.central.removeTab(index)
+        return True
 
     def closeFile(self):
         n=self.central.tabBar().count()
         if n>0:
             index=self.central.currentIndex()
-            self.closeTab(index)
+            return self.closeTab(index)
+        return False
             
     def currentEditor(self):
         if self.central.count()>0:
