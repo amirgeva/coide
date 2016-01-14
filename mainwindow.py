@@ -54,6 +54,7 @@ class MainWindow(QtGui.QMainWindow):
         self.central.tabCloseRequested.connect(self.closeTab)
         
         self.setupMenu()
+        self.setupContextMenuItems()
         self.setupToolbar(rootDir)
         self.showWorkspacePane()
         self.showOutputPane()
@@ -202,6 +203,15 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
         m.addAction(QtGui.QAction('&Templates',self,triggered=self.settingsTemplates))
+
+    def setupContextMenuItems(self):
+        self.contextMenuItems=[
+            QtGui.QAction('Toggle Breakpoint',self,triggered=self.toggleBreakpoint)
+        ]
+        
+    def insertContextMenuItems(self,menu):
+        pass
+        
 
     def setupToolbar(self,rootDir):
         """ Creates the application main toolbar """
