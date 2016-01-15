@@ -216,7 +216,7 @@ class Qutepart(QPlainTextEdit):
     indentWidthChanged = pyqtSignal(int)
     indentUseTabsChanged = pyqtSignal(bool)
     eolChanged = pyqtSignal(unicode)
-    breakpointToggled = pyqtSignal(unicode,int)
+    #breakpointToggled = pyqtSignal(unicode,int)
 
     LINT_ERROR = 'e'
     LINT_WARNING = 'w'
@@ -298,19 +298,19 @@ class Qutepart(QPlainTextEdit):
         self._updateLineNumberAreaWidth(0)
         self._updateExtraSelections()
         
-        self.actToggleBreakpoint = QAction('Toggle Breakpoint',self,triggered=self.toggleBreakpoint)
-        self.actOpenHeader = QAction('Open Header',self,triggered=self.openHeader)
+        #self.actToggleBreakpoint = QAction('Toggle Breakpoint',self,triggered=self.toggleBreakpoint)
+        #self.actOpenHeader = QAction('Open Header',self,triggered=self.openHeader)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
+        self.mainWindow=None
         self.workspace=None
 
 
-    def openHeader(self):
-        if self.workspace:
-            self.workspace.openFile(self.contextFilename)
+#    def openHeader(self):
+#        if self.workspace:
+#            self.workspace.openFile(self.contextFilename)
     
     def getTextUnderMouse(self,pos,acceptPattern=patIdentifier):
-        pos=QtCore.QPoint(pos.x() - (self._lineNumberArea.width() + self._markArea.width()), pos.y())
         c=self.cursorForPosition(pos)
         c.movePosition(QtGui.QTextCursor.StartOfWord,QtGui.QTextCursor.MoveAnchor)
         while True:
@@ -323,6 +323,7 @@ class Qutepart(QPlainTextEdit):
 
     def event(self,event):
         if isinstance(event,QHelpEvent):
+            pos=QtCore.QPoint(event.pos().x() - (self._lineNumberArea.width() + self._markArea.width()), event.pos().y())
             text=self.getTextUnderMouse(event.pos())
             if not evaluator or not text:
                 return True
@@ -334,20 +335,22 @@ class Qutepart(QPlainTextEdit):
 
     def showContextMenu(self,pos):
         self.contextFilename=self.getTextUnderMouse(pos,patFilename)
-        if self.workspace:
-            self.contextFilename=self.workspace.exists(self.contextFilename)
+#        if self.workspace:
+#            self.contextFilename=self.workspace.exists(self.contextFilename)
         menu=self.createStandardContextMenu()
-        acts=menu.actions()
-        if len(acts)>0:
-            first=acts[0]
-            menu.insertAction(first,self.actToggleBreakpoint)
-            if self.contextFilename:
-                menu.insertAction(first,self.actOpenHeader)
-            menu.insertSeparator(first)
-        else:
-            menu.addAction(self.actToggleBreakpoint)
-            if self.contextFilename:
-                menu.addAction(self.actOpenHeader)
+        if self.mainWindow:
+            self.mainWindow.insertContextMenuItems(self,menu)
+#        acts=menu.actions()
+#        if len(acts)>0:
+#            first=acts[0]
+#            menu.insertAction(first,self.actToggleBreakpoint)
+#            if self.contextFilename:
+#                menu.insertAction(first,self.actOpenHeader)
+#            menu.insertSeparator(first)
+#        else:
+#            menu.addAction(self.actToggleBreakpoint)
+#            if self.contextFilename:
+#                menu.addAction(self.actOpenHeader)
         cursor = self.cursorForPosition(pos)
         self.contextMenuLine = cursor.block().blockNumber()
         menu.exec_(self.viewport().mapToGlobal(pos))
@@ -356,6 +359,9 @@ class Qutepart(QPlainTextEdit):
         self.path=path
         self._completer.setDir(os.path.dirname(path))
         self._completer.setFilename(os.path.basename(path))
+        
+    def setMainWindow(self,mw):
+        self.mainWindow=mw
         
     def setWorkspace(self,ws):
         self.workspace=ws
@@ -630,12 +636,12 @@ class Qutepart(QPlainTextEdit):
             self._bpMarks = {}
             self.update()
 
-    def toggleBreakpoint(self):
-        self.toggleLineBreakpoint(self.contextMenuLine)
-
-    def toggleLineBreakpoint(self,line):
-        self.breakpointToggled.emit(self.path,line)
-        self.update()
+#    def toggleBreakpoint(self):
+#        self.toggleLineBreakpoint(self.contextMenuLine)
+#
+#    def toggleLineBreakpoint(self,line):
+#        self.breakpointToggled.emit(self.path,line)
+#        self.update()
 
     @property
     def lintMarks(self):
