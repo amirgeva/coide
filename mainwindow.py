@@ -11,7 +11,7 @@ import output
 from consts import FileRole
 from gdbwrapper import GDBWrapper
 from watchestree import WatchesTree
-from breakpoints import BreakpointsDB
+from breakpoints import BreakpointsDB, BreakpointDialog
 from properties import Properties
 import utils
 import genmake
@@ -243,6 +243,12 @@ class MainWindow(QtGui.QMainWindow):
         e=self.central.currentWidget()
         path=e.path
         line=e.contextMenuLine
+        bp=self.breakpoints.getBreakpoint(path,line)
+        if bp:
+            d=BreakpointDialog()
+            d.condition.setText(bp.condition)
+            if d.exec_():
+                bp.condition=d.condition.text()
         
     def contextOpenHeader(self):
         e=self.central.currentWidget()
