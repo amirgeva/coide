@@ -37,6 +37,12 @@ class BreakpointsDB(QtCore.QObject):
         del bps[line]
         self.breakpointsChanged.emit()
         
+    def hasBreakpoint(self,path,line):
+        if not path in self.breakpoints:
+            return False
+        bps=self.pathBreakpoints(path)
+        return line in bps
+        
     def toggleBreakpoint(self,path,line):
         bps=self.pathBreakpoints(path)
         if line in bps:
