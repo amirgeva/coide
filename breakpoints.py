@@ -1,9 +1,11 @@
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
+import uis
 
 class Breakpoint:
     def __init__(self,enabled=True,index=-1):
         self.enabled=enabled
         self.index=index
+        self.condition=''
 
 class BreakpointsDB(QtCore.QObject):
     
@@ -36,6 +38,9 @@ class BreakpointsDB(QtCore.QObject):
         bps=self.pathBreakpoints(path)
         del bps[line]
         self.breakpointsChanged.emit()
+        
+    def getBreakpoint(self,path,line):
+        return self.pathBreakpoints(path).get(line)
         
     def hasBreakpoint(self,path,line):
         if not path in self.breakpoints:
@@ -81,5 +86,11 @@ class BreakpointsDB(QtCore.QObject):
                 arr.append('1' if bp.enabled else '0')
             arr.append(';')
         return ''.join(arr)
-        
-        
+
+
+class BreakpointDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(BreakpointDialog,self).__init__(parent)
+        uis.loadDialog('breakpoint',self)
+    
+    
