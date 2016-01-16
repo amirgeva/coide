@@ -335,24 +335,11 @@ class Qutepart(QPlainTextEdit):
 
     def showContextMenu(self,pos):
         self.contextFilename=self.getTextUnderMouse(pos,patFilename)
-#        if self.workspace:
-#            self.contextFilename=self.workspace.exists(self.contextFilename)
         menu=self.createStandardContextMenu()
-        if self.mainWindow:
-            self.mainWindow.insertContextMenuItems(self,menu)
-#        acts=menu.actions()
-#        if len(acts)>0:
-#            first=acts[0]
-#            menu.insertAction(first,self.actToggleBreakpoint)
-#            if self.contextFilename:
-#                menu.insertAction(first,self.actOpenHeader)
-#            menu.insertSeparator(first)
-#        else:
-#            menu.addAction(self.actToggleBreakpoint)
-#            if self.contextFilename:
-#                menu.addAction(self.actOpenHeader)
         cursor = self.cursorForPosition(pos)
         self.contextMenuLine = cursor.block().blockNumber()
+        if self.mainWindow:
+            self.mainWindow.insertContextMenuItems(self,menu)
         menu.exec_(self.viewport().mapToGlobal(pos))
         
     def setPath(self,path):
