@@ -211,6 +211,9 @@ class MainWindow(QtGui.QMainWindow):
             ],
             'files':[
                 QtGui.QAction('Open Header',self,triggered=self.contextOpenHeader)
+            ],
+            'breakpoints':[
+                QtGui.QAction('Edit Breakpoint',self,triggered=self.contextEditBreakpoint)
             ]
         }
         
@@ -220,9 +223,14 @@ class MainWindow(QtGui.QMainWindow):
         if len(acts)>0:
             first=acts[0]
         actions=list(self.contextMenuItems.get('all'))
+        path=editor.path
+        line=editor.contextMenuLine
+        if self.breakpoints.hasBreakpoint(path,line):
+            actions.extend(self.contextMenuItems.get('breakpoints'))
         if self.workspaceTree.exists(editor.contextFilename):
             actions.extend(self.contextMenuItems.get('files'))
         menu.insertActions(first,actions)
+        menu.insertSeparator(first)
             
     def contextToggleBreakpoint(self):
         e=self.central.currentWidget()
@@ -230,6 +238,11 @@ class MainWindow(QtGui.QMainWindow):
         line=e.contextMenuLine
         self.breakpoints.toggleBreakpoint(path,line)
         e.update()
+
+    def contextEditBreakpoint(self):
+        e=self.central.currentWidget()
+        path=e.path
+        line=e.contextMenuLine
         
     def contextOpenHeader(self):
         e=self.central.currentWidget()
