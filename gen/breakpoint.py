@@ -38,6 +38,9 @@ class Ui_Dialog(object):
         Dialog.label = QtGui.QLabel(Dialog)
         Dialog.label.setGeometry(QtCore.QRect(20, 10, 71, 17))
         Dialog.label.setObjectName(_fromUtf8("label"))
+        Dialog.enabled = QtGui.QCheckBox(Dialog)
+        Dialog.enabled.setGeometry(QtCore.QRect(20, 50, 88, 22))
+        Dialog.enabled.setObjectName(_fromUtf8("enabled"))
 
         self.retranslateUi(Dialog)
         QtCore.QObject.connect(Dialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
@@ -47,4 +50,5 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(_translate("Dialog", "Breakpoint", None))
         Dialog.label.setText(_translate("Dialog", "Condition:", None))
+        Dialog.enabled.setText(_translate("Dialog", "Enabled", None))
 
