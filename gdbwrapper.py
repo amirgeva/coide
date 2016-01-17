@@ -306,10 +306,9 @@ class GDBWrapper:
         self.clearBreakpoints()
         for path in self.breakpoints.paths():
             bps=self.breakpoints.pathBreakpoints(path)
-            for line in bps:
-                bp=bps.get(line)
+            for bp in bps:
                 if bp.isEnabled():
-                    line=line+1
+                    line=bp.line()+1
                     self.setBreakpoint(path,line,bp.condition())
     
     def actStep(self):
