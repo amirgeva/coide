@@ -246,9 +246,9 @@ class MainWindow(QtGui.QMainWindow):
         bp=self.breakpoints.getBreakpoint(path,line)
         if bp:
             d=BreakpointDialog()
-            d.condition.setText(bp.condition)
+            d.condition.setText(bp.condition())
             if d.exec_():
-                bp.condition=d.condition.text()
+                bp.setCondition(d.condition.text())
         
     def contextOpenHeader(self):
         e=self.central.currentWidget()
