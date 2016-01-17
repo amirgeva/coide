@@ -2,16 +2,33 @@ from PyQt4 import QtCore, QtGui
 import uis
 import json
 
-class Breakpoint:
+class Breakpoint(QtGui.QTextBlockUserData):
     def __init__(self,data=None):
+        super(Breakpoint,self).__init__()
+        self.block=None
         if data:
             self.data=data
         else:
             self.data={
                 'enabled':True,
-                'index':-1,
+                'line':-1,
                 'condition':''
             }
+            
+    def line(self):
+        if self.block:
+            return self.block.blockNumber()
+        return self.data.get('line')
+            
+    def setBlock(self,block):
+        self.block=block
+        self.data['line']=block.blockNumber()
+        block.setUserData(self)
+        
+    def isValid(self):
+        if not self.block:
+            return False
+        return self.block.userData()==self
     
     def condition(self):
         return self.data.get('condition')
@@ -39,6 +56,32 @@ class Breakpoint:
         
     def load(self,s):
         self.data=json.loads(s)
+        
+class BreakpointList(list):
+    def __init__(self,*args):
+        list.__init__(self,*args)
+        
+    def findIndex(self,blockNumber):
+        i=0
+        for bp in self:
+            if bp.block:
+                if bp.block.blockNumber()==blockNumber:
+                    return i
+            else:
+                if bp.data.get('line')==blockNumber:
+                    return i
+            i=i+1
+        return -1
+        
+    def find(self,blockNumber):
+        index=self.findIndex(blockNumber)
+        if index<0:
+            return None
+        return self[index]
+        
+    def __contains__(self,blockNumber):
+        return self.findIndex(blockNumber)>=0
+
 
 class BreakpointEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -49,6 +92,13 @@ class BreakpointEncoder(json.JSONEncoder):
 class BreakpointsDB(QtCore.QObject):
     
     breakpointsChanged = QtCore.pyqtSignal()
+    
+    def testPrint(self):
+        for path in self.breakpoints:
+            blist=self.breakpoints.get(path)
+            for bp in blist:
+                if bp.block:
+                    print '{}:{} - Valid={}'.format(path,bp.block.blockNumber(),bp.isValid())
     
     def __init__(self):
         super(BreakpointsDB,self).__init__()
@@ -63,25 +113,33 @@ class BreakpointsDB(QtCore.QObject):
     def paths(self):
         return self.breakpoints.keys()
         
+    def updateLineNumbers(self,path):
+        if path in self.breakpoints:
+            bps=self.breakpoints.get(path)
+            for bp in bps:
+                if bp.block:
+                    bp.data['line']=bp.block.blockNumber()
+        
     def pathBreakpoints(self,path):
         if not path in self.breakpoints:
-            self.breakpoints[path]={}
+            self.breakpoints[path]=BreakpointList()
         return self.breakpoints.get(path)
         
-    def setBreakpoint(self,path,line,enabled):
+    def setBreakpoint(self,path,block):
         bps=self.pathBreakpoints(path)
-        bps[line]=Breakpoint()
-        if not enabled:
-            bps.get(line).disable()
-        self.breakpointsChanged.emit()
+        if not block.blockNumber() in bps:
+            bp=Breakpoint()
+            bp.setBlock(block)
+            bps.append(bp)
+            self.breakpointsChanged.emit()
         
-    def removeBreakpoint(self,path,line):
-        bps=self.pathBreakpoints(path)
-        del bps[line]
-        self.breakpointsChanged.emit()
+#    def removeBreakpoint(self,path,line):
+#        bps=self.pathBreakpoints(path)
+#        del bps[line]
+#        self.breakpointsChanged.emit()
         
     def getBreakpoint(self,path,line):
-        return self.pathBreakpoints(path).get(line)
+        return self.pathBreakpoints(path).find(line)
         
     def hasBreakpoint(self,path,line):
         if not path in self.breakpoints:
@@ -89,12 +147,19 @@ class BreakpointsDB(QtCore.QObject):
         bps=self.pathBreakpoints(path)
         return line in bps
         
-    def toggleBreakpoint(self,path,line):
-        bps=self.pathBreakpoints(path)
-        if line in bps:
-            del bps[line]
+    def toggleBreakpoint(self,editor):
+        bps=self.pathBreakpoints(editor.path)
+        block=editor.contextBlock
+        index=bps.findIndex(block.blockNumber())
+        if index>=0:
+            del bps[index]
         else:
-            bps[line]=Breakpoint()
+            b=Breakpoint()
+            b.setBlock(block)
+            bps.append(b)
+        self.breakpointsChanged.emit()
+        
+    def update(self):
         self.breakpointsChanged.emit()
 
     def load(self,s):
@@ -107,9 +172,7 @@ class BreakpointsDB(QtCore.QObject):
             self.breakpoints={}
             for path in all:
                 bps=all.get(path)
-                dst=self.pathBreakpoints(path)
-                for line in bps:
-                    dst[int(line)]=bps.get(line)
+                self.pathBreakpoints(path).extend(bps)
             self.breakpointsChanged.emit()
         except ValueError:
             print "Failed to load breakpoints from: '{}'".format(s)
