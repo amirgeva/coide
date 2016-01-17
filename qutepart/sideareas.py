@@ -80,6 +80,7 @@ class MarkArea(QWidget):
                              qpart.LINT_WARNING: self._loadIcon('lint-warning.png'),
                              qpart.LINT_NOTE: self._loadIcon('lint-note.png')}
         self._bpPixmap = self._loadIcon('bp.png')
+        self._bpcPixmap = self._loadIcon('bpcond.png')
 
     def _loadIcon(self, fileName):
         defaultSizePixmap = QPixmap(qutepart.getIconPath(fileName))
@@ -116,9 +117,13 @@ class MarkArea(QWidget):
                     yPos = top + ((height - pixMap.height()) / 2)  # centered
                     painter.drawPixmap(0, yPos, pixMap)
                     
-                if block.blockNumber() in self._qpart.bpMarks:
+                bp=self._qpart.bpMarks.get(block.blockNumber())
+                if bp:
                     yPos = top + ((height - self._bpPixmap.height()) / 2)  # centered
-                    painter.drawPixmap(0, yPos, self._bpPixmap)
+                    if bp.condition():
+                        painter.drawPixmap(0, yPos, self._bpcPixmap)
+                    else:
+                        painter.drawPixmap(0, yPos, self._bpPixmap)
 
                 if Bookmarks.isBlockMarked(block):
                     yPos = top + ((height - self._bookmarkPixmap.height()) / 2)  # centered
