@@ -235,9 +235,7 @@ class MainWindow(QtGui.QMainWindow):
             
     def contextToggleBreakpoint(self):
         e=self.central.currentWidget()
-        path=e.path
-        line=e.contextMenuLine
-        self.breakpoints.toggleBreakpoint(path,line)
+        self.breakpoints.toggleBreakpoint(e)
         e.update()
 
     def contextEditBreakpoint(self):
@@ -252,6 +250,7 @@ class MainWindow(QtGui.QMainWindow):
             if d.exec_():
                 bp.setCondition(d.condition.text())
                 bp.able(utils.getCheckbox(d.enabled))
+                self.breakpoints.update()
                 e.update()
                 
     def contextAbleBreakpoint(self):
@@ -264,6 +263,7 @@ class MainWindow(QtGui.QMainWindow):
                 bp.disable()
             else:
                 bp.enable()
+            self.breakpoints.update()
             e.update()
         
     def contextOpenHeader(self):
@@ -274,8 +274,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def markToggleBreakpoint(self,line):
         e=self.central.currentWidget()
-        path=e.path
-        self.breakpoints.toggleBreakpoint(path,line)
+        #path=e.path
+        self.breakpoints.toggleBreakpoint(e)
         e.update()
 
     def setupToolbar(self,rootDir):
@@ -578,6 +578,8 @@ class MainWindow(QtGui.QMainWindow):
                 time.sleep(1)
         
     def timer1000(self):
+        self.breakpoints.updateLineNumbers(self.central.currentWidget().path)
+        #self.breakpoints.testPrint()
         if self.timerCall:
             f=self.timerCall
             self.timerCall=None
@@ -830,7 +832,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.loadFont('codefont',editor)
                     self.central.tabBar().setCurrentIndex(index)
                     bps=self.breakpoints.pathBreakpoints(path)
-                    editor._bpMarks=bps
+                    editor.bpMarks=bps
                     editor._markArea.blockDoubleClicked.connect(self.markToggleBreakpoint)
                     return True
             except IOError:
