@@ -292,8 +292,11 @@ class GDBWrapper:
         self.write("delete")
         self.read()
         
-    def setBreakpoint(self,path,line):    
-        self.write('break {}:{}'.format(path,line))
+    def setBreakpoint(self,path,line,cond):
+        cmd='break {}:{}'.format(path,line)
+        if cond:
+            cmd=cmd+' if {}'.format(cond)
+        self.write(cmd)
         self.read()
         self.changed=True
     
@@ -305,9 +308,9 @@ class GDBWrapper:
             bps=self.breakpoints.pathBreakpoints(path)
             for line in bps:
                 bp=bps.get(line)
-                if bp.enabled:
+                if bp.isEnabled():
                     line=line+1
-                    self.setBreakpoint(path,line)
+                    self.setBreakpoint(path,line,bp.condition())
     
     def actStep(self):
         """ Single steps going into function calls """
