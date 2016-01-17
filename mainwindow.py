@@ -248,8 +248,10 @@ class MainWindow(QtGui.QMainWindow):
         if bp:
             d=BreakpointDialog()
             d.condition.setText(bp.condition())
+            utils.setCheckbox(d.enabled,bp.isEnabled())
             if d.exec_():
                 bp.setCondition(d.condition.text())
+                bp.able(utils.getCheckbox(d.enabled))
                 e.update()
                 
     def contextAbleBreakpoint(self):
