@@ -61,6 +61,17 @@ class BreakpointList(list):
     def __init__(self,*args):
         list.__init__(self,*args)
         
+    def removeInvalid(self):
+        index=0
+        res=False
+        while index<len(self):
+            if self[index].isValid():
+                index=index+1
+            else:
+                del self[index]
+                res=True
+        return res
+        
     def findIndex(self,blockNumber):
         i=0
         for bp in self:
@@ -93,12 +104,12 @@ class BreakpointsDB(QtCore.QObject):
     
     breakpointsChanged = QtCore.pyqtSignal()
     
-    def testPrint(self):
-        for path in self.breakpoints:
-            blist=self.breakpoints.get(path)
-            for bp in blist:
-                if bp.block:
-                    print '{}:{} - Valid={}'.format(path,bp.block.blockNumber(),bp.isValid())
+#    def testPrint(self):
+#        for path in self.breakpoints:
+#            blist=self.breakpoints.get(path)
+#            for bp in blist:
+#                if bp.block:
+#                    print '{}:{} - Valid={}'.format(path,bp.block.blockNumber(),bp.isValid())
     
     def __init__(self):
         super(BreakpointsDB,self).__init__()
@@ -114,11 +125,15 @@ class BreakpointsDB(QtCore.QObject):
         return self.breakpoints.keys()
         
     def updateLineNumbers(self,path):
+        res=[]
         if path in self.breakpoints:
             bps=self.breakpoints.get(path)
+            if bps.removeInvalid():
+                res.append(path)
             for bp in bps:
                 if bp.block:
                     bp.data['line']=bp.block.blockNumber()
+        return res
         
     def pathBreakpoints(self,path):
         if not path in self.breakpoints:
