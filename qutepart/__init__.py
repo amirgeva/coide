@@ -302,6 +302,7 @@ class Qutepart(QPlainTextEdit):
         #self.actOpenHeader = QAction('Open Header',self,triggered=self.openHeader)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
+        self.contextFilename=''
         self.mainWindow=None
         self.workspace=None
 
