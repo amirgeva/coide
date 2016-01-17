@@ -3,7 +3,8 @@ from xparse import Parser, ParseException
 from xlex import TokenizerException,EndOfText
 
 def parse(text):
-    #print "Parsing: '{}'".format(text)
+    if text=='No locals.':
+        return None
     try:
         if text.find('error reading variable:')>=0:
             return None
