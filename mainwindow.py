@@ -213,7 +213,8 @@ class MainWindow(QtGui.QMainWindow):
                 QtGui.QAction('Open Header',self,triggered=self.contextOpenHeader)
             ],
             'breakpoints':[
-                QtGui.QAction('Edit Breakpoint',self,triggered=self.contextEditBreakpoint)
+                QtGui.QAction('Edit Breakpoint',self,triggered=self.contextEditBreakpoint),
+                QtGui.QAction('Dis/Enable Breakpoint',self,triggered=self.contextAbleBreakpoint)
             ]
         }
         
@@ -249,12 +250,31 @@ class MainWindow(QtGui.QMainWindow):
             d.condition.setText(bp.condition())
             if d.exec_():
                 bp.setCondition(d.condition.text())
+                e.update()
+                
+    def contextAbleBreakpoint(self):
+        e=self.central.currentWidget()
+        path=e.path
+        line=e.contextMenuLine
+        bp=self.breakpoints.getBreakpoint(path,line)
+        if bp:
+            if bp.isEnabled():
+                bp.disable()
+            else:
+                bp.enable()
+            e.update()
         
     def contextOpenHeader(self):
         e=self.central.currentWidget()
         filename=self.workspaceTree.exists(e.contextFilename)
         if filename:
             self.workspaceTree.openFile(filename)
+
+    def markToggleBreakpoint(self,line):
+        e=self.central.currentWidget()
+        path=e.path
+        self.breakpoints.toggleBreakpoint(path,line)
+        e.update()
 
     def setupToolbar(self,rootDir):
         """ Creates the application main toolbar """
@@ -809,6 +829,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.central.tabBar().setCurrentIndex(index)
                     bps=self.breakpoints.pathBreakpoints(path)
                     editor._bpMarks=bps
+                    editor._markArea.blockDoubleClicked.connect(self.markToggleBreakpoint)
                     return True
             except IOError:
                 return False
