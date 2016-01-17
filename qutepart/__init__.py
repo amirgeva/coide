@@ -303,6 +303,8 @@ class Qutepart(QPlainTextEdit):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.contextFilename=''
+        self.contextMenuLine=1
+        self.contextBlock=None
         self.mainWindow=None
         self.workspace=None
 
@@ -338,7 +340,8 @@ class Qutepart(QPlainTextEdit):
         self.contextFilename=self.getTextUnderMouse(pos,patFilename)
         menu=self.createStandardContextMenu()
         cursor = self.cursorForPosition(pos)
-        self.contextMenuLine = cursor.block().blockNumber()
+        self.contextBlock = cursor.block()
+        self.contextMenuLine = self.contextBlock.blockNumber()
         if self.mainWindow:
             self.mainWindow.insertContextMenuItems(self,menu)
         menu.exec_(self.viewport().mapToGlobal(pos))
