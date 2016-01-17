@@ -52,6 +52,19 @@
     <string>Condition:</string>
    </property>
   </widget>
+  <widget class="QCheckBox" name="enabled">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>50</y>
+     <width>88</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enabled</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
