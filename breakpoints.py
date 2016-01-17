@@ -21,6 +21,12 @@ class Breakpoint:
         
     def isEnabled(self):
         return self.data.get('enabled')
+        
+    def able(self,state):
+        if state:
+            self.enable()
+        else:
+            self.disable()
     
     def enable(self):
         self.data['enabled']=True
