@@ -578,8 +578,11 @@ class MainWindow(QtGui.QMainWindow):
                 time.sleep(1)
         
     def timer1000(self):
-        self.breakpoints.updateLineNumbers(self.central.currentWidget().path)
-        #self.breakpoints.testPrint()
+        updates=self.breakpoints.updateLineNumbers(self.central.currentWidget().path)
+        for path in updates:
+            e=self.editors.get(path)
+            if e:
+                e.update()
         if self.timerCall:
             f=self.timerCall
             self.timerCall=None
