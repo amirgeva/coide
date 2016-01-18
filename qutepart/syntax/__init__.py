@@ -117,7 +117,7 @@ class Syntax:
     def _getTextType(self, lineData, column):
         """Get text type (letter)
         """
-        if lineData is None:
+        if lineData is None or not 1 in lineData:
             return ' '  # default is code
 
         textTypeMap = lineData[1]

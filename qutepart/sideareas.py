@@ -3,7 +3,7 @@
 
 from PyQt4.QtCore import QPoint, Qt, pyqtSignal
 from PyQt4.QtGui import QPainter, QPalette, \
-                        QPixmap, \
+                        QPixmap, QMenu,\
                         QTextBlock, QToolTip, QWidget
 
 import qutepart
@@ -64,6 +64,7 @@ class LineNumberArea(QWidget):
 class MarkArea(QWidget):
 
     blockClicked = pyqtSignal(QTextBlock)
+    blockDoubleClicked = pyqtSignal(int)
 
     _MARGIN = 1
 
@@ -80,6 +81,19 @@ class MarkArea(QWidget):
                              qpart.LINT_WARNING: self._loadIcon('lint-warning.png'),
                              qpart.LINT_NOTE: self._loadIcon('lint-note.png')}
         self._bpPixmap = self._loadIcon('bp.png')
+        self._bpcPixmap = self._loadIcon('bpcond.png')
+        self._bpdPixmap = self._loadIcon('bpdis.png')
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)        
+        
+    def showContextMenu(self,pos):
+        if self._qpart.mainWindow:
+            menu=QMenu()
+            cursor = self._qpart.cursorForPosition(QPoint(0, pos.y()))
+            self._qpart.contextBlock = cursor.block()
+            self._qpart.contextMenuLine=self._qpart.contextBlock.blockNumber()
+            self._qpart.mainWindow.insertContextMenuItems(self._qpart,menu)
+            menu.exec_(self._qpart.viewport().mapToGlobal(pos))
 
     def _loadIcon(self, fileName):
         defaultSizePixmap = QPixmap(qutepart.getIconPath(fileName))
@@ -116,9 +130,15 @@ class MarkArea(QWidget):
                     yPos = top + ((height - pixMap.height()) / 2)  # centered
                     painter.drawPixmap(0, yPos, pixMap)
                     
-                if block.blockNumber() in self._qpart.bpMarks:
+                bp=self._qpart.bpMarks.find(block.blockNumber())
+                if bp:
+                    if not bp.block:
+                        bp.setBlock(block)
+                    pix=self._bpdPixmap
+                    if bp.isEnabled():
+                        pix=self._bpcPixmap if bp.condition() else self._bpPixmap
                     yPos = top + ((height - self._bpPixmap.height()) / 2)  # centered
-                    painter.drawPixmap(0, yPos, self._bpPixmap)
+                    painter.drawPixmap(0, yPos, pix)
 
                 if Bookmarks.isBlockMarked(block):
                     yPos = top + ((height - self._bookmarkPixmap.height()) / 2)  # centered
@@ -131,7 +151,16 @@ class MarkArea(QWidget):
         """
         return self._MARGIN + self._bookmarkPixmap.width() + self._MARGIN
 
-    def mousePressEvent(self, mouseEvent):
+    def mouseDoubleClickEvent(self,mouseEvent):
+        cursor = self._qpart.cursorForPosition(QPoint(0, mouseEvent.y()))
+        block = cursor.block()
+        blockRect = self._qpart.blockBoundingGeometry(block).translated(self._qpart.contentOffset())
+        if blockRect.bottom() >= mouseEvent.y():  # clicked not lower, then end of text
+            self._qpart.contextMenuLine=block.blockNumber()
+            self._qpart.contextBlock=block
+            self.blockDoubleClicked.emit(block.blockNumber())
+
+    def mousePressEvent_Old(self, mouseEvent):
         cursor = self._qpart.cursorForPosition(QPoint(0, mouseEvent.y()))
         block = cursor.block()
         blockRect = self._qpart.blockBoundingGeometry(block).translated(self._qpart.contentOffset())

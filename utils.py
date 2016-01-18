@@ -195,3 +195,10 @@ def browseDirectory(lineedit):
     cur=QtGui.QFileDialog.getExistingDirectory(caption="Working Directory",directory=cur)
     if cur:
         lineedit.setText(cur)
+
+def setCheckbox(cb,on):
+    cb.setCheckState(QtCore.Qt.Checked if on else QtCore.Qt.Unchecked)
+    
+def getCheckbox(cb):
+    return cb.checkState()==QtCore.Qt.Checked
+

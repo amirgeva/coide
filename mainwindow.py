@@ -11,7 +11,7 @@ import output
 from consts import FileRole
 from gdbwrapper import GDBWrapper
 from watchestree import WatchesTree
-from breakpoints import BreakpointsDB
+from breakpoints import BreakpointsDB, BreakpointDialog
 from properties import Properties
 import utils
 import genmake
@@ -54,6 +54,7 @@ class MainWindow(QtGui.QMainWindow):
         self.central.tabCloseRequested.connect(self.closeTab)
         
         self.setupMenu()
+        self.setupContextMenuItems()
         self.setupToolbar(rootDir)
         self.showWorkspacePane()
         self.showOutputPane()
@@ -101,14 +102,17 @@ class MainWindow(QtGui.QMainWindow):
         
         """
         self.workspaceTree.onClose()
+        self.workspaceTree.saveTabs(self.central)
+        while self.central.count()>0:
+            if not self.closeFile():
+                event.ignore()
+                return
+
         self.timer.stop()
         self.generateTimer.stop()
         if self.debugger:
             self.debugger.closingApp()
-        self.workspaceTree.saveTabs(self.central)
             
-        while self.central.count()>0:
-            self.closeFile()
         settings = QtCore.QSettings()
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
@@ -199,6 +203,80 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
         m.addAction(QtGui.QAction('&Templates',self,triggered=self.settingsTemplates))
+
+    def setupContextMenuItems(self):
+        self.contextMenuItems={
+            'all':[
+                QtGui.QAction('Toggle Breakpoint',self,triggered=self.contextToggleBreakpoint)
+            ],
+            'files':[
+                QtGui.QAction('Open Header',self,triggered=self.contextOpenHeader)
+            ],
+            'breakpoints':[
+                QtGui.QAction('Edit Breakpoint',self,triggered=self.contextEditBreakpoint),
+                QtGui.QAction('Dis/Enable Breakpoint',self,triggered=self.contextAbleBreakpoint)
+            ]
+        }
+        
+    def insertContextMenuItems(self,editor,menu):
+        first=None
+        acts=menu.actions()
+        if len(acts)>0:
+            first=acts[0]
+        actions=list(self.contextMenuItems.get('all'))
+        path=editor.path
+        line=editor.contextMenuLine
+        if self.breakpoints.hasBreakpoint(path,line):
+            actions.extend(self.contextMenuItems.get('breakpoints'))
+        if self.workspaceTree.exists(editor.contextFilename):
+            actions.extend(self.contextMenuItems.get('files'))
+        menu.insertActions(first,actions)
+        menu.insertSeparator(first)
+            
+    def contextToggleBreakpoint(self):
+        e=self.central.currentWidget()
+        self.breakpoints.toggleBreakpoint(e)
+        e.update()
+
+    def contextEditBreakpoint(self):
+        e=self.central.currentWidget()
+        path=e.path
+        line=e.contextMenuLine
+        bp=self.breakpoints.getBreakpoint(path,line)
+        if bp:
+            d=BreakpointDialog()
+            d.condition.setText(bp.condition())
+            utils.setCheckbox(d.enabled,bp.isEnabled())
+            if d.exec_():
+                bp.setCondition(d.condition.text())
+                bp.able(utils.getCheckbox(d.enabled))
+                self.breakpoints.update()
+                e.update()
+                
+    def contextAbleBreakpoint(self):
+        e=self.central.currentWidget()
+        path=e.path
+        line=e.contextMenuLine
+        bp=self.breakpoints.getBreakpoint(path,line)
+        if bp:
+            if bp.isEnabled():
+                bp.disable()
+            else:
+                bp.enable()
+            self.breakpoints.update()
+            e.update()
+        
+    def contextOpenHeader(self):
+        e=self.central.currentWidget()
+        filename=self.workspaceTree.exists(e.contextFilename)
+        if filename:
+            self.workspaceTree.openFile(filename)
+
+    def markToggleBreakpoint(self,line):
+        e=self.central.currentWidget()
+        #path=e.path
+        self.breakpoints.toggleBreakpoint(e)
+        e.update()
 
     def setupToolbar(self,rootDir):
         """ Creates the application main toolbar """
@@ -500,6 +578,11 @@ class MainWindow(QtGui.QMainWindow):
                 time.sleep(1)
         
     def timer1000(self):
+        updates=self.breakpoints.updateLineNumbers(self.central.currentWidget().path)
+        for path in updates:
+            e=self.editors.get(path)
+            if e:
+                e.update()
         if self.timerCall:
             f=self.timerCall
             self.timerCall=None
@@ -604,7 +687,8 @@ class MainWindow(QtGui.QMainWindow):
     def closeAllTabs(self):
         while self.central.count()>0:
             if not self.closeTab(0):
-                return
+                return False
+        return True
     
     def closeTab(self,index):
         path=self.central.tabToolTip(index)
@@ -628,15 +712,15 @@ class MainWindow(QtGui.QMainWindow):
                 elif rc == QtGui.QMessageBox.Cancel:
                     return False
             del self.editors[path]
-            self.central.removeTab(index)
-            return True
-        return False
+        self.central.removeTab(index)
+        return True
 
     def closeFile(self):
         n=self.central.tabBar().count()
         if n>0:
             index=self.central.currentIndex()
-            self.closeTab(index)
+            return self.closeTab(index)
+        return False
             
     def currentEditor(self):
         if self.central.count()>0:
@@ -744,14 +828,15 @@ class MainWindow(QtGui.QMainWindow):
                     editor.text="".join(lines)
                     editor.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
                     editor.setWorkspace(self.workspaceTree)
+                    editor.setMainWindow(self)
                     index=self.central.addTab(editor,os.path.basename(path))
                     self.central.setTabToolTip(index,path)
                     self.editors[path]=editor
                     self.loadFont('codefont',editor)
                     self.central.tabBar().setCurrentIndex(index)
-                    editor.breakpointToggled.connect(self.breakpointToggled)
                     bps=self.breakpoints.pathBreakpoints(path)
-                    editor._bpMarks=bps
+                    editor.bpMarks=bps
+                    editor._markArea.blockDoubleClicked.connect(self.markToggleBreakpoint)
                     return True
             except IOError:
                 return False
@@ -1036,9 +1121,6 @@ class MainWindow(QtGui.QMainWindow):
         for line in bt:
             self.stackList.addItem(line)
     
-    def breakpointToggled(self,path,line):
-        self.breakpoints.toggleBreakpoint(path,line)
-        
     def startDebug(self):
         if self.debugger:
             self.actCont()
