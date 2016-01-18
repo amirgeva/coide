@@ -580,7 +580,7 @@ class MainWindow(QtGui.QMainWindow):
                     f.close()
                     doc.setModified(False)
                     dir=os.path.dirname(path)
-                    self.generateQueue.add(dir)
+                    #self.generateQueue.add(dir)
                     if self.symbolScan:
                         from system import getLibrarySymbols
                         getLibrarySymbols()
