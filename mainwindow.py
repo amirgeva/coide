@@ -467,22 +467,25 @@ class MainWindow(QtGui.QMainWindow):
         syms=getLibrarySymbols()
         wsSyms=getWorkspaceSymbols()
         for sym in undefs:
-            if sym in syms:
-                s=syms.get(sym)
-                for l in s:
-                    if not l in suggested:
-                        suggested[l]=1
-                    else:
-                        n=suggested.get(l)+1
-                        suggested[l]=n
-            if sym in wsSyms:
-                s=wsSyms.get(sym)
-                for l in s:
-                    if not l in suggested:
-                        suggested[l]=1
-                    else:
-                        n=suggested.get(l)+1
-                        suggested[l]=n
+            words=sym.split(':')
+            words=[w for w in words if w]
+            for word in words:
+                if word in syms:
+                    s=syms.get(word)
+                    for l in s:
+                        if not l in suggested:
+                            suggested[l]=1
+                        else:
+                            n=suggested.get(l)+1
+                            suggested[l]=n
+                if word in wsSyms:
+                    s=wsSyms.get(word)
+                    for l in s:
+                        if not l in suggested:
+                            suggested[l]=1
+                        else:
+                            n=suggested.get(l)+1
+                            suggested[l]=n
         self.added=set()
         if len(suggested)>0:
             d=uis.loadDialog('libsuggest')
