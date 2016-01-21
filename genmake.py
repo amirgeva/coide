@@ -18,6 +18,13 @@ def waitForThread():
         genThread.join()
         genThread=None
 
+def genThreadDone():
+    global genThread
+    if genThread:
+        if genThread.isAlive():
+            return False
+    return True
+    
 def mkProps(props, dir):
     path=os.path.join(dir,'mk.cfg')
     if os.path.exists(path):
