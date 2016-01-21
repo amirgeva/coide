@@ -183,11 +183,12 @@ class BreakpointsDB(QtCore.QObject):
                 return Breakpoint(d)
             return d
         try:
-            all=json.loads(s,object_hook=as_breakpoint)
             self.breakpoints={}
-            for path in all:
-                bps=all.get(path)
-                self.pathBreakpoints(path).extend(bps)
+            if s:
+                all=json.loads(s,object_hook=as_breakpoint)
+                for path in all:
+                    bps=all.get(path)
+                    self.pathBreakpoints(path).extend(bps)
             self.breakpointsChanged.emit()
         except ValueError:
             print "Failed to load breakpoints from: '{}'".format(s)
