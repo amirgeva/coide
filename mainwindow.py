@@ -87,7 +87,7 @@ class MainWindow(QtGui.QMainWindow):
         self.generateTimer.timeout.connect(self.timer1000)
         self.generateTimer.start(1000)
         
-        self.generateAll()
+        self.generateAll(False)
         
         self.paneWatches.hide()
         self.paneLocals.hide()
@@ -607,8 +607,8 @@ class MainWindow(QtGui.QMainWindow):
                 system.getLibrarySymbols()
             
         
-    def generateAll(self):
-        genmake.generateTree(self.workspaceTree.root)
+    def generateAll(self,blocking=True):
+        genmake.generateTree(self.workspaceTree.root,blocking)
         
     def generate(self):
         mb=QtGui.QMessageBox()
@@ -775,7 +775,6 @@ class MainWindow(QtGui.QMainWindow):
         self.paneWorkspace.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
         self.workspaceTree=WorkSpace(self.paneWorkspace,self)
         self.workspaceTree.depsChanged.connect(lambda path: self.generateQueue.add(path))
-        #self.workspaceTree.itemClicked.connect(lambda item: self.loadItem(item))
         self.paneWorkspace.setWidget(self.workspaceTree)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)
         self.updateWorkspace()
