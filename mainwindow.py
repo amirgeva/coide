@@ -324,6 +324,9 @@ class MainWindow(QtGui.QMainWindow):
         if e:
             from finddlg import FindDialog
             d=FindDialog(self)
+            c=e.textCursor()
+            if c.hasSelection:
+                d.setFindText(c.selectedText())
             if d.exec_():
                 self.findDetails=d.details
                 self.onFindNext()
