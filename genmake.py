@@ -5,9 +5,18 @@ from properties import Properties
 from system import listAllPackages
 import utils
 import templates
+from threading import Thread
 
 
 root=os.path.abspath('.')
+
+genThread=None
+
+def waitForThread():
+    global genThread
+    if genThread:
+        genThread.join()
+        genThread=None
 
 def mkProps(props, dir):
     path=os.path.join(dir,'mk.cfg')
@@ -347,15 +356,26 @@ class Generator:
 
         o.close()
         
-
-def generateTree(root):
+def generateTreeRun(root):
     g=Generator(root)
     for (dir,subdirs,files) in os.walk(os.path.join(root,"src")):
         if isSourceDir(dir,files):
             g.generate(dir,files)
             subdirs[:]=[]  # do not recurse down project subdirs
+
+def generateTree(root,blocking):
+    global genThread
+    if genThread:
+        waitForThread()
+    if blocking:
+        generateTreeRun(root)
+    else:
+        genThread=Thread(target=generateTreeRun,args=(root,))
+        genThread.start()
             
 def generateDirectory(root,dir):
+    if genThread:
+        waitForThread()
     g=Generator(root)
     files=os.listdir(dir)
     if isSourceDir(dir,files):
