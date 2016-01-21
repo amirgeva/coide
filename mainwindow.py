@@ -300,7 +300,7 @@ class MainWindow(QtGui.QMainWindow):
     def nextError(self):
         e=self.outputEdit.getNextError()
         if e:
-            self.statusBar().showMessage(e[3])
+            self.showStatus(e[3])
             self.goToSource(e[0],e[1],e[2],'#ff8080')
             self.outputEdit.highlightLine(e[4])
 
@@ -427,7 +427,9 @@ class MainWindow(QtGui.QMainWindow):
             for t in templates:
                 self.tmplCombo.addItem(t)
         
-
+    def showStatus(self,status):
+        self.statusBar().showMessage(status)
+        
     def findUndefinedReferences(self,output):
         """
         Search the linker output to find undefined reference
@@ -515,10 +517,11 @@ class MainWindow(QtGui.QMainWindow):
                 utils.appendColorLine(self.outputEdit,"= Failed ({}) =".format(rcs[0]),'#ff0000')
             self.checkBuildOutput()
             self.asyncPollTimer.stop()
+            self.showStatus("Done")
             
     def execute(self,path,cmd,*args):
         if utils.pendingAsync():
-            self.statusBar().showMessage('Busy')
+            self.showStatus('Busy')
             return None
         self.outputEdit.clearAll()
         p=utils.execute(self.outputEdit,path,cmd,*args)
@@ -530,6 +533,7 @@ class MainWindow(QtGui.QMainWindow):
         self.saveAll()
         self.autoGenerate()
         if len(path)>0:
+            self.showStatus("Building "+os.path.basename(path))
             s=QtCore.QSettings()
             if s.value('parallel_make',False).toBool():
                 self.buildProcess=self.execute(path,'/usr/bin/make','-j',self.config)
@@ -563,11 +567,11 @@ class MainWindow(QtGui.QMainWindow):
         for path in self.generateQueue:
             genmake.generateDirectory(self.workspaceTree.root,path)
         self.generateQueue.clear()
-        self.statusBar().showMessage('Ready')
+        self.showStatus('Ready')
         
     def autoGenerate(self):
         if len(self.generateQueue)>0:
-            self.statusBar().showMessage('Generating Makefiles')
+            self.showStatus('Generating Makefiles')
             self.timerCall=self.autoGenerateRun
         
     def waitForScanner(self):
@@ -596,7 +600,7 @@ class MainWindow(QtGui.QMainWindow):
             if system.isScannerDone():
                 #if system.scanq and not system.scanq.empty():
                 if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
-                    self.statusBar().showMessage('Ready')
+                    self.showStatus('Ready')
                 system.getLibrarySymbols()
             
         
@@ -773,7 +777,7 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)
         self.updateWorkspace()
         self.workspaceTree.doubleClicked.connect(self.docDoubleClicked)
-        self.statusBar().showMessage(MainWindow.LIBRARY_SCAN)
+        self.showStatus(MainWindow.LIBRARY_SCAN)
         if self.symbolScan:
             from system import startSymbolScan
             startSymbolScan(self.workspaceTree.root)
