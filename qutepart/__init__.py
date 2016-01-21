@@ -894,7 +894,7 @@ class Qutepart(QPlainTextEdit):
         return cursor.block().text()[:cursor.positionInBlock()]
 
     def keyPressEvent(self, event):
-        pass # suppress dockstring for non-public method
+        pass # suppress docstring for non-public method
         """QPlainTextEdit.keyPressEvent() implementation.
         Catch events, which may not be catched with QShortcut and call slots
         """
@@ -928,9 +928,33 @@ class Qutepart(QPlainTextEdit):
             with self:
                 cursor.deleteChar()
                 cursor.insertText(text)
-
+                
+        def commentBlock():
+            with self:
+                doc=cursor.document()
+                c=QtGui.QTextCursor(doc)
+                blocks=[]
+                b=doc.findBlock(cursor.selectionStart())
+                epos=cursor.selectionEnd()
+                while b.position()<epos:
+                    blocks.append(b)
+                    b=b.next()
+                for b in blocks:
+                    p=b.position()
+                    c.movePosition(QtGui.QTextCursor.Start,QtGui.QTextCursor.MoveAnchor)
+                    c.movePosition(QtGui.QTextCursor.NextCharacter,QtGui.QTextCursor.MoveAnchor,p)
+                    if doc.characterAt(p)=='/' and doc.characterAt(p+1)=='/':
+                        c.deleteChar()
+                        c.deleteChar()
+                    else:
+                        c.insertText('//')
+                    
+                    
+                    
         if event.matches(QKeySequence.InsertParagraphSeparator):
             self._insertNewBlock()
+        elif event.key() == Qt.Key_Slash and cursor.hasSelection():
+            commentBlock()
         elif event.matches(QKeySequence.Copy) and self._rectangularSelection.isActive():
             self._rectangularSelection.copy()
         elif event.matches(QKeySequence.Cut) and self._rectangularSelection.isActive():
