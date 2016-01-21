@@ -87,7 +87,8 @@ class MainWindow(QtGui.QMainWindow):
         self.generateTimer.timeout.connect(self.timer1000)
         self.generateTimer.start(1000)
         
-        self.generateAll(False)
+        self.showStatus("Generating All Makefiles")
+        self.timerCall=self.generateAllInThread
         
         self.paneWatches.hide()
         self.paneLocals.hide()
@@ -576,6 +577,9 @@ class MainWindow(QtGui.QMainWindow):
         if len(self.generateQueue)>0:
             self.showStatus('Generating Makefiles')
             self.timerCall=self.autoGenerateRun
+        else:
+            if genmake.genThreadDone():
+                self.showStatus("Done")
         
     def waitForScanner(self):
         if self.symbolScan:
@@ -606,9 +610,11 @@ class MainWindow(QtGui.QMainWindow):
                     self.showStatus('Ready')
                 system.getLibrarySymbols()
             
+    def generateAllInThread(self):
+        genmake.generateTree(self.workspaceTree.root,False)
         
-    def generateAll(self,blocking=True):
-        genmake.generateTree(self.workspaceTree.root,blocking)
+    def generateAll(self):
+        genmake.generateTree(self.workspaceTree.root,True)
         
     def generate(self):
         mb=QtGui.QMessageBox()
