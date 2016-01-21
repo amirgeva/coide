@@ -28,6 +28,9 @@ class FindDialog(QtGui.QDialog):
         self.findEdit.setFocus(QtCore.Qt.OtherFocusReason)
         self.replaceClicked=False
         
+    def setFindText(self,text):
+        self.findEdit.setText(text)
+        
     def accept(self):
         self.details={
             'find_case':getCheck(self.caseCB),
