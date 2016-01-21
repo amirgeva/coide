@@ -3,7 +3,7 @@ from PyQt4.QtGui import QApplication, QKeyEvent, QKeySequence, QPalette, QTextCu
 
 
 class RectangularSelection:
-    """This class does not replresent any object, but is part of Qutepart
+    """This class does not represent any object, but is part of Qutepart
     It just groups together Qutepart rectangular selection methods and fields
     """
 
