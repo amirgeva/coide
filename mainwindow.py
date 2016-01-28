@@ -180,6 +180,11 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Find/Replace',self,shortcut='Ctrl+F',triggered=self.onFindReplace))
         m.addAction(QtGui.QAction('Find/Replace &Next',self,shortcut='F3',triggered=self.onFindNext))
         
+        m=bar.addMenu('&View')
+        panes=m.addMenu('Panes')
+        panes.addAction(QtGui.QAction('&Workspace',self,triggered=self.onViewPaneWorkspace))
+        panes.addAction(QtGui.QAction('&Output',self,triggered=self.onViewPaneOutput))
+        
         m=bar.addMenu('&Build')
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
         m.addAction(QtGui.QAction('&Clean',self,triggered=self.clean))
@@ -204,6 +209,12 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
         m.addAction(QtGui.QAction('&Templates',self,triggered=self.settingsTemplates))
+
+    def onViewPaneWorkspace(self):
+        self.paneWorkspace.show()
+
+    def onViewPaneOutput(self):
+        self.paneOutput.show()
 
     def setupContextMenuItems(self):
         self.contextMenuItems={
