@@ -919,9 +919,6 @@ class MainWindow(QtGui.QMainWindow):
         self.paneLocals.setWidget(self.localsTree)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneLocals)
         self.loadFont('watchesfont',self.watchesTree)
-        #self.watchesTree.addTopLevelItem(QtGui.QTreeWidgetItem(['* Double-Click for new watch']))
-        #self.watchesTree.resizeColumnToContents(0)
-        #self.watchesTree.itemDoubleClicked.connect(lambda item,column : self.watchDoubleClicked(item,column))
     
     def showWatchesPane(self):
         self.paneWatches=QtGui.QDockWidget("Watches",self)
