@@ -75,8 +75,8 @@ def appendLine(output,line):
 
 def checkFor(cmd):
     try:
-        subprocess.call([cmd])
-        return True
+        res=subprocess.call(['which',cmd])
+        return res==0
     except OSError:
         return False
 
