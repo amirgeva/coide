@@ -1038,6 +1038,9 @@ class MainWindow(QtGui.QMainWindow):
             os.remove('/tmp/{}'.format(f))
         
     def runProject(self):
+        if not utils.checkFor('xterm'):
+            utils.message("xterm not installed")
+            return
         path=self.tempScriptPath()
         f=open(path,'w')
         dir=self.workspaceTree.getDebugDirectory()
