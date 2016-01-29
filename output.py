@@ -1,7 +1,10 @@
 import re
 from PyQt4 import QtGui, QtCore
 
-posStrPattern=re.compile('(.+):(\d+):(\d+):')
+posStrPatterns=[
+    re.compile('(.+):(\d+):(\d+):'),
+    re.compile('\[(.+):(\d+)\]:')
+]
 tagPattern=re.compile('<[^<>]*>')
 
 def removeTags(s):
@@ -31,13 +34,17 @@ class OutputWidget(QtGui.QPlainTextEdit):
         parts=line.split(' ')
         if len(parts)>0:
             posStr=parts[0]
-            m=re.match(posStrPattern,posStr)
-            if m:
-                g=m.groups()
-                path=g[0]
-                row=int(g[1])
-                col=int(g[2])
-                self.mainWindow.goToSource(path,row,col,'#ff8080')
+            for pat in posStrPatterns:
+                m=re.match(pat,posStr)
+                if m:
+                    g=m.groups()
+                    path=g[0]
+                    row=int(g[1])
+                    if len(g)>2:
+                        col=int(g[2])
+                    else:
+                        col=1
+                    self.mainWindow.goToSource(path,row,col,'#ff8080')
 
     def keyPressEvent(self,event):
         #print "{} : '{}'".format(event.key(),event.text())
@@ -70,14 +77,18 @@ class OutputWidget(QtGui.QPlainTextEdit):
         if p>0:
             posStr=line[0:p]
             rest=line[(p+1):]
-            m=re.match(posStrPattern,posStr)
-            if m:
-                g=m.groups()
-                path=g[0]
-                row=int(g[1])
-                col=int(g[2])
-                msg=removeTags(rest)
-                self.errors.append((path,row,col,msg,outputRow))
+            for pat in posStrPatterns:
+                m=re.match(pat,posStr)
+                if m:
+                    g=m.groups()
+                    path=g[0]
+                    row=int(g[1])
+                    if len(g)>2:
+                        col=int(g[2])
+                    else:
+                        col=1
+                    msg=removeTags(rest)
+                    self.errors.append((path,row,col,msg,outputRow))
                 
     def getNextError(self):
         if len(self.errors)==0:
