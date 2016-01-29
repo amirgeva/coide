@@ -139,6 +139,7 @@ class Generator:
         self.intrDir=os.path.join(root,'intr')
         self.outDir=os.path.join(root,'out')
         self.scanWorkspace()
+        self.cppcheck=utils.checkFor('cppcheck')
         
     def scanWorkspace(self):
         self.wsLibs={}
@@ -316,6 +317,8 @@ class Generator:
                     if hpath.startswith(self.root) and not hpath.endswith('/'):
                         hdeps.append(hpath)
             o.write('{}: {} {}\n'.format(objs[i],src,' '.join(hdeps)))
+            if self.cppcheck:
+                o.write('\tcppcheck {}/{}\n'.format(absdir,srcs[i]))
             o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
             
         return True
