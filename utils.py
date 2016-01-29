@@ -73,6 +73,13 @@ def appendLine(output,line):
         else:
             appendColorLine(output,line,color)
 
+def checkFor(cmd):
+    try:
+        subprocess.call([cmd])
+        return True
+    except OSError:
+        return False
+
 def runcmd(dir,cmdlist):
     return subprocess.Popen(cmdlist, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,cwd=dir)
     
