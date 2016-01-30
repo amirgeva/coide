@@ -132,7 +132,6 @@ class Parser:
                 v=''
             elif t=='IDENT':
                 v=v+self.readUntil('EQUALS')
-                #self.expect('EQUALS')
                 child=Node(v)
                 v=''
             else:
