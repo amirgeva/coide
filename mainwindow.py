@@ -519,7 +519,7 @@ class MainWindow(QtGui.QMainWindow):
                 path=self.workspaceTree.root
         d=BuildSettingsDialog(self,path)
         d.exec_()
-        self.generateAll()
+        self.generateQueue.add(path)
         
     def checkBuildOutput(self):
         if self.buildProcess:
