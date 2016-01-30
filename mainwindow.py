@@ -87,6 +87,10 @@ class MainWindow(QtGui.QMainWindow):
         self.generateTimer.timeout.connect(self.timer1000)
         self.generateTimer.start(1000)
         
+        self.lowFreqTimer=QtCore.QTimer()
+        self.lowFreqTimer.timeout.connect(self.timer5000)
+        self.lowFreqTimer.start(5000)
+        
         self.showStatus("Generating All Makefiles")
         self.timerCall=self.generateAllInThread
         
@@ -623,6 +627,17 @@ class MainWindow(QtGui.QMainWindow):
                 if self.statusBar().currentMessage() == MainWindow.LIBRARY_SCAN:
                     self.showStatus('Ready')
                 system.getLibrarySymbols()
+                
+    def timer5000(self):
+        import scm
+        res=scm.scan(self.workspaceTree.root)
+        if res:
+            for (name,stat) in res:
+                path=os.path.join(self.workspaceTree.root,name)
+                if stat=='Modified' and path in self.workspaceTree.fileItems:
+                    item=self.workspaceTree.fileItems.get(path)
+                    item.setForeground(0,QtGui.QBrush(QtGui.QColor(255,0,0)))
+                
             
     def generateAllInThread(self):
         genmake.generateTree(self.workspaceTree.root,False)
