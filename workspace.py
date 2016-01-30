@@ -38,6 +38,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.root=s.value('workspace').toString()
         self.wsini=os.path.join(self.root,'settings.ini')
         self.config="Debug"
+        self.fileItems={}
         self.itemCollapsed.connect(self.onCollapsed)
         self.itemExpanded.connect(self.onExpanded)
         
@@ -364,7 +365,9 @@ class WorkSpace(QtGui.QTreeWidget):
                         child=QtGui.QTreeWidgetItem([filename])
                         child.setIcon(0,self.docIcon)
                         item.addChild(child)
-                        child.setData(0,FileRole,os.path.join(dir,filename))
+                        path=os.path.join(dir,filename)
+                        child.setData(0,FileRole,path)
+                        self.fileItems[path]=child
         
     def update(self):
         self.main=None
@@ -380,6 +383,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.rootItem.setData(0,DirectoryRole,self.root)
         self.addTopLevelItem(self.rootItem)
         
+        self.fileItems={}
         self.scanDirectory('src')
         self.scanDirectory('include')
         self.loadSettings()
