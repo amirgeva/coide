@@ -94,6 +94,7 @@ class Parser:
                 if len(value)>0:
                     value=value+' '
                 value=value+v
+                node.value=value
         except EndOfText,e:
             t="END"
         node.value=value
@@ -141,6 +142,15 @@ class Parser:
             (cv,t)=self.parse(child,v)
             if t=='RBRACE':
                 break
+        if not node.value and len(node.children)>0:
+            for c in node.children:
+                if node.value:
+                    node.value=node.value+", "
+                if c.value:
+                    node.value=node.value+c.value
+                else:
+                    node.value=node.value+'{}'
+            
 
 def test():
     import sys
