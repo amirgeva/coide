@@ -24,6 +24,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actSetMain = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
         self.actEditDependencies = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
         self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
+        self.actGenerate = QtGui.QAction('Generate Makefile',self,triggered=self.generate)
         self.actCreateFolder = QtGui.QAction('Create Folder',self,triggered=self.createFolder)
         self.actCreateFile = QtGui.QAction('Create File',self,triggered=self.createFile)
         self.actRefresh = QtGui.QAction('Refresh',self,triggered=self.refreshWorkspace)
@@ -83,6 +84,7 @@ class WorkSpace(QtGui.QTreeWidget):
                 menu.addAction(self.actEditDependencies)
                 menu.addAction(self.actDebugSettings)
                 menu.addSeparator()
+            menu.addAction(self.actGenerate)
             menu.addAction(self.actCreateFolder)
             menu.addAction(self.actCreateFile)
             menu.addAction(self.actRefresh)
@@ -178,6 +180,11 @@ class WorkSpace(QtGui.QTreeWidget):
         if self.main:
             return self.main.data(0,DirectoryRole).toString()
         return ""
+        
+    def generate(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        self.mainWindow.generateQueue.add(path)
         
     def buildSettings(self):
         item=self.currentItem()
