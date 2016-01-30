@@ -508,8 +508,12 @@ class Completer(QObject):
     def _isDot(self):
         cursor = self._qpart.textCursor()
         p=cursor.positionInBlock()
-        text=cursor.block().text()[p-1:p]
-        return (text=='.',cursor.blockNumber(),p)
+        opts=['.','->']
+        for o in opts:
+            text=cursor.block().text()[p-len(o):p]
+            if text==o:
+                return (True,cursor.blockNumber(),p)
+        return (False,cursor.blockNumber(),p)
 
     def _wordBeforeCursor(self):
         """Get word, which is located before cursor
