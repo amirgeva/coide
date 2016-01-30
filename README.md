@@ -12,6 +12,11 @@ Requirements:
 * g++ 4.8 or higher
 * recent gdb
 
+Optional:
+
+* clang  (for code completion)
+* cppcheck  (for static analysis)
+
 To start, run the `coide.py` main script
 
 Or install from the ppa using:
