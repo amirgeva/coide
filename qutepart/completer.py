@@ -3,6 +3,7 @@
 
 import re
 import time
+import traceback
 
 from PyQt4.QtCore import pyqtSignal, QAbstractItemModel, QEvent, QModelIndex, QObject, QSize, Qt, QTimer, Qt
 from PyQt4.QtGui import QCursor, QListView, QStyle, QMessageBox
@@ -62,23 +63,31 @@ class _CompletionModel(QAbstractItemModel):
     """
     def __init__(self, wordSet):
         QAbstractItemModel.__init__(self)
-
         self._wordSet = wordSet
+        self.dotWords=[]
 
     def setData(self, wordBeforeCursor, wholeWord):
         """Set model information
         """
         self._typedText = wordBeforeCursor
+        if self.dotWords:
+            self.setFilter(wordBeforeCursor)
+            return
         self.words = self._makeListOfCompletions(wordBeforeCursor, wholeWord)
         commonStart = self._commonWordStart(self.words)
         self.canCompleteText = commonStart[len(wordBeforeCursor):]
-
         self.layoutChanged.emit()
         
     def setDotWords(self,words):
         self._typedText=''
+        self.dotWords=words
         self.words=words
         self.canCompleteText=''
+        self.layoutChanged.emit()
+        
+    def setFilter(self,prefix):
+        #traceback.print_stack()
+        self.words=sorted([w for w in self.dotWords if w.startswith(prefix)])
         self.layoutChanged.emit()
 
     def hasWords(self):
@@ -387,22 +396,28 @@ class Completer(QObject):
         """Text in the qpart changed. Update word set"""
         self._globalUpdateWordSetTimer.schedule(self._updateWordSet)
         (dot,row,col)=self._isDot()
-        if self._qpart.clangCompletion and dot:
-            cmd=['make','LINE={}'.format(row+1),'COL={}'.format(col+1),'clang_complete']
-            try:
-                import subprocess
-                p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir)
-                text=self._qpart.text
-                out,err=p.communicate(text)
-                words=self.parseClang(out)
-                if len(words)>0:
-                    self.invokeCompletion()
-                    if self._widget:
-                        self._widget.model().setDotWords(words)
-            except OSError,e:
-                if e.errno==2:
-                    QMessageBox.warning(self._qpart,"clang not available","clang not installed.  Disabling completion.")
-                    self._qpart.clangCompletion=False
+        #wbc=self._wordBeforeCursor()
+        if self._qpart.clangCompletion:
+            if dot:
+                cmd=['make','LINE={}'.format(row+1),'COL={}'.format(col+1),'clang_complete']
+                try:
+                    import subprocess
+                    p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir)
+                    text=self._qpart.text
+                    out,err=p.communicate(text)
+                    words=self.parseClang(out)
+                    if len(words)>0:
+                        self.invokeCompletion()
+                        if self._widget:
+                            self._widget.model().setDotWords(words)
+                except OSError,e:
+                    if e.errno==2:
+                        QMessageBox.warning(self._qpart,"clang not available","clang not installed.  Disabling completion.")
+                        self._qpart.clangCompletion=False
+#            else:
+#                if (self._widget):
+#                    self._widget.model().setFilter(wbc)
+#                    #print "Word='{}'".format(wbc)
 
     def _updateWordSet(self):
         """Make a set of words, which shall be completed, from text
@@ -470,12 +485,13 @@ class Completer(QObject):
                             return True
                     else:
                         self._widget.model().setData(wordBeforeCursor, wholeWord)
+                        self._widget._selectItem(0)
                         if self._shouldShowModel(self._widget.model(), forceShow):
                             self._widget.updateGeometry()
 
                             return True
 
-        self._closeCompletion()
+        #self._closeCompletion()
         return False
 
     def _closeCompletion(self):
@@ -483,6 +499,8 @@ class Completer(QObject):
         Delete widget
         """
         if self._widget is not None:
+            #import traceback
+            #traceback.print_stack()
             self._widget.close()
             self._widget = None
             self._completionOpenedManually = False
@@ -505,7 +523,7 @@ class Completer(QObject):
             return ''
 
     def _wordAfterCursor(self):
-        """Get word, which is located before cursor
+        """Get word, which is located after cursor
         """
         cursor = self._qpart.textCursor()
         textAfterCursor = cursor.block().text()[cursor.positionInBlock():]
