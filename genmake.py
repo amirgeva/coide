@@ -310,12 +310,14 @@ class Generator:
             depcmd=depcmd+' | grep {} | grep -v {}'.format(self.root,src)
             depcmd=templates.generateMkCommand(depcmd,mkProps)
             (out,err)=utils.shellcall(dir,depcmd)
+            #open(os.path.join(dir,"deplog_{}.txt".format(i)),'w').write(out)
             for line in out.split('\n'):
-                parts=line.split('"')
-                if len(parts)>1:
-                    hpath=parts[1]
-                    if hpath.startswith(self.root) and not hpath.endswith('/'):
-                        hdeps.append(hpath)
+                if line.startswith('#'):
+                    parts=line.split('"')
+                    if len(parts)>1:
+                        hpath=parts[1]
+                        if hpath.startswith(self.root) and not hpath.endswith('/'):
+                            hdeps.append(hpath)
             o.write('{}: {} {}\n'.format(objs[i],src,' '.join(hdeps)))
             if self.cppcheck:
                 o.write('\tcppcheck {}/{}\n'.format(absdir,srcs[i]))
