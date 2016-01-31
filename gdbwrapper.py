@@ -24,8 +24,12 @@ class GDBWrapper:
         self.breakpoints.breakpointsChanged.connect(self.setBreakpoints)
         dataRoot=os.path.dirname(os.path.abspath(__file__))
         #print "Starting debugger for: {}".format(args)
-        self.args=['gdb']+args
+        self.args=['gdb','--args']+args
         self.debugged=os.path.abspath(args[0])
+        arglist=''
+        if len(args)>1:
+            for i in xrange(1,len(args)):
+                arglist=arglist+' "{}"'.format(args[i])
         self.dumpLog=None
         # During development create a dump log
         if len(os.getenv('COIDE',''))>0:
@@ -54,11 +58,10 @@ class GDBWrapper:
         # dict:  str filepath -> dict of breakpoints ( int line -> Breakpoint )
         self.allFiles=set()
         self.initializePrettyPrints(dataRoot)
-        self.recursiveTypes={'map','vector','struct'}
         
         self.pid=''
-                     
-        self.write('start > {}'.format(self.outputFileName))
+
+        self.write('start {} > {}'.format(arglist,self.outputFileName))
         self.read()
         self.write('info inferior')
         lines,ok=self.read()
