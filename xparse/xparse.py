@@ -117,10 +117,14 @@ class Parser:
                 self.parse_children(child)
                 continue
             elif t=='LBRACKET':
-                t,name=self.lexer.analyze()
-                self.expect('RBRACKET')
+                parts=[]
+                while t!='RBRACKET':
+                    t,name=self.lexer.analyze()
+                    if t!='RBRACKET':
+                        parts.append(name)
+                #self.expect('RBRACKET')
                 self.expect('EQUALS')
-                child=Node(name)
+                child=Node(''.join(parts))
                 v=''
             elif t=='LTAG': 
                 # base class
