@@ -91,8 +91,9 @@ class MainWindow(QtGui.QMainWindow):
         self.lowFreqTimer.timeout.connect(self.timer5000)
         self.lowFreqTimer.start(5000)
         
-        self.showStatus("Generating All Makefiles")
-        self.timerCall=self.generateAllInThread
+        #self.showStatus("Generating All Makefiles")
+        #self.timerCall=self.generateAllInThread
+        self.timerCall=None
         
         self.paneWatches.hide()
         self.paneLocals.hide()
