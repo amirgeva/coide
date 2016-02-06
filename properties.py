@@ -27,6 +27,10 @@ class Properties:
         
     def assign(self,name,value):
         self.props[name]=value
+        
+    def remove(self,name):
+        if name in self.props:
+            del self.props[name]
 
     def keys(self):
         return self.props.keys()
