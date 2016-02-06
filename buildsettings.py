@@ -66,60 +66,92 @@ class SettingsTabDialog(QtGui.QDialog):
         super(SettingsTabDialog,self).__init__(parent)
         # fields maps setting name to widget
         self.fields={}
+        self.resetCommands=[]
+        self.inheritCBs=[]
+        self.fieldList=[]
         
     def addWidgets(self,desc,main):
         '''
         Add widgets based on the description in desc
         which is a list of tuples describing individual widgets
         '''
+        topLayout=QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
+        topLayout.addWidget(QtGui.QLabel('Inherit'))
         layout=QtGui.QGridLayout()
-        def createCallback(main,name):
-            return lambda: main.onChange(name)
+        layout.setColumnStretch(0,1)
+        layout.setColumnStretch(1,2)
+        layout.setColumnStretch(2,3)
         row=0
         for d in desc:
             n=len(d)
             name=d[0]
             title=d[1]
             details=d[2]
-            layout.addWidget(QtGui.QLabel(title),row,0)
+            hcb=QtGui.QCheckBox()
+            check(hcb,True)
+            hcb.stateChanged.connect(lambda state,cur=row:self.inheritChanged(cur,state))
+            self.inheritCBs.append(hcb)
+            layout.addWidget(hcb,row,0)
+            layout.addWidget(QtGui.QLabel(title),row,1)
             w=None
             if details=='STR':
                 w=QtGui.QLineEdit()
                 w.setText(d[3])
-                w.textEdited.connect(createCallback(main,name))
+                self.resetCommands.append((QtGui.QLineEdit.setText,w,d[3]))
             if details=='EDIT':
                 w=QtGui.QPlainTextEdit()
-                w.setPlainText(d[3].replace('\\n','\n'))
-                w.textChanged.connect(createCallback(main,name))
+                text=d[3].replace('\\n','\n')
+                w.setPlainText(text)
+                self.resetCommands.append((QtGui.QPlainTextEdit.setPlainText,w,text))
             if details=='CB':
                 w=QtGui.QCheckBox()
                 check(w,d[3])
-                w.stateChanged.connect(createCallback(main,name))
+                self.resetCommands.append((check,w,d[3]))
             if '|' in details:
                 w=QtGui.QComboBox()
                 opts=details.split('|')
                 for o in opts:
                     w.addItem(o)
                 setCombo(w,d[3])
-                w.currentIndexChanged.connect(createCallback(main,name))
+                self.resetCommands.append((setCombo,w,d[3]))
             if (w):
-                self.fields[name]=w
-                layout.addWidget(w,row,1)
+                w.setDisabled(True)
+                self.fields[name]=(hcb,w)
+                self.fieldList.append(w)
+                layout.addWidget(w,row,2)
             row=row+1
-        self.setLayout(layout)
+        topLayout.addLayout(layout)
+        topLayout.addStretch()
+        self.setLayout(topLayout)
+        
+    def inheritChanged(self,index,state):
+        dis=(state==QtCore.Qt.Checked)
+        w=self.fieldList[index]
+        w.setDisabled(dis)
+                
+    def reset(self):
+        for cb in self.inheritCBs:
+            check(cb,True)
+        for (func,w,val) in self.resetCommands:
+            func(w,val)
         
     def load(self,props):
+        self.reset()
         for name in self.fields:
-            w=self.fields.get(name)
+            (hcb,w)=self.fields.get(name)
             if props.has(name):
                 load(w,props.get(name))
+                check(hcb,False)
+            else:
+                check(hcb,True)
     
-    def save(self,props,changes):
+    def save(self,props):
         for name in self.fields:
-            if len(changes)==0 or name in changes:
-                w=self.fields.get(name)
+            (hcb,w)=self.fields.get(name)
+            if not getCheck(hcb):
                 props.assign(name,save(w))
-            
+            else:
+                props.remove(name)
                 
 class BuildSettingsDialog(QtGui.QDialog):
     def __init__(self,mainwin,startPath,parent=None):
@@ -129,7 +161,6 @@ class BuildSettingsDialog(QtGui.QDialog):
         s=QtCore.QSettings()
         check(self.parallelCB,s.value('parallel_make',False).toBool())
         check(self.symscanCB,s.value('symbol_scan',True).toBool())
-        self.changes=set()
         self.tabWidget.clear()
         self.tabs=[]
         for t in tabs:
@@ -160,9 +191,6 @@ class BuildSettingsDialog(QtGui.QDialog):
         dir=firstItem.data(0,DirectoryRole).toString()
         self.prevPath=os.path.join(dir,'mk.cfg')
         
-    def onChange(self,name):
-        self.changes.add(name)
-        
     def findItem(self,parent,path):
         n=parent.childCount()
         for i in xrange(0,n):
@@ -187,15 +215,15 @@ class BuildSettingsDialog(QtGui.QDialog):
         res=QtGui.QMessageBox.question(self,'Delete File','Delete '+self.prevPath,QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
         if res==QtGui.QMessageBox.Yes:
             try:
-                self.changes=set()
                 os.remove(self.prevPath)
+                for (t,dlg) in self.tabs:
+                    dlg.reset()
             except OSError:
                 pass
         
     def selectionChanged(self):
-        if self.prevPath and len(self.changes)>0:
+        if self.prevPath:
             self.save(self.prevPath)
-        self.changes=set()
         item=self.projTree.currentItem()
         dir=item.data(0,DirectoryRole).toString()
         path=os.path.join(dir,'mk.cfg')
@@ -210,10 +238,7 @@ class BuildSettingsDialog(QtGui.QDialog):
     def save(self,path):
         props=Properties(path)
         for (name,tab) in self.tabs:
-            changes=self.changes
-            if path==self.workspaceDir:
-                changes=set()
-            tab.save(props,changes)
+            tab.save(props)
         props.save(path)
         
 
