@@ -85,6 +85,9 @@ class WorkSpace(QtGui.QTreeWidget):
                 menu.addAction(self.actEditDependencies)
                 menu.addAction(self.actDebugSettings)
                 menu.addSeparator()
+            else:
+                if dirpath==self.root:
+                    menu.addAction(self.actBuildSettings)
             menu.addAction(self.actGenerate)
             menu.addAction(self.actCreateFolder)
             menu.addAction(self.actCreateFile)
