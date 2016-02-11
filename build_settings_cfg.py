@@ -21,7 +21,8 @@ tabs={
     ],
     'Advanced':[
         ('COMPILE_CUSTOM','Custom Compile Flags','EDIT',''),
-        ('LINK_CUSTOM','Custom Link Flags','EDIT','')
+        ('LINK_CUSTOM','Custom Link Flags','EDIT',''),
+        ('BUILD_WHOLE_ARCHIVE','Whole Archive','CB',False,'')
     ]
 }
 
