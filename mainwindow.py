@@ -52,6 +52,8 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.central)
         self.central.setTabsClosable(True)
         self.central.tabCloseRequested.connect(self.closeTab)
+        self.central.currentChanged.connect(self.tabChanged)
+        self.tabOrder=[]
         
         self.setupMenu()
         self.setupContextMenuItems()
@@ -189,6 +191,7 @@ class MainWindow(QtGui.QMainWindow):
         panes=m.addMenu('Panes')
         panes.addAction(QtGui.QAction('&Workspace',self,triggered=self.onViewPaneWorkspace))
         panes.addAction(QtGui.QAction('&Output',self,triggered=self.onViewPaneOutput))
+        m.addAction(QtGui.QAction('&Next Tab',self,shortcut='Ctrl+F6',triggered=self.onViewNextTab))
         
         m=bar.addMenu('&Build')
         m.addAction(QtGui.QAction('&Build',self,shortcut='F7',triggered=self.build))
@@ -220,6 +223,15 @@ class MainWindow(QtGui.QMainWindow):
 
     def onViewPaneOutput(self):
         self.paneOutput.show()
+        
+    def onViewNextTab(self):
+        count=self.central.count()
+        if count>0:
+            if len(self.tabOrder)!=count:
+                self.tabOrder=range(0,self.central.count())
+            if self.central.currentIndex() == self.tabOrder[0]:
+               self.tabOrder=self.tabOrder[1:]+self.tabOrder[:1] 
+            self.central.setCurrentIndex(self.tabOrder[0])
 
     def setupContextMenuItems(self):
         self.contextMenuItems={
@@ -735,6 +747,12 @@ class MainWindow(QtGui.QMainWindow):
                 return False
         return True
     
+    def tabChanged(self,index):
+        for i in xrange(0,len(self.tabOrder)):
+            if self.tabOrder[i]==index:
+                self.tabOrder=self.tabOrder[i:]+self.tabOrder[:i]
+                break
+
     def closeTab(self,index):
         path=self.central.tabToolTip(index)
         editor=self.editors.get(path)
