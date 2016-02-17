@@ -30,7 +30,10 @@ def mkProps(props, dir):
     if os.path.exists(path):
         p=Properties(path)
         for name in p.keys():
-            props.assign(name,p.get(name))
+            value=p.get(name)
+            if value.startswith('\\'):
+                value=props.get(name)+' '+value[1:]
+            props.assign(name,value)
     return props
 
 packages=listAllPackages()
