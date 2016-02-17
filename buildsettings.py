@@ -24,6 +24,9 @@ def setStr(props,name,value):
     value='\\n'.join(lines)
     props.assign(name,value)
         
+def setPartialCheck(checkbox):
+    checkbox.setCheckState(QtCore.Qt.PartiallyChecked)
+        
 def check(checkbox,boolState):
     state = QtCore.Qt.Checked if boolState else QtCore.Qt.Unchecked
     checkbox.setCheckState(state)
@@ -31,6 +34,9 @@ def check(checkbox,boolState):
     
 def getCheck(checkbox):
     return (checkbox.checkState() == QtCore.Qt.Checked)
+    
+def isPartialCheck(checkbox):
+    return (checkbox.checkState() == QtCore.Qt.PartiallyChecked)
     
 def setCombo(cb,value):
     n=cb.count()
@@ -97,11 +103,13 @@ class SettingsTabDialog(QtGui.QDialog):
             if details=='STR':
                 w=QtGui.QLineEdit()
                 w.setText(d[3])
+                hcb.setTristate(True)
                 self.resetCommands.append((QtGui.QLineEdit.setText,w,d[3]))
             if details=='EDIT':
                 w=QtGui.QPlainTextEdit()
                 text=d[3].replace('\\n','\n')
                 w.setPlainText(text)
+                hcb.setTristate(True)
                 self.resetCommands.append((QtGui.QPlainTextEdit.setPlainText,w,text))
             if details=='CB':
                 w=QtGui.QCheckBox()
@@ -140,8 +148,13 @@ class SettingsTabDialog(QtGui.QDialog):
         for name in self.fields:
             (hcb,w)=self.fields.get(name)
             if props.has(name):
-                load(w,props.get(name))
-                check(hcb,False)
+                value=props.get(name)
+                if value.startswith('\\'):
+                    value=value[1:]
+                    setPartialCheck(hcb)
+                else:
+                    check(hcb,False)
+                load(w,value)
             else:
                 check(hcb,True)
     
@@ -149,7 +162,10 @@ class SettingsTabDialog(QtGui.QDialog):
         for name in self.fields:
             (hcb,w)=self.fields.get(name)
             if not getCheck(hcb):
-                props.assign(name,save(w))
+                value=save(w)
+                if isPartialCheck(hcb):
+                    value='\\'+value
+                props.assign(name,value)
             else:
                 props.remove(name)
                 
