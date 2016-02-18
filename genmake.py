@@ -257,9 +257,9 @@ class Generator:
                             wPrefix=''
                             wSuffix=''
                             if libProps.get('BUILD_WHOLE_ARCHIVE','False')=='True':
-                                wPrefix='-Wl,--whole-archive'
-                                wSuffix='-Wl,--no-whole-archive'
-                            lflags=lflags+' {} -L{} -l{} {} '.format(wPrefix,libdir,lib,wSuffix)
+                                wPrefix=' -Wl,--whole-archive'
+                                wSuffix='-Wl,--no-whole-archive '
+                            lflags=lflags+'{} -L{} -l{} {}'.format(wPrefix,libdir,lib,wSuffix)
                             libdeps[lib]=libDir
                     else:
                         if stage=='package':
