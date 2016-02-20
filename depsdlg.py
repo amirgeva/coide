@@ -1,19 +1,15 @@
 from PyQt4 import QtGui
-
+import uis
 
 class DependenciesDialog(QtGui.QDialog):
     def __init__(self,libs,parent=None):
         super(DependenciesDialog,self).__init__(parent)
-        layout=QtGui.QVBoxLayout()
-        self.setLayout(layout)
-        self.depsList=QtGui.QListWidget(self)
-        layout.addWidget(self.depsList)
-        buttonLayout=QtGui.QHBoxLayout()
-        layout.addLayout(buttonLayout)
-        self.addButton(buttonLayout,"Ok",self.okPressed)
-        self.addButton(buttonLayout,"Cancel",self.cancelPressed)
-        self.addButton(buttonLayout,"Add",self.addPressed)
-        self.addButton(buttonLayout,"Remove",self.removePressed)
+        uis.loadDialog('deps',self)
+        buttonNames=['ok','cancel','add','remove','up','down']
+        for name in buttonNames:
+            button=getattr(self,name+'Button')
+            handler=getattr(self,name+'Pressed')
+            button.clicked.connect(handler)
         self.libs=[]
         self.depsList.clear()
         for lib in libs:
@@ -24,6 +20,20 @@ class DependenciesDialog(QtGui.QDialog):
         b=QtGui.QPushButton(text)
         b.clicked.connect(callback)
         layout.addWidget(b)
+
+    def upPressed(self):
+        cur=self.depsList.currentRow()
+        if cur>0:
+            item=self.depsList.takeItem(cur)
+            self.depsList.insertItem(cur-1,item)
+            self.depsList.setCurrentRow(cur-1)
+
+    def downPressed(self):
+        cur=self.depsList.currentRow()
+        if cur<(self.depsList.count()-1):
+            item=self.depsList.takeItem(cur)
+            self.depsList.insertItem(cur+1,item)
+            self.depsList.setCurrentRow(cur+1)
 
     def addPressed(self):
         res=QtGui.QInputDialog.getText(self,"Library Name","Library")
