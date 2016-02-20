@@ -30,6 +30,8 @@ def generate():
         f.close()
         for i in xrange(0,len(lines)):
             line=lines[i]
+            line=line.replace('QtGui.QPixmap(_fromUtf8("../icons','QtGui.QPixmap(_fromUtf8("icons')
+            lines[i]=line
             if line.startswith('# Created'):
                 lines[i]='#\n'
             if line.startswith("class Ui_"):
