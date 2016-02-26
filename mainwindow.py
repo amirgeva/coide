@@ -101,7 +101,9 @@ class MainWindow(QtGui.QMainWindow):
         self.paneLocals.hide()
         self.paneStack.hide()
         
-
+        #self.sc=QtGui.QShortcut("Ctrl+F8",self)
+        #self.sc.activated.connect(self.prtsc)
+        
     def closeEvent(self, event):
         """ Called before the application window closes
 
@@ -217,6 +219,7 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Fonts',self,triggered=self.settingsFonts))
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
         m.addAction(QtGui.QAction('&Templates',self,triggered=self.settingsTemplates))
+        m.addAction(QtGui.QAction('&Plugins',self,triggered=self.settingsPlugins))
 
     def onViewPaneWorkspace(self):
         self.paneWorkspace.show()
@@ -388,6 +391,13 @@ class MainWindow(QtGui.QMainWindow):
         if d.exec_():
             d.save()
             self.updateTemplates()
+            
+    def settingsPlugins(self):
+        """ Show the python plugins settings dialog """
+        from settings import PluginsDialog
+        d=PluginsDialog()
+        if d.exec_():
+            d.save()
 
     def settingsGeneral(self):
         """ Show the general settings """

@@ -89,7 +89,7 @@ class EditorSettingsDialog(QtGui.QDialog):
         self.indentSpaces.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp('\d+')))
         self.indentSpaces.setText(s.value('indent','2').toString())
         self.clangCB.setCheckState(QtCore.Qt.Checked if s.value('clangCompletion',True).toBool() else QtCore.Qt.Unchecked)
-        
+
     def save(self):
         s=QtCore.QSettings()
         indent=2
@@ -210,3 +210,40 @@ class TemplatesDialog(QtGui.QDialog):
         
     def save(self):
         pass
+
+class PluginsDialog(QtGui.QDialog):
+    def __init__(self,parent=None):
+        super(PluginsDialog,self).__init__(parent)
+        uis.loadDialog('plugins',self)
+        s=QtCore.QSettings()
+        self.dir=s.value('pluginsDir','').toString()
+        self.pluginsDirectory.setText(self.dir)
+        self.dirBrowse.clicked.connect(self.browsePluginsDir)
+        self.pluginsTable.setColumnCount(2);
+        self.pluginsTable.setHorizontalHeaderItem(0,QtGui.QTableWidgetItem('Plugin'))
+        self.pluginsTable.setHorizontalHeaderItem(1,QtGui.QTableWidgetItem('Shortcut'))
+        self.updatePlugins()
+        self.pluginsTable.resizeRowsToContents()
+
+    def updatePlugins(self):
+        if self.dir:
+            files=os.listdir(self.dir)
+            files=[f for f in files if f.endswith('.py')]
+            self.pluginsTable.setRowCount(len(files))
+            for i in xrange(0,len(files)):
+                name=os.path.basename(files[i])
+                item=QtGui.QTableWidgetItem(name)
+                item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
+                self.pluginsTable.setItem(i,0,item)
+
+    def browsePluginsDir(self):
+        d=QtGui.QFileDialog.getExistingDirectory(directory=self.dir)
+        if d:
+            self.dir=d
+            self.pluginsDirectory.setText(d)
+            self.updatePlugins()
+        
+    def save(self):
+        s=QtCore.QSettings()
+        s.setValue('pluginsDir',self.dir)
+
