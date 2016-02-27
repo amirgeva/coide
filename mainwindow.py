@@ -16,6 +16,7 @@ from properties import Properties
 import utils
 import genmake
 import uis
+import plugins
 
 class MainWindow(QtGui.QMainWindow):
     """ Main IDE Window
@@ -101,6 +102,7 @@ class MainWindow(QtGui.QMainWindow):
         self.paneLocals.hide()
         self.paneStack.hide()
         
+        self.plugins=plugins.PluginsManager()
         #self.sc=QtGui.QShortcut("Ctrl+F8",self)
         #self.sc.activated.connect(self.prtsc)
         
@@ -394,7 +396,7 @@ class MainWindow(QtGui.QMainWindow):
             
     def settingsPlugins(self):
         """ Show the python plugins settings dialog """
-        from settings import PluginsDialog
+        from plugins import PluginsDialog
         d=PluginsDialog()
         if d.exec_():
             d.save()
