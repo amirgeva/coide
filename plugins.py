@@ -2,6 +2,7 @@ from PyQt4 import QtCore,QtGui
 import uis
 import os
 import imp
+import globals
 from buildsettings import check
 
 class Plugin(QtCore.QObject):
@@ -13,7 +14,9 @@ class Plugin(QtCore.QObject):
         self.action=None
     
     def activated(self):
-        print "Triggered"
+        c=globals.mw.createPluginCuror()
+        if c:
+            self.activate(c)
 
     def load(self):
         fp=None
@@ -23,11 +26,9 @@ class Plugin(QtCore.QObject):
             (fp, pathname, description)=imp.find_module(self.name,[self.dir])
             self.module=imp.load_module(self.name,fp,pathname,description)
             if 'activate' in dir(self.module):
-                print "Found activate in {}".format(self.name)
                 self.activate=getattr(self.module,'activate')
                 if self.shortcut:
-                    print "Creating action shortcut={}".format(self.shortcut)
-                    self.action=QtGui.QAction(self,shortcut=self.shortcut,triggered=self.activated)
+                    self.action=QtGui.QAction(self.name,self,shortcut=self.shortcut,triggered=self.activated)
                 return True
             return False
         except ImportError,e:
@@ -54,6 +55,10 @@ class PluginsManager(QtCore.QObject):
                 p=Plugin(self.dir,f)
                 if p.load():
                     self.plugins[p.name]=p
+                    
+    def addToMenu(self,menu):
+        for name in self.plugins:
+            menu.addAction(self.plugins.get(name).action)
                 
 class ShortcutDialog(QtGui.QDialog):
     def __init__(self,shortcut,parent=None):
