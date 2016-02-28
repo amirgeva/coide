@@ -56,6 +56,8 @@ class MainWindow(QtGui.QMainWindow):
         self.central.currentChanged.connect(self.tabChanged)
         self.tabOrder=[]
         
+        self.plugins=plugins.PluginsManager()
+
         self.setupMenu()
         self.setupContextMenuItems()
         self.setupToolbar(rootDir)
@@ -102,7 +104,6 @@ class MainWindow(QtGui.QMainWindow):
         self.paneLocals.hide()
         self.paneStack.hide()
         
-        self.plugins=plugins.PluginsManager()
         #self.sc=QtGui.QShortcut("Ctrl+F8",self)
         #self.sc.activated.connect(self.prtsc)
         
@@ -222,6 +223,10 @@ class MainWindow(QtGui.QMainWindow):
         m.addAction(QtGui.QAction('&Editor',self,triggered=self.settingsEditor))
         m.addAction(QtGui.QAction('&Templates',self,triggered=self.settingsTemplates))
         m.addAction(QtGui.QAction('&Plugins',self,triggered=self.settingsPlugins))
+        
+        m=bar.addMenu('&Tools')
+        pm=m.addMenu('&Plugins')
+        self.plugins.addToMenu(pm)
 
     def onViewPaneWorkspace(self):
         self.paneWorkspace.show()
@@ -266,12 +271,12 @@ class MainWindow(QtGui.QMainWindow):
             actions.extend(self.contextMenuItems.get('files'))
         menu.insertActions(first,actions)
         menu.insertSeparator(first)
-            
+        
     def contextToggleBreakpoint(self):
         e=self.central.currentWidget()
         self.breakpoints.toggleBreakpoint(e)
         e.update()
-
+        
     def contextEditBreakpoint(self):
         e=self.central.currentWidget()
         path=e.path
@@ -311,6 +316,13 @@ class MainWindow(QtGui.QMainWindow):
         #path=e.path
         self.breakpoints.toggleBreakpoint(e)
         e.update()
+
+    def createPluginCuror(self):
+        from pcursor import PluginCursor
+        e=self.central.currentWidget()
+        if e:
+            return PluginCursor(e.textCursor())
+        return None
 
     def setupToolbar(self,rootDir):
         """ Creates the application main toolbar """
