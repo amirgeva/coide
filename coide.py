@@ -15,7 +15,8 @@ try:
 except ImportError:
     print "PyQt4 not installed.  try:   sudo apt-get install python-qt4"
     sys.exit(1)
-    
+
+import globals    
 from mainwindow import MainWindow
 import callbacks
 
@@ -48,8 +49,8 @@ def main():
     root=os.getenv('COIDE','')
     if len(root)==0:
         root=os.path.dirname(os.path.realpath(__file__))
-    w=MainWindow(root)
-    w.show()
+    globals.mw=MainWindow(root)
+    globals.mw.show()
     app.exec_()
     import system
     if not system.isScannerDone():
