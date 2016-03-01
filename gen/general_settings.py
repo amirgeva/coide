@@ -35,6 +35,9 @@ class Ui_EditorSettingsDialog(object):
         EditorSettingsDialog.sortFilesCB = QtGui.QCheckBox(EditorSettingsDialog)
         EditorSettingsDialog.sortFilesCB.setGeometry(QtCore.QRect(10, 20, 321, 27))
         EditorSettingsDialog.sortFilesCB.setObjectName(_fromUtf8("sortFilesCB"))
+        EditorSettingsDialog.clearCacheButton = QtGui.QPushButton(EditorSettingsDialog)
+        EditorSettingsDialog.clearCacheButton.setGeometry(QtCore.QRect(20, 60, 85, 27))
+        EditorSettingsDialog.clearCacheButton.setObjectName(_fromUtf8("clearCacheButton"))
 
         self.retranslateUi(EditorSettingsDialog)
         QtCore.QObject.connect(EditorSettingsDialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), EditorSettingsDialog.accept)
@@ -44,4 +47,5 @@ class Ui_EditorSettingsDialog(object):
     def retranslateUi(self, EditorSettingsDialog):
         EditorSettingsDialog.setWindowTitle(_translate("EditorSettingsDialog", "Editor Settings", None))
         EditorSettingsDialog.sortFilesCB.setText(_translate("EditorSettingsDialog", "Sort by File name", None))
+        EditorSettingsDialog.clearCacheButton.setText(_translate("EditorSettingsDialog", "Clear Cache", None))
 
