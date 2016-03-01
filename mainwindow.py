@@ -521,6 +521,7 @@ class MainWindow(QtGui.QMainWindow):
         for sym in undefs:
             words=sym.split(':')
             words=[w for w in words if w]
+            words.append(sym)
             for word in words:
                 if word in syms:
                     s=syms.get(word)
