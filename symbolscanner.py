@@ -72,7 +72,6 @@ class Scanner:
                     refsIdx.append(r)
             all.append(sym+"."+','.join(refsIdx))
         s.setValue('library_symbols',';'.join(all))
-        #s.setValue('library_symbols',pickle.dumps(self.librarySymbols))
         s.sync()
         
     def loadLists(self):
@@ -80,7 +79,6 @@ class Scanner:
         utils.timestamp('load from settings')
         ls=s.value('library_symbols').toString()
         utils.timestamp('deserialize')
-        #self.librarySymbols=pickle.loads(ls)
         self.librarySymbols={}
         all=ls.split(';')
         for s in all:
