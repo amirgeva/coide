@@ -42,6 +42,19 @@
     <string>Sort by File name</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="clearCacheButton">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>60</y>
+     <width>85</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Clear Cache</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
