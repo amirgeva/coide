@@ -40,7 +40,6 @@ def main():
     directory where the 'parsers' and 'icons' sub-dirs are
     
     """
-
     app=QtGui.QApplication(sys.argv)
     QtCore.QCoreApplication.setOrganizationName("MLGSoft")
     QtCore.QCoreApplication.setOrganizationDomain("mlgsoft.com")
@@ -49,6 +48,7 @@ def main():
     root=os.getenv('COIDE','')
     if len(root)==0:
         root=os.path.dirname(os.path.realpath(__file__))
+    os.chdir(root)
     globals.mw=MainWindow(root)
     globals.mw.show()
     app.exec_()
