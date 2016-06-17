@@ -342,6 +342,8 @@ class Qutepart(QPlainTextEdit):
         cursor = self.cursorForPosition(pos)
         self.contextBlock = cursor.block()
         self.contextMenuLine = self.contextBlock.blockNumber()
+        cursor.select(QtGui.QTextCursor.WordUnderCursor)
+        self.contextMenuWord = cursor.selectedText()
         if self.mainWindow:
             self.mainWindow.insertContextMenuItems(self,menu)
         menu.exec_(self.viewport().mapToGlobal(pos))
