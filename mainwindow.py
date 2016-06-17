@@ -17,6 +17,7 @@ import utils
 import genmake
 import uis
 import plugins
+import dwarf
 
 class MainWindow(QtGui.QMainWindow):
     """ Main IDE Window
@@ -254,6 +255,9 @@ class MainWindow(QtGui.QMainWindow):
             'breakpoints':[
                 QtGui.QAction('Edit Breakpoint',self,triggered=self.contextEditBreakpoint),
                 QtGui.QAction('Dis/Enable Breakpoint',self,triggered=self.contextAbleBreakpoint)
+            ],
+            'symbols':[
+                QtGui.QAction('Goto Definition',self,triggered=self.contextGotoDefinition)
             ]
         }
         
@@ -265,12 +269,32 @@ class MainWindow(QtGui.QMainWindow):
         actions=list(self.contextMenuItems.get('all'))
         path=editor.path
         line=editor.contextMenuLine
+        word=editor.contextMenuWord
+        self.context=(path,line,word)
+        if len(word)>0:
+            actions.extend(self.contextMenuItems.get('symbols'))
         if self.breakpoints.hasBreakpoint(path,line):
             actions.extend(self.contextMenuItems.get('breakpoints'))
         if self.workspaceTree.exists(editor.contextFilename):
             actions.extend(self.contextMenuItems.get('files'))
         menu.insertActions(first,actions)
         menu.insertSeparator(first)
+        
+    def contextGotoDefinition(self):
+        src=os.path.join(self.workspaceTree.root,'src')
+        intr=os.path.join(self.workspaceTree.root,'intr')
+        srcpath=self.context[0]
+        if srcpath.startswith(src) and srcpath.endswith('.cpp'):
+            rel=srcpath[len(src):]
+            rel=rel[1:-4]+'.o'
+            objpath=os.path.join(intr,rel)
+            (dir,name)=os.path.split(objpath)
+            objpath=os.path.join(dir,'Debug',name)
+            s=dwarf.DwarfSymbols(objpath)
+            (path,line)=s.find(self.context[2])
+            if len(path)>0:
+                self.goToSource(path,line,1)
+                
         
     def contextToggleBreakpoint(self):
         e=self.central.currentWidget()
