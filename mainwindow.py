@@ -290,10 +290,13 @@ class MainWindow(QtGui.QMainWindow):
             objpath=os.path.join(intr,rel)
             (dir,name)=os.path.split(objpath)
             objpath=os.path.join(dir,'Debug',name)
-            s=dwarf.DwarfSymbols(objpath)
-            (path,line)=s.find(self.context[2])
-            if len(path)>0:
-                self.goToSource(path,line,1)
+            try:
+                s=dwarf.DwarfSymbols(objpath)
+                (path,line)=s.find(self.context[2])
+                if len(path)>0:
+                    self.goToSource(path,line,1)
+            except IOError:
+                utils.message('Project must first be compiled in Debug')
                 
         
     def contextToggleBreakpoint(self):
