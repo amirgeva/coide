@@ -7,6 +7,8 @@ class DwarfSymbols:
         self.symbols={}
         (dir,name)=os.path.split(objpath)
         (rawline,err_rawline)=utils.call(dir,'objdump','--dwarf=rawline',name)
+        if err_rawline.strip().endswith('No such file'):
+            raise IOError()
         self.files={}
         self.collectFiles(rawline)
         (info,err_info)=utils.call(dir,'objdump','--dwarf=info',name)
