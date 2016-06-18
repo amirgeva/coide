@@ -284,12 +284,18 @@ class MainWindow(QtGui.QMainWindow):
         src=os.path.join(self.workspaceTree.root,'src')
         intr=os.path.join(self.workspaceTree.root,'intr')
         srcpath=self.context[0]
+        objpath=''
         if srcpath.startswith(src) and srcpath.endswith('.cpp'):
             rel=srcpath[len(src):]
             rel=rel[1:-4]+'.o'
             objpath=os.path.join(intr,rel)
             (dir,name)=os.path.split(objpath)
             objpath=os.path.join(dir,'Debug',name)
+        if srcpath.startswith(self.workspaceTree.root) and srcpath.endswith('.h'):
+            dir=self.workspaceTree.mainPath()
+            mkPath=os.path.join(dir,'Makefile')
+            objpath=utils.objForHeader(mkPath,srcpath)
+        if len(objpath)>0:
             try:
                 s=dwarf.DwarfSymbols(objpath)
                 (path,line)=s.find(self.context[2])
