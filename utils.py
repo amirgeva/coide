@@ -29,6 +29,19 @@ def message(msg):
 def errorMessage(msg):
     message(msg)
 
+# Find the dependency on a header in a makefile 
+# and return an object path that depends on it
+def objForHeader(mkPath,headerPath):
+    for line in open(mkPath,'r').readlines():
+        p=line.strip().split()
+        if len(p)==0:
+            continue
+        p0=p[0]
+        if p0.endswith('.o:') and '/Debug/' in p0:
+            o=p0[0:-1]
+            if headerPath in p:
+                return o
+    return ''
 
 def appendOutput(output,text):
     #text=output.toPlainText()
