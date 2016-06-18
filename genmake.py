@@ -313,7 +313,8 @@ class Generator:
             (out,err)=utils.shellcall(dir,depcmd)
             p=out.find(':')
             if p>0:
-                o.write('{}{}'.format(objs[i],out[p:]))
+                hdeps=out[p:].replace('\\\n','')
+                o.write('{}{}'.format(objs[i],hdeps))
             if self.cppcheck:
                 o.write('\tcppcheck {}/{}\n'.format(absdir,srcs[i]))
             o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
