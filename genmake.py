@@ -307,21 +307,13 @@ class Generator:
         o.write('{}: {}\n\n'.format(cfg,outfile))
             
         for i in xrange(0,len(objs)):
-            hdeps=[]
             src=os.path.join(absdir,srcs[i])
-            depcmd='g++ {} -E {}'.format(cflags,src)
-            depcmd=depcmd+' | grep {} | grep -v {}'.format(self.root,src)
+            depcmd='g++ {} -MM {}'.format(cflags,src)
             depcmd=templates.generateMkCommand(depcmd,mkProps)
             (out,err)=utils.shellcall(dir,depcmd)
-            #open(os.path.join(dir,"deplog_{}.txt".format(i)),'w').write(out)
-            for line in out.split('\n'):
-                if line.startswith('#'):
-                    parts=line.split('"')
-                    if len(parts)>1:
-                        hpath=parts[1]
-                        if hpath.startswith(self.root) and not hpath.endswith('/'):
-                            hdeps.append(hpath)
-            o.write('{}: {} {}\n'.format(objs[i],src,' '.join(hdeps)))
+            p=out.find(':')
+            if p>0:
+                o.write('{}{}'.format(objs[i],out[p:]))
             if self.cppcheck:
                 o.write('\tcppcheck {}/{}\n'.format(absdir,srcs[i]))
             o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
