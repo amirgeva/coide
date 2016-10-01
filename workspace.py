@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from consts import DirectoryRole,FileRole
@@ -21,6 +22,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actClean = QtGui.QAction('Clean',self,triggered=self.cleanCurrent)
         self.actRebuild = QtGui.QAction('Rebuild',self,triggered=self.rebuildCurrent)
         self.actBuildSettings = QtGui.QAction('Build Settings',self,triggered=self.buildSettings)
+        self.actCopySettings = QtGui.QAction('Copy Settings',self,triggered=self.copySettings)
         self.actSetMain = QtGui.QAction('Set Main Project',self,triggered=self.setMain)        
         self.actEditDependencies = QtGui.QAction('Dependencies',self,triggered=self.editDependencies)
         self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
@@ -80,6 +82,7 @@ class WorkSpace(QtGui.QTreeWidget):
                 menu.addAction(self.actRebuild)
                 menu.addAction(self.actClean)
                 menu.addAction(self.actBuildSettings)
+                menu.addAction(self.actCopySettings)
                 menu.addSeparator()
                 menu.addAction(self.actSetMain)
                 menu.addAction(self.actEditDependencies)
@@ -194,6 +197,14 @@ class WorkSpace(QtGui.QTreeWidget):
         item=self.currentItem()
         path=item.data(0,DirectoryRole).toString()
         self.mainWindow.buildSettings(path)
+        
+    def copySettings(self):
+        item=self.currentItem()
+        path=item.data(0,DirectoryRole).toString()
+        src=QtGui.QFileDialog.getExistingDirectory(caption="Copy From",directory=path)
+        if src:
+            shutil.copy(os.path.join(src,'mk.cfg'),path)
+            self.mainWindow.generateQueue.add(path)
         
     def buildCurrent(self):
         item=self.currentItem()
