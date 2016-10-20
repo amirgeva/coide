@@ -28,6 +28,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actDebugSettings = QtGui.QAction('Debug Settings',self,triggered=self.editDebugSettings)
         self.actGenerate = QtGui.QAction('Generate Makefile',self,triggered=self.generate)
         self.actCreateFolder = QtGui.QAction('Create Folder',self,triggered=self.createFolder)
+        self.actCreateHWFolder = QtGui.QAction('Create App Project',self,triggered=self.createAppProject)
         self.actCreateFile = QtGui.QAction('Create File',self,triggered=self.createFile)
         self.actRefresh = QtGui.QAction('Refresh',self,triggered=self.refreshWorkspace)
         self.actDelete = QtGui.QAction('Delete',self,triggered=self.deletePath)
@@ -93,6 +94,7 @@ class WorkSpace(QtGui.QTreeWidget):
                     menu.addAction(self.actBuildSettings)
             menu.addAction(self.actGenerate)
             menu.addAction(self.actCreateFolder)
+            menu.addAction(self.actCreateHWFolder)
             menu.addAction(self.actCreateFile)
             menu.addAction(self.actRefresh)
         else:
@@ -294,10 +296,18 @@ class WorkSpace(QtGui.QTreeWidget):
             item=self.currentItem()
             path=item.data(0,DirectoryRole).toString()
             try:
-                os.mkdir(os.path.join(path,name))
+                path=os.path.join(path,name)
+                os.mkdir(path)
                 self.update()
+                return path
             except OSError:
                 utils.message("Failed to create folder")
+        return ''
+                
+    def createAppProject(self):
+        path=self.createFolder()
+        if len(path)>0:
+            self.mainWindow.createHelloWorldProject(path)
         
     def createFile(self):
         (name,rc)=QtGui.QInputDialog.getText(self,"Create File","File Name")
