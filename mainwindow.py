@@ -726,6 +726,20 @@ class MainWindow(QtGui.QMainWindow):
         if rc==QtGui.QMessageBox.Yes:
             self.generateAll()
             utils.message("Done")
+            
+    def createHelloWorldProject(self,dir):
+        try:
+            os.makedirs(dir)
+        except OSError:
+            pass
+        mainpath=os.path.join(dir,'main.cpp')
+        f=open(mainpath,"w")
+        f.write('#include <iostream>\n\n\nint main(int argc, char* argv[])\n')
+        f.write('{\n  std::cout << "Hello World" << std::endl;\n  return 0;\n}\n')
+        f.close()
+        self.workspaceTree.update()
+        genmake.generateDirectory(self.workspaceTree.root,dir)
+        self.workspaceTree.setMainPath(dir)
 
     def initWorkspace(self):
         d=QtGui.QFileDialog()
@@ -735,14 +749,8 @@ class MainWindow(QtGui.QMainWindow):
             ws=(d.selectedFiles())[0]
             os.makedirs(os.path.join(ws,'include'))
             dir=os.path.join(ws,'src','hello')
-            os.makedirs(dir)
-            mainpath=os.path.join(dir,'main.cpp')
-            f=open(mainpath,"w")
-            f.write('#include <iostream>\n\n\nint main(int argc, char* argv[])\n')
-            f.write('{\n  std::cout << "Hello World" << std::endl;\n  return 0;\n}\n')
-            f.close()
             self.workspaceTree.setWorkspacePath(ws)
-            self.workspaceTree.setMainPath(dir)
+            self.createHelloWorldProject(dir)
             self.workspaceTree.saveSettings()
             self.generateAll()            
 
