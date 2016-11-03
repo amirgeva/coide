@@ -66,7 +66,7 @@ class Parser:
                 if tagdepth<1:
                     break
                 name=name+v
-        except EndOfText,e:
+        except EndOfText:
             t="END"
         return name
         
