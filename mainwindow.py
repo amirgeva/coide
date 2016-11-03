@@ -50,6 +50,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.generateQueue=set()        
         self.editors={}
+        self.file_times={}
         self.central=QtGui.QTabWidget()
         self.setCentralWidget(self.central)
         self.central.setTabsClosable(True)
@@ -708,6 +709,15 @@ class MainWindow(QtGui.QMainWindow):
                 if stat=='Modified' and path in self.workspaceTree.fileItems:
                     item=self.workspaceTree.fileItems.get(path)
                     item.setForeground(0,QtGui.QBrush(QtGui.QColor(255,0,0)))
+        for path in self.editors:
+            last=self.file_times.get(path)
+            cur=os.path.getmtime(path)
+            if cur!=last:
+                self.file_times[path]=cur
+                res=QtGui.QMessageBox.question(self,'File changed','Reload {}'.format(path),QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
+                if res==QtGui.QMessageBox.Yes:
+                    text=''.join(open(path,'r').readlines())
+                    self.editors.get(path).text=text
                 
             
     def generateAllInThread(self):
@@ -841,6 +851,7 @@ class MainWindow(QtGui.QMainWindow):
                 elif rc == QtGui.QMessageBox.Cancel:
                     return False
             del self.editors[path]
+            del self.file_times[path]
         self.central.removeTab(index)
         return True
 
@@ -960,6 +971,7 @@ class MainWindow(QtGui.QMainWindow):
                     index=self.central.addTab(editor,os.path.basename(path))
                     self.central.setTabToolTip(index,path)
                     self.editors[path]=editor
+                    self.file_times[path]=os.path.getmtime(path)
                     self.loadFont('codefont',editor)
                     self.central.tabBar().setCurrentIndex(index)
                     bps=self.breakpoints.pathBreakpoints(path)
