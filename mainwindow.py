@@ -795,7 +795,8 @@ class MainWindow(QtGui.QMainWindow):
                     f.write(doc.toPlainText())
                     f.close()
                     doc.setModified(False)
-                    dir=os.path.dirname(path)
+                    self.file_times[path]=os.path.getmtime(path)
+                    #dir=os.path.dirname(path)
                     #self.generateQueue.add(dir)
                     if self.symbolScan:
                         from system import getLibrarySymbols
