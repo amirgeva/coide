@@ -48,6 +48,8 @@ def main():
     root=os.getenv('COIDE','')
     if len(root)==0:
         root=os.path.dirname(os.path.realpath(__file__))
+    else:
+        globals.dev=True
     os.chdir(root)
     globals.mw=MainWindow(root)
     globals.mw.show()
