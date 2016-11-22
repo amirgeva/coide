@@ -74,11 +74,13 @@ class GeneralSettingsDialog(QtGui.QDialog):
         uis.loadDialog('general_settings',self)
         s=QtCore.QSettings()
         self.sortFilesCB.setCheckState(QtCore.Qt.Checked if s.value('sortFiles',True).toBool() else QtCore.Qt.Unchecked)
+        self.customPrinters.setCheckState(QtCore.Qt.Checked if s.value('customPrinters',True).toBool() else QtCore.Qt.Unchecked)
         self.clearCacheButton.clicked.connect(self.clearCache)
     
     def save(self):
         s=QtCore.QSettings()
         s.setValue('sortFiles',(self.sortFilesCB.checkState() == QtCore.Qt.Checked))
+        s.setValue('customPrinters',(self.customPrinters.checkState() == QtCore.Qt.Checked))
         s.sync()
         
     def clearCache(self):
