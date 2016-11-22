@@ -1,28 +1,17 @@
 #!/usr/bin/env python
-from xlex import Lexer,TokenizerException,EndOfText
+from xlex import Lexer
+from xnode import Node
+#import re
 
-class Node:
-    def __init__(self,name='',value=''):
-        self.name=name
-        self.value=value
-        self.children=[]
-        
-    def add_child(self,c):
-        self.children.append(c)
-        
-    def iprint(self,indent):
-        res=' '*indent+self.name+"="+self.value
-        if len(self.children)>0:
-            res=res+" {\n"
-            for c in self.children:
-                res=res+c.iprint(indent+2)
-            res=res+' '*indent+"}\n"
-        else:
-            res=res+'\n'
-        return res
-        
-    def __repr__(self):
-        return self.iprint(0)
+#stdpat=re.compile('{<.+>=(.+)(,.+)}')
+#
+#def parse_name(s):
+#    m=re.match(stdpat,s)
+#    if m:
+#        g=m.groups()
+#        return g[0]
+#    return s
+    
 
 class ParseException(Exception):
     def __init__(self,value):
@@ -81,7 +70,8 @@ class Parser:
                 if t=='RTAG':
                     tagdepth=tagdepth-1
                 if tagdepth==0:
-                    if not t or t=='COMMA' or t=='RBRACE':
+                    #if not t or t=='COMMA' or t=='RBRACE':
+                    if not t or t=='RBRACE':
                         break
                     if t=='LBRACE':
                         value='struct'
@@ -95,9 +85,12 @@ class Parser:
                     value=value+' '
                 value=value+v
                 node.value=value
-        except EndOfText,e:
+        except EndOfText:
             t="END"
         node.value=value
+        if node.value=='struct' and len(node.children)==1 and node.children[0].name.startswith('std::') and node.children[0].value:
+            node.value=node.children[0].value
+            node.children=[]
         return (value,t)
         
     def parse_children(self,node):
@@ -162,7 +155,6 @@ def test():
         print arg
         text=open(arg,'r').read()
         print text
-        indent=0
         p=Parser(text)
         print p.root
 
