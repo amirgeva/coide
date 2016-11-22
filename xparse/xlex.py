@@ -44,8 +44,25 @@ def parse_string(text):
             esc=False
         cur=cur+1
     return text[0:(cur+1)]
-    
-class Lexer:
+                
+class Token(object):
+    def __init__(self,t='',v=''):
+        self.token=t
+        self.value=v
+
+    def __str__(self):
+        return self.token        
+        
+    def __repr__(self):
+        return '{}:{}'.format(self.token,self.value)
+
+    def __eq__(self,other):
+        return self.token==str(other)
+
+    def __ne__(self,other):
+        return self.token!=str(other)
+        
+class Lexer(object):
     def __init__(self,text):
         self.text=text
         self.pos=0
@@ -55,6 +72,13 @@ class Lexer:
         
     def get_rest(self):
         return self.text[self.pos:]
+
+    def all(self):
+        try:
+            while True:
+                yield self.analyze()
+        except EndOfText:
+            pass
         
     def analyze(self,include_white_space=False):
         if len(self.queue)>0:
@@ -79,7 +103,31 @@ class Lexer:
                         return self.analyze()
         self.lastToken=tokname
         self.lastValue=tokvalue
-        return (tokname,tokvalue)
+        return Token(tokname,tokvalue)
+        #return (tokname,tokvalue)
 
     def push(self):
         self.queue.insert(0,(self.lastToken,self.lastValue))
+
+def test():
+    import sys
+    for i in xrange(1,len(sys.argv)):
+        arg=sys.argv[i]
+        print "Analyzing: {}".format(arg)
+        text=open(arg,'r').read()
+        print text
+        lex=Lexer(text)
+        indent=0
+        for tok in lex.all():
+            if tok.token=='RBRACE':
+                indent-=2
+            spacing=''
+            if indent>0:
+                spacing=' '*indent
+            print "{}{}:{}".format(spacing,tok.token,tok.value)
+            if tok.token=='LBRACE':
+                indent+=2
+        
+if __name__=='__main__':
+    test()
+    
