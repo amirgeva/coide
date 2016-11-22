@@ -46,13 +46,26 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>60</y>
+     <y>90</y>
      <width>85</width>
      <height>27</height>
     </rect>
    </property>
    <property name="text">
     <string>Clear Cache</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="customPrinters">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>50</y>
+     <width>201</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Use custom gdb printers</string>
    </property>
   </widget>
  </widget>
