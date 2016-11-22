@@ -4,11 +4,12 @@ import subprocess
 import re
 import fcntl
 import os
-import inspect
-import imp
-import sys
+#import inspect
+#import imp
+#import sys
 import time
 import handlers
+import globals
 
 class GDBWrapper:
     """ Wrapper above the GDB process
@@ -20,6 +21,7 @@ class GDBWrapper:
 
     def __init__(self,bps,args,dir):
         """ Start gdb. """
+        settings=QtCore.QSettings()
         self.breakpoints=bps
         self.breakpoints.breakpointsChanged.connect(self.setBreakpoints)
         dataRoot=os.path.dirname(os.path.abspath(__file__))
@@ -57,7 +59,9 @@ class GDBWrapper:
         self.changed=True
         # dict:  str filepath -> dict of breakpoints ( int line -> Breakpoint )
         self.allFiles=set()
-        self.initializePrettyPrints(dataRoot)
+        
+        if settings.value('customPrinters',True).toBool():
+            self.initializePrettyPrints(dataRoot)
         
         self.pid=''
 
@@ -85,10 +89,10 @@ class GDBWrapper:
         """ Installs the python extension for pretty printing """
         path=os.path.join(dataRoot,"gdb_printers","python")
         cmd=("python\nimport sys\nsys.path.insert(0,'{}')\n"+
-            "from libstdcxx.v6.printers import register_libstdcxx_printers\n"+
-            "from prims.printers import register_prim_printers\n"+
-            "register_libstdcxx_printers(None)\n"+
-            "register_prim_printers()\n"+
+#            "from libstdcxx.v6.printers import register_libstdcxx_printers\n"+
+#            "from prims.printers import register_prim_printers\n"+
+#            "register_libstdcxx_printers(None)\n"+
+#            "register_prim_printers()\n"+
             "from eigen.printers import register_eigen_printers\n"+
             "register_eigen_printers(None)\n"+
             "end").format(path)
@@ -390,8 +394,10 @@ class GDBWrapper:
         
     def evaluate(self,var):
         import xparse
-        from xparse.xparse import Node
+        #from xparse.xparse import Node
         lines=self.printVar(var)
+        if globals.dev:
+            print "@@@\n{}\n@@@".format(lines)
         return xparse.parse(lines)
         
     def flatten(self,root):
@@ -430,13 +436,14 @@ class GDBWrapper:
         lines=lines.split('\n')
         groups=[]
         for line in lines:
-            if line[0]!=' ':
-                groups.append([])
-            groups[-1].append(line)
+            if line:
+                if line[0]!=' ':
+                    groups.append([])
+                groups[-1].append(line)
         for group in groups:
             all='\n'.join(group)
             import xparse
-            from xparse.xparse import Node
+            #from xparse.xparse import Node
             cur=xparse.parse(all)
             if cur:
                 res[cur.name]=cur
