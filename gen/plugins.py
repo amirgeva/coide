@@ -3,7 +3,6 @@
 # Form implementation generated from reading ui file 'uis/plugins.ui'
 #
 #
-#      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
 
