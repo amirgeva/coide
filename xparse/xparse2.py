@@ -3,6 +3,13 @@ import sys
 from xlex import Lexer
 from xnode import Node
 
+class ParseException(Exception):
+    def __init__(self,value):
+        self.value=value
+    def __str__(self):
+        return repr(self.value)
+
+
 def recursive_find(seq,start,stop,innermost=False):
     laststart=-1
     for i in xrange(0,len(seq)):
@@ -105,7 +112,9 @@ def print_seq(seq):
         if t.token=='LBRACE': indent+=2
 
 def value_node(seq):
-    print seq
+    #print seq
+    if len(seq)==1:
+        return seq[0]
     res=Node(seq[0].value)
     if seq[1].token=='EQUALS':
         res.value=seq[2].value
@@ -116,16 +125,25 @@ class Parser(object):
         seq=[t for t in Lexer(text).all()]
         collapse_all(seq)
         self.root=self.parse(seq)
-        print_seq(seq)
-        
+        #print_seq(seq)
+
+    def finalize_root(self,seq):
+        if len(seq)==5 and seq[1]=='EQUALS' and seq[3]=='EQUALS' and seq[4]=='NODE':
+            root=seq[4].value
+            root.name=seq[0].value
+            root.value=seq[2].value
+            return root
+        return None
+
     def parse(self,seq):
         while True:
             idx=recursive_find(seq,'LBRACE','RBRACE',True)
             if not idx:
-                break
+                return self.finalize_root(seq)
             sub=seq[(idx[0]+1):(idx[1]-1)]
+            #print "Parsing: {}".format(sub)
             sibs=split_seq(sub,'COMMA')
-            cur=Node()
+            cur=Node('','struct')
             cur.children=[value_node(s) for s in sibs]
             seq[idx[0]].token='NODE'
             seq[idx[0]].value=cur
@@ -139,6 +157,7 @@ def test():
         text=open(arg,'r').read()
         print text
         p=Parser(text)
+        print p.root
 
 if __name__=='__main__':
     test()

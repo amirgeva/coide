@@ -10,11 +10,16 @@ class Node:
         self.children.append(c)
         
     def iprint(self):
-        res=self.name+"="+self.value
+        res=self.name+"="+str(self.value)
         if len(self.children)>0:
             res=res+"{"
             for c in self.children:
-                res=res+' '+c.iprint()
+                try:
+                    res=res+' '+str(c)
+                except TypeError:
+                    print "ERR:"
+                    print type(c)
+                    print c
             res=res+" }"
         return res
         
