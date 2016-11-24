@@ -9,25 +9,14 @@ class Node:
     def add_child(self,c):
         self.children.append(c)
         
-    def iprint(self):
-        res=self.name+"="+str(self.value)
-        if len(self.children)>0:
-            res=res+"{"
-            for c in self.children:
-                try:
-                    res=res+' '+str(c)
-                except TypeError:
-                    print "ERR:"
-                    print type(c)
-                    print c
-            res=res+" }"
-        return res
-        
     def __str__(self):
-        return self.iprint()
-        #return '{}={}'.format(self.name,self.value)
+        return self.name
         
     def __repr__(self):
-        return self.iprint()
+        return "N({}:{})".format(self.name,self.value)
 
+    def __eq__(self,other):
+        return self.name==str(other)
 
+    def __ne__(self, other):
+        return self.name != str(other)
