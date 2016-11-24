@@ -54,7 +54,7 @@ class Token(object):
         return self.token        
         
     def __repr__(self):
-        return '{}:{}'.format(self.token,self.value)
+        return 'T({}:{})'.format(self.token,self.value)
 
     def __eq__(self,other):
         return self.token==str(other)
