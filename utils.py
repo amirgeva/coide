@@ -123,7 +123,7 @@ class AsyncExecute:
             return True
         reads=[self.process.stdout.fileno(),self.process.stderr.fileno()]
         self.act=0
-        rc=select.select(reads,[],[])
+        rc=select.select(reads,[],[],0)
         for fd in rc[0]:
             if fd==self.process.stdout.fileno():
                 line=self.process.stdout.readline().strip()
