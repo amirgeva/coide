@@ -33,6 +33,7 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow,self).__init__(parent)
 
         s=QtCore.QSettings()
+        self.recent_ws=[d for d in s.value('recent_ws','').toString().split(':') if d]
 
         self.symbolScan=s.value('symbol_scan',True).toBool()
         self.setMinimumSize(QtCore.QSize(1024,768))
@@ -181,6 +182,7 @@ class MainWindow(QtGui.QMainWindow):
         m=bar.addMenu('&File')
         m.addAction(QtGui.QAction('&Initialize Workspace',self,triggered=self.initWorkspace))
         m.addAction(QtGui.QAction('Open &Workspace',self,triggered=self.openWorkspace))
+        self.recents_menu=m.addMenu('&Recent Workspaces')
         m.addAction(QtGui.QAction('&Save',self,shortcut='Ctrl+S',triggered=self.saveFile))
         m.addAction(QtGui.QAction('Save &As',self,triggered=self.saveAsFile))
         m.addAction(QtGui.QAction('&Close File',self,shortcut='Ctrl+F4',triggered=self.closeFile))
@@ -762,7 +764,34 @@ class MainWindow(QtGui.QMainWindow):
             self.workspaceTree.setWorkspacePath(ws)
             self.createHelloWorldProject(dir)
             self.workspaceTree.saveSettings()
-            self.generateAll()            
+            self.generateAll()
+            
+    def updateRecents(self):
+        ws=self.workspaceTree.root
+        if ws in self.recent_ws:
+            del self.recent_ws[self.recent_ws.index(ws)]
+        self.recent_ws.insert(0,ws)
+        while len(self.recent_ws)>4:
+            del self.recent_ws[-1]
+        s=QtCore.QSettings()
+        s.setValue('recent_ws',':'.join(self.recent_ws))
+        s.sync()
+        self.recents_menu.clear()
+        for ws in self.recent_ws:
+            l=lambda:self.openRecent(ws)
+            self.recents_menu.addAction(QtGui.QAction(ws,self,triggered=l))
+        
+            
+    def openRecent(self,ws):
+        self.workspaceTree.saveTabs(self.central)
+        self.closeAllTabs()
+        self.workspaceTree.setWorkspacePath(ws)
+        #self.generateAll()
+        self.loadTabs()
+        self.waitForScanner()
+        import symbolscanner
+        symbolscanner.setWorkspacePath(ws)
+        self.updateRecents()
 
     def openWorkspace(self):
         d=QtGui.QFileDialog()
@@ -770,15 +799,7 @@ class MainWindow(QtGui.QMainWindow):
         d.setOption(QtGui.QFileDialog.ShowDirsOnly)
         if d.exec_():
             ws=(d.selectedFiles())[0]
-            self.workspaceTree.saveTabs(self.central)
-            self.closeAllTabs()
-            self.workspaceTree.setWorkspacePath(ws)
-            self.generateAll()
-            self.loadTabs()
-            self.waitForScanner()
-            import symbolscanner
-            symbolscanner.setWorkspacePath(ws)
-                
+            self.openRecent(ws)
 
     def saveTabFile(self,index):
         n=self.central.tabBar().count()
@@ -918,6 +939,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             from system import disableSymbolScan
             disableSymbolScan()
+        self.updateRecents()
         
     def updateWorkspace(self):
         self.workspaceTree.update()
