@@ -34,7 +34,7 @@ def recursive_unite(seq,start,stop,name):
         if not idx:
             break
         i=idx[0]
-        seq[i].token=name
+        seq[i].name=name
         for j in xrange(i+1,idx[1]):
             seq[i].value+=seq[i+1].value
             del seq[i+1]
@@ -89,6 +89,8 @@ def collapse_all(seq):
         if m==n:
             break
         n=m
+    recursive_unite(seq,'LBRACKET','RBRACKET','INDEX')
+        
         
 def split_seq(seq,delim):
     res=[]
@@ -104,34 +106,34 @@ def split_seq(seq,delim):
         res.append(cur)
     return res
 
-def print_seq(seq):
-    indent=0
-    for t in seq:
-        if t.token=='RBRACE': indent-=2
-        print '{}{} : {}'.format(' '*indent,t.token,t.value)
-        if t.token=='LBRACE': indent+=2
-
 def value_node(seq):
-    #print seq
     if len(seq)==1:
         return seq[0]
+    if len(seq)==5 and seq[1]=='EQUALS' and seq[3]=='EQUALS':
+        res=seq[4]
+        res.name=seq[0].value
+        res.value=seq[2].value
+        return res
     res=Node(seq[0].value)
-    if seq[1].token=='EQUALS':
+    if seq[1]=='EQUALS':
         res.value=seq[2].value
     return res
         
 class Parser(object):
     def __init__(self,text):
-        seq=[t for t in Lexer(text).all()]
+        seq=[Node(t.token,t.value) for t in Lexer(text).all()]
         collapse_all(seq)
         self.root=self.parse(seq)
-        #print_seq(seq)
 
     def finalize_root(self,seq):
-        if len(seq)==5 and seq[1]=='EQUALS' and seq[3]=='EQUALS' and seq[4]=='NODE':
-            root=seq[4].value
+        if len(seq)==5 and seq[1]=='EQUALS' and seq[3]=='EQUALS':
+            root=seq[4]
             root.name=seq[0].value
             root.value=seq[2].value
+            return root
+        if len(seq)==3 and seq[1]=='EQUALS':
+            root=seq[2]
+            root.name=seq[0].value
             return root
         return None
 
@@ -141,12 +143,10 @@ class Parser(object):
             if not idx:
                 return self.finalize_root(seq)
             sub=seq[(idx[0]+1):(idx[1]-1)]
-            #print "Parsing: {}".format(sub)
             sibs=split_seq(sub,'COMMA')
-            cur=Node('','struct')
+            cur=Node('UNDEF','struct')
             cur.children=[value_node(s) for s in sibs]
-            seq[idx[0]].token='NODE'
-            seq[idx[0]].value=cur
+            seq[idx[0]]=cur
             del seq[(idx[0]+1):idx[1]]
                 
 
