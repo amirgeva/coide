@@ -63,7 +63,22 @@ def match(seq,sub,i):
         if seq[i+j]!=sub[j]:
             return False
     return True
-            
+
+def find(seq,sub):
+    for i in xrange(0,len(seq)-len(sub)):
+        if match(seq,sub,i):
+            return i
+    return -1
+
+def collapse_refs(seq):
+    while True:
+        i=find(seq,['LPAREN','','','','RPAREN','AT','HEX','COLON'])
+        if i<0: break
+        del seq[i]
+        for j in xrange(0,3):
+            del seq[i+3]
+        seq[i+3].name='EQUALS'
+        seq[i+3].value='='
                     
 def collapse(seq,sub):
     n=len(seq)
@@ -82,6 +97,7 @@ def collapse_all(seq):
     recursive_unite(seq,'LTAG','RTAG','TAG')
     collapse(seq,['TAG','EQUALS'])
     collapse(seq,['COMMA','TAG'])
+    collapse_refs(seq)
     unite_ident(seq)
     n=len(seq)
     while True:
