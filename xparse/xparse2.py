@@ -3,6 +3,8 @@ import sys
 from xlex import Lexer
 from xnode import Node
 
+dev=False
+
 class ParseException(Exception):
     def __init__(self,value):
         self.value=value
@@ -106,6 +108,8 @@ def split_seq(seq,delim):
         res.append(cur)
     return res
 
+ignore_list=['_vptr','static ']
+
 def value_node(seq):
     if len(seq)==1:
         return seq[0]
@@ -114,10 +118,25 @@ def value_node(seq):
         res.name=seq[0].value
         res.value=seq[2].value
         return res
-    res=Node(seq[0].value)
     if seq[1]=='EQUALS':
-        res.value=seq[2].value
+        if seq[2]=='TAG':
+            return None
+        for ig in ignore_list:
+            if seq[0].value.startswith(ig):
+                return None
+        res=seq[2]
+        res.name=seq[0].value
+        return res
+    return None
+
+def dump(seq,indent=0):
+    res=''
+    s=' '*indent
+    for node in seq:
+        res+='{}{}={}\n'.format(s,node.name,node.value)
+        res+=dump(node.children,indent+2)
     return res
+
         
 class Parser(object):
     def __init__(self,text):
@@ -146,18 +165,22 @@ class Parser(object):
             sibs=split_seq(sub,'COMMA')
             cur=Node('UNDEF','struct')
             cur.children=[value_node(s) for s in sibs]
+            cur.children=[c for c in cur.children if c]
             seq[idx[0]]=cur
             del seq[(idx[0]+1):idx[1]]
-                
+            if dev: print "{}\n\n".format(dump(seq))
+
 
 def test():
+    global dev
+    dev=True
     for i in xrange(1,len(sys.argv)):
         arg=sys.argv[i]
         print arg
         text=open(arg,'r').read()
         print text
         p=Parser(text)
-        print p.root
+        print dump([p.root])
 
 if __name__=='__main__':
     test()
