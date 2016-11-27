@@ -46,6 +46,7 @@ class MainWindow(QtGui.QMainWindow):
         self.debugger=None
         self.breakpoints=BreakpointsDB()
         self.findDetails=None
+        self.scm_mods=[]
         
         self.setWindowIcon(utils.loadIcon('coide'))
         self.setWindowTitle("Coide")
@@ -529,16 +530,24 @@ class MainWindow(QtGui.QMainWindow):
         errors, and collect the missing symbol names
         """
         undefined=set()
+        base='undefined reference to '
         if output:
             for line in output:
-                p=line.find('undefined reference to ')
+                p=line.find(base)
                 if p>0:
-                    name=line[p+24:]
+                    name=line[(p+len(base)):]
+                    if name.startswith('symbol '):
+                        name=name[8:]
+                    else:
+                        name=name[1:]
                     p=name.find('(')
                     if p>0:
                         name=name[0:p]
                     else:
                         name=name[0:len(name)-1]
+                    p=name.find('@')
+                    if p>0:
+                        name=name[0:p]
                     undefined.add(name)
         return undefined
 
@@ -707,11 +716,20 @@ class MainWindow(QtGui.QMainWindow):
         import scm
         res=scm.scan(self.workspaceTree.root)
         if res:
-            for (name,stat) in res:
+            new_scm_mods=[]
+            for (name,status) in res:
                 path=os.path.join(self.workspaceTree.root,name)
-                if stat=='Modified' and path in self.workspaceTree.fileItems:
+                if path in self.workspaceTree.fileItems:
                     item=self.workspaceTree.fileItems.get(path)
-                    item.setForeground(0,QtGui.QBrush(QtGui.QColor(255,0,0)))
+                    if status=='Modified':
+                        item.setForeground(0,QtGui.QBrush(QtGui.QColor(255,0,0)))
+                    elif status=='Staged':
+                        item.setForeground(0,QtGui.QBrush(QtGui.QColor(0,255,0)))
+                    new_scm_mods.append(item)
+            for item in self.scm_mods:
+                if not item in new_scm_mods:
+                    item.setForeground(0,QtGui.QBrush(QtGui.QColor(0,0,0)))
+            self.scm_mods=new_scm_mods
         for path in self.editors:
             last=self.file_times.get(path)
             cur=os.path.getmtime(path)
