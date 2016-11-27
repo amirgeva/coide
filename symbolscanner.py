@@ -1,10 +1,10 @@
 from PyQt4 import QtCore
 import sys
 import os
-import re
+#import re
 import utils
 from system import listAllPackages, libraryDirs
-from globals import is_src_ext
+#from globals import is_src_ext
 
 def baseLibName(f):
     if f.startswith("lib"):
@@ -30,6 +30,7 @@ class Scanner:
 
     def __init__(self,ws,libSyms=None,wsSyms=None,wsLibs=None):
         self.ws=ws
+        self.libraryMap={}
         if libSyms and wsSyms and wsLibs:
             self.librarySymbols=libSyms
             self.workspaceSymbols=wsSyms
@@ -125,19 +126,23 @@ class Scanner:
             refs=self.libraryMap.get(f)
         dump=out.split('\n')
         for line in dump:
-            parts=line.split()
-            if len(parts)>=4:
-                sym=parts[3]
+            parts=line.split('\t')
+            if len(parts)!=2:
+                continue
+            left=parts[0].split()
+            right=parts[1].split()
+            if (left[-1]=='.text' or left[-1]=='.bss') and not right[-1].startswith('.'):
+                sym=right[-1]
                 par=sym.find('(')
                 if par>0:
                     sym=sym[0:par]
-                    if not sym in symbols:
-                        s=set()
-                        s.update(refs)
-                        symbols[sym]=s
-                    else:
-                        s=symbols.get(sym)
-                        s.update(refs)
+                if not sym in symbols:
+                    s=set()
+                    s.update(refs)
+                    symbols[sym]=s
+                else:
+                    s=symbols.get(sym)
+                    s.update(refs)
     
     def parseDynamic(self,path,symbols,f):
         (out,err)=utils.call('.','objdump','-T','-C',path)
@@ -150,7 +155,7 @@ class Scanner:
         for line in dump:
             parts=line.split()
             if len(parts)>=7:
-                sym=parts[6]
+                sym=parts[-1]
                 par=sym.find('(')
                 if par>0:
                     sym=sym[0:par]
@@ -186,30 +191,31 @@ class Scanner:
                 sys.stdout.write('\n')
         return symbols
         
-    def scanWorkspaceDirectory(self,dir,files=[]):
-        libname=(dir.split('/'))[-1]
-        self.removeLibRefs(libname)
-        if len(files)==0:
-            files=os.listdir(dir)
-        files=[f for f in files if is_src_ext(f)]
-        for f in files:
-            path=os.path.join(dir,f)
-            for line in open(path,'r').readlines():
-                words=re.split('\W+',line.strip())
-                for word in words:
-                    if not word in self.workspaceSymbols:
-                        self.workspaceSymbols[word]=set()
-                    if not libname in self.workspaceLibSyms:
-                        self.workspaceLibSyms[libname]=set()
-                    self.workspaceSymbols.get(word).add(libname)
-                    self.workspaceLibSyms.get(libname).add(word)
+#    def scanWorkspaceDirectory(self,dir,files=[]):
+#        libname=(dir.split('/'))[-1]
+#        self.removeLibRefs(libname)
+#        if len(files)==0:
+#            files=os.listdir(dir)
+#        files=[f for f in files if is_src_ext(f)]
+#        for f in files:
+#            path=os.path.join(dir,f)
+#            for line in open(path,'r').readlines():
+#                words=re.split('\W+',line.strip())
+#                for word in words:
+#                    if not word in self.workspaceSymbols:
+#                        self.workspaceSymbols[word]=set()
+#                    if not libname in self.workspaceLibSyms:
+#                        self.workspaceLibSyms[libname]=set()
+#                    self.workspaceSymbols.get(word).add(libname)
+#                    self.workspaceLibSyms.get(libname).add(word)
 
     def scanWorkspaceSymbols(self,printOut=False):
         self.workspaceSymbols.clear()
-        self.workspaceLibSyms.clear()
-        for dir,subdirs,files in os.walk(os.path.join(self.ws,'src')):
-            if isLibraryDir(dir):
-                self.scanWorkspaceDirectory(dir,files)
+        for dir,subdirs,files in os.walk(os.path.join(self.ws,'out')):
+            for f in files:
+                if f.startswith('lib') and f.endswith('.a'):
+                    path=os.path.join(dir,f)
+                    self.parseStatic(path,self.workspaceSymbols,f)
         if printOut:
             f=open('ws_syms.txt','w')
             for s in self.workspaceSymbols:
