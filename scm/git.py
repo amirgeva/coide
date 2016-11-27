@@ -1,6 +1,10 @@
 import os
 import utils
 
+def diff(root,path):
+    if os.path.isdir(os.path.join(root,'.git')):
+        utils.call(root,'git','diff',path)
+
 def scan(root):
     if not os.path.isdir(os.path.join(root,'.git')):
         return None
