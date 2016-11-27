@@ -4,6 +4,7 @@ import os
 import re
 import utils
 from system import listAllPackages, libraryDirs
+from globals import is_src_ext
 
 def baseLibName(f):
     if f.startswith("lib"):
@@ -190,7 +191,7 @@ class Scanner:
         self.removeLibRefs(libname)
         if len(files)==0:
             files=os.listdir(dir)
-        files=[f for f in files if f.endswith('.cpp')]
+        files=[f for f in files if is_src_ext(f)]
         for f in files:
             path=os.path.join(dir,f)
             for line in open(path,'r').readlines():
