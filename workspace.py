@@ -34,6 +34,7 @@ class WorkSpace(QtGui.QTreeWidget):
         self.actRefresh = QtGui.QAction('Refresh',self,triggered=self.refreshWorkspace)
         self.actDelete = QtGui.QAction('Delete',self,triggered=self.deletePath)
         self.actRename = QtGui.QAction('Rename',self,triggered=self.renamePath)
+        self.actSCMDiff = QtGui.QAction('SCM Diff',self,triggered=self.scmDiffPath)
         self.main=None
         self.src=None
         self.debug=('','')
@@ -103,6 +104,7 @@ class WorkSpace(QtGui.QTreeWidget):
             if os.path.isfile(filepath):
                 menu.addAction(self.actRename)
                 menu.addAction(self.actDelete)
+                menu.addAction(self.actSCMDiff)
         if menu:
             menu.exec_(event.globalPos())
         
@@ -244,6 +246,11 @@ class WorkSpace(QtGui.QTreeWidget):
         if len(path)==0:
             path=item.data(0,FileRole).toString()
         return path
+        
+    def scmDiffPath(self):
+        import scm
+        path=self.getCurrentItemPath()
+        scm.diff(self.root,path)
         
     def renamePath(self):
         oldpath=self.getCurrentItemPath()
