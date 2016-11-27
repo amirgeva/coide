@@ -13,6 +13,7 @@ from gdbwrapper import GDBWrapper
 from watchestree import WatchesTree
 from breakpoints import BreakpointsDB, BreakpointDialog
 from properties import Properties
+from globals import is_src_ext
 import utils
 import genmake
 import uis
@@ -288,7 +289,7 @@ class MainWindow(QtGui.QMainWindow):
         intr=os.path.join(self.workspaceTree.root,'intr')
         srcpath=self.context[0]
         objpath=''
-        if srcpath.startswith(src) and srcpath.endswith('.cpp'):
+        if srcpath.startswith(src) and is_src_ext(srcpath):
             rel=srcpath[len(src):]
             rel=rel[1:-4]+'.o'
             objpath=os.path.join(intr,rel)
