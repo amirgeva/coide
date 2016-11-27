@@ -6,6 +6,7 @@ from system import listAllPackages
 import utils
 import templates
 from threading import Thread
+from globals import is_src_ext, src_exts
 
 
 root=os.path.abspath('.')
@@ -63,14 +64,14 @@ def isSourceDir(dir,files):
     if dir.count('/')==0:
         return False
     for f in files:
-        if f.endswith('.cpp'):
+        if is_src_ext(f):
             return True
     return False
     
 def filterSources(files):
     alt=[]
     for f in files:
-        if f.endswith('.cpp'):
+        if is_src_ext(f):
             alt.append(f)
     return alt
     
@@ -91,7 +92,7 @@ def isSourceFile(f):
     '''
     Check if a file is a C++ source file
     '''
-    return f.endswith('.cpp')
+    return is_src_ext(f)
 
 def findMain(dir):
     '''
@@ -269,7 +270,9 @@ class Generator:
                             lflags=lflags+' -l{} '.format(lib)
         o.write('CFLAGS_{}={}\n'.format(cfg,cflags))
         o.write('LFLAGS_{}={}\n'.format(cfg,lflags))
-        objs = arreplace(srcs,'.cpp','.o')
+        objs=srcs
+        for e in src_exts:
+            objs = arreplace(objs,e,'.o')
         for i in xrange(0,len(objs)):
             objs[i]=os.path.join(intr,objs[i])
             
