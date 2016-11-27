@@ -13,3 +13,8 @@ def scan(root):
         if res:
             return res
     return None
+
+def diff(root,path):
+    for m in modules:
+        m.diff(root,path)
+    
