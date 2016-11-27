@@ -6,6 +6,7 @@ from PyQt4 import QtGui
 from consts import DirectoryRole,FileRole
 from properties import Properties
 from depsdlg import DependenciesDialog
+from globals import is_src_ext, is_header
 import utils
 import uis
 
@@ -385,7 +386,7 @@ class WorkSpace(QtGui.QTreeWidget):
                     items[path]=child
                     item.addChild(child)
                 for filename in files:
-                    if filename.endswith('.cpp') or filename.endswith('.h'):
+                    if is_src_ext(filename) or is_header(filename):
                         child=QtGui.QTreeWidgetItem([filename])
                         child.setIcon(0,self.docIcon)
                         item.addChild(child)
