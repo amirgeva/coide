@@ -13,6 +13,7 @@ from gdbwrapper import GDBWrapper
 from watchestree import WatchesTree
 from breakpoints import BreakpointsDB, BreakpointDialog
 from properties import Properties
+from functools import partial
 from globals import is_src_ext
 import utils
 import genmake
@@ -796,11 +797,10 @@ class MainWindow(QtGui.QMainWindow):
         s.setValue('recent_ws',':'.join(self.recent_ws))
         s.sync()
         self.recents_menu.clear()
-        for ws in self.recent_ws:
-            l=lambda:self.openRecent(ws)
-            self.recents_menu.addAction(QtGui.QAction(ws,self,triggered=l))
-        
-            
+        handlers=[partial(self.openRecent,w) for w in self.recent_ws]
+        for ws,h in zip(self.recent_ws,handlers):
+            self.recents_menu.addAction(QtGui.QAction(ws,self,triggered=h))
+
     def openRecent(self,ws):
         self.workspaceTree.saveTabs(self.central)
         self.closeAllTabs()
