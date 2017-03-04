@@ -72,13 +72,17 @@ def find(seq,sub):
 
 def collapse_refs(seq):
     while True:
+        ofs=3
         i=find(seq,['LPAREN','','','','RPAREN','AT','HEX','COLON'])
-        if i<0: break
+        if i<0:
+            i=find(seq,['LPAREN','','','RPAREN','AT','HEX','COLON'])
+            if i<0: break
+            ofs=2
         del seq[i]
         for j in xrange(0,3):
-            del seq[i+3]
-        seq[i+3].name='EQUALS'
-        seq[i+3].value='='
+            del seq[i+ofs]
+        seq[i+ofs].name='EQUALS'
+        seq[i+ofs].value='='
                     
 def collapse(seq,sub):
     n=len(seq)
