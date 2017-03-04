@@ -665,6 +665,7 @@ class MainWindow(QtGui.QMainWindow):
     def rebuildSpecific(self,path):
         if len(path)>0:
             cfg=self.config
+            self.showStatus("Rebuilding "+os.path.basename(path))
             self.buildProcess=self.execute(path,'/usr/bin/make','clean_'+cfg,cfg)
     
     def rebuild(self):
@@ -682,7 +683,7 @@ class MainWindow(QtGui.QMainWindow):
             self.timerCall=self.autoGenerateRun
         else:
             if genmake.genThreadDone():
-                self.showStatus("Done")
+                self.showStatus("Makefile Generate Done")
         
     def waitForScanner(self):
         if self.symbolScan:
