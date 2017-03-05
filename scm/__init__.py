@@ -16,5 +16,9 @@ def scan(root):
 
 def diff(root,path):
     for m in modules:
-        m.diff(root,path)
+        res=m.diff(root,path)
+        if not res is None:
+            return res
+    return None
+
     
