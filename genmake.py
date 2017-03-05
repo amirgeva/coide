@@ -12,19 +12,26 @@ from globals import is_src_ext, src_exts
 root=os.path.abspath('.')
 
 genThread=None
+genThreadDoneFlag=False
 
 def waitForThread():
     global genThread
+    global genThreadDoneFlag
     if genThread:
         genThread.join()
         genThread=None
+        genThreadDoneFlag=True
 
 def genThreadDone():
-    global genThread
+    global genThreadDoneFlag
     if genThread:
         if genThread.isAlive():
             return False
-    return True
+        else:
+            genThreadDoneFlag=True
+    res=genThreadDoneFlag
+    genThreadDoneFlag=False
+    return res
     
 def mkProps(props, dir):
     path=os.path.join(dir,'mk.cfg')
