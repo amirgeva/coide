@@ -1,9 +1,20 @@
 import os
 import utils
 
+def check_meld():
+    res=utils.call('/','/bin/sh','-c','which meld')
+    return len(res[0])>0
+
+meld_available=check_meld()
+
 def diff(root,path):
     if os.path.isdir(os.path.join(root,'.git')):
-        utils.call(root,'git','diff',path)
+        if meld_available:
+            utils.run(root,'meld',path)
+        else:
+            res=utils.call(root,'git','diff',path)
+            return res[0]
+    return None
 
 def scan(root):
     if not os.path.isdir(os.path.join(root,'.git')):
