@@ -250,7 +250,10 @@ class WorkSpace(QtGui.QTreeWidget):
     def scmDiffPath(self):
         import scm
         path=self.getCurrentItemPath()
-        scm.diff(self.root,path)
+        res=scm.diff(self.root,path)
+        if not res is None:
+            self.mainWindow.outputEdit.clearAll()
+            self.mainWindow.addOutputText(res)
         
     def renamePath(self):
         oldpath=self.getCurrentItemPath()
