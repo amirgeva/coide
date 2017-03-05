@@ -71,6 +71,7 @@ class GDBWrapper:
         lines,ok=self.read()
         if ok:
             for line in lines:
+                print line
                 m=re.match('\*\s+\d+\s+process\s+(\d+)',line)
                 if not m is None:
                     g=m.groups()

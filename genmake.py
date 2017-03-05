@@ -315,9 +315,10 @@ class Generator:
             depcmd=templates.generateMkCommand(depcmd,mkProps)
             (out,err)=utils.shellcall(dir,depcmd)
             p=out.find(':')
+            hdeps=':\n'
             if p>0:
                 hdeps=out[p:].replace('\\\n','')
-                o.write('{}{}'.format(objs[i],hdeps))
+            o.write('{}{}'.format(objs[i],hdeps))
             if self.cppcheck:
                 o.write('\tcppcheck {}/{}\n'.format(absdir,srcs[i]))
             o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
