@@ -93,11 +93,13 @@ def checkFor(cmd):
     except OSError:
         return False
 
-def runcmd(dir,cmdlist):
-    return subprocess.Popen(cmdlist, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,cwd=dir)
+def runcmd(dir,cmdlist,pipes=True):
+    if pipes:
+        return subprocess.Popen(cmdlist, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,cwd=dir)
+    return subprocess.Popen(cmdlist, shell=False, cwd=dir)
     
 def run(dir,cmd,*args):
-    return runcmd(dir,[cmd]+list(args))
+    return runcmd(dir,[cmd]+list(args),False)
 
 def call(dir,cmd,*args):
     return runcmd(dir,[cmd]+list(args)).communicate('')
