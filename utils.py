@@ -80,6 +80,8 @@ def appendLine(output,line):
             appname=(parts[2].split('/'))[-1]
             line='Linking {}'.format(appname)
             color='#000080'
+        elif parts[0]=='cppcheck':
+            return
         lower=line.lower()
         if lower.find('error')>0:
             appendColorLine(output,line,'#ff0000')
