@@ -11,6 +11,7 @@ token_pattern = r"""
 |(?P<AMP>\&)
 |(?P<AT>\@)
 |(?P<STRING>\"[^\"]*\")
+|(?P<CHAR>'[^']*')
 |(?P<COLON>\:)
 |(?P<COMMA>\,)
 |(?P<VAR>\$\d+)
