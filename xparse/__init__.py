@@ -8,7 +8,9 @@ def parse(text):
     try:
         if text.find('error reading variable:')>=0:
             return None
-        return Parser(text).root
+        p=Parser(text)
+        p.flatten()
+        return p.root
     except TokenizerException:
         pass
     except EndOfText:
