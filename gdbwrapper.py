@@ -4,9 +4,6 @@ import subprocess
 import re
 import fcntl
 import os
-#import inspect
-#import imp
-#import sys
 import time
 import handlers
 import globals
@@ -395,7 +392,6 @@ class GDBWrapper:
         
     def evaluate(self,var):
         import xparse
-        #from xparse.xparse import Node
         lines=self.printVar(var)
         if globals.dev:
             print "@@@\n{}\n@@@".format(lines)
