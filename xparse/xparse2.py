@@ -46,7 +46,7 @@ def unite_ident(seq):
     i=0
     while i<n:
         if seq[i]=='IDENT':
-            while (i+1)<n and seq[i+1]!='EQUALS':
+            while (i+1)<n and seq[i+1]!='EQUALS' and seq[i+1]!='RBRACE':
                 if seq[i+1]!='COMMA':
                     seq[i].value+=' '
                 seq[i].value+=seq[i+1].value
@@ -153,8 +153,9 @@ def dump(seq,indent=0):
     res=''
     s=' '*indent
     for node in seq:
-        res+='{}{}={}\n'.format(s,node.name,node.value)
-        res+=dump(node.children,indent+2)
+        if node:
+            res+='{}{}={}\n'.format(s,node.name,node.value)
+            res+=dump(node.children,indent+2)
     return res
 
         
@@ -190,6 +191,24 @@ class Parser(object):
             del seq[(idx[0]+1):idx[1]]
             if dev: print "{}\n\n".format(dump(seq))
 
+    def flatten_node(self,node):
+        #print "NAME='{}' VALUE='{}'".format(node.name,node.value)
+        if not node:
+            return ''
+        if node.value.endswith(' &') or node.value=='struct':
+            node.value='{'+','.join([self.flatten_node(n) for n in node.children])+'}'
+        if node.value.startswith('std::vector') or node.name.startswith('std::vector'):
+            index=0
+            for c in node.children:
+                if c.name=='UNDEF':
+                    c.name='[{}]'.format(index)
+                index=index+1
+            node.value='['+','.join([self.flatten_node(n) for n in node.children])+']'
+        return node.value
+
+    def flatten(self):
+        self.flatten_node(self.root)
+
 
 def test():
     global dev
@@ -200,6 +219,7 @@ def test():
         text=open(arg,'r').read()
         print text
         p=Parser(text)
+        p.flatten()
         print dump([p.root])
 
 if __name__=='__main__':
