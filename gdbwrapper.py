@@ -416,20 +416,18 @@ class GDBWrapper:
         root=self.evaluate(var)
         return self.flatten(root)
 
-    def getLocals(self):
-        res={}
+    def getVarsInfo(self,vartype,res):
         if self.active or not self.running:
             return res
         ch=self.changed
-        self.write('info locals')
+        self.write('info {}'.format(vartype))
         lines,ok=self.read()
         self.changed=ch
-        if not ok: 
+        if not ok:
             #print "Failed to evaluate {}".format(var)
             return res
         if type(lines) is list:
             lines='\n'.join(lines)
-        #open("locals.txt","w").write(lines)
         lines=lines.split('\n')
         groups=[]
         for line in lines:
@@ -444,6 +442,11 @@ class GDBWrapper:
             cur=xparse.parse(all)
             if cur:
                 res[cur.name]=cur
+
+    def getLocals(self):
+        res={}
+        self.getVarsInfo('args',res)
+        self.getVarsInfo('locals',res)
         return res
         
 
