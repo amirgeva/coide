@@ -147,7 +147,7 @@ class Generator:
         self.root=root
         self.globalInc=os.path.join(root,'include')
         self.srcDir=os.path.join(root,'src')
-        self.intrDir=os.path.join(root,'intr')
+        self.intrDir=os.path.join(root,'.intr')
         self.outDir=os.path.join(root,'out')
         self.scanWorkspace()
         self.cppcheck=utils.checkFor('cppcheck')
@@ -333,7 +333,7 @@ class Generator:
         return True
         
     def assignDefaults(self,props):
-        props.assign("COMPILE_CPP11","-std=c++11")
+        props.assign("COMPILE_CPP_STD","-std=c++11")
         props.assign("COMPILE_CUSTOM","")
         props.assign("OPT_Release","-O2")
             
@@ -363,9 +363,10 @@ class Generator:
         if opt=="Custom":
             opt=""
         o.write('INC_STD=-I{}\n'.format(' -I'.join(stdIncludes)))
-        o.write('OPT_Release={}\n'.format(opt))
-        o.write('OPT_Debug=-g\n')
+        o.write('OPT_Release={} $(USER_OPT)\n'.format(opt))
+        o.write('OPT_Debug=-g $(USER_OPT)\n')
         o.write('\ndefault: Release\n\n')
+        o.write('\nclean: clean_Release\n\n')
         self.generateConfig(dir,files,"Release",o,props)
         if self.generateConfig(dir,files,"Debug",o,props):
             pass
@@ -400,9 +401,9 @@ def generateDirectory(root,dir):
     if isSourceDir(dir,files):
         g.generate(dir,files)
 
-def main():
+def unit_test():
     generateTree("src")
 
 if __name__=="__main__":
-    main()
+    unit_test()
     
