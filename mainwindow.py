@@ -288,7 +288,7 @@ class MainWindow(QtGui.QMainWindow):
         
     def contextGotoDefinition(self):
         src=os.path.join(self.workspaceTree.root,'src')
-        intr=os.path.join(self.workspaceTree.root,'intr')
+        intr=os.path.join(self.workspaceTree.root,'.intr')
         srcpath=self.context[0]
         objpath=''
         if srcpath.startswith(src) and is_src_ext(srcpath):
