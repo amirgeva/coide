@@ -14,7 +14,7 @@ tabs={
         ('COMPILE_WARN','Warnings','Default|None (-w)|All (-Wall)','Default'),
         ('COMPILE_PEDANTIC','Pedantic','CB',False,'-pedantic-errors'),
         ('COMPILE_WARNERR','Warning as errors','CB',False,'-Werror'),
-        ('COMPILE_CPP11','Standard','Default|-std=c++0x|-std=c++11','-std=c++11')
+        ('COMPILE_CPP_STD','Standard','Default|-std=c++0x|-std=c++11|-std=c++14|-std=c++17','-std=c++11')
     ],
     'Link':[
         ('LINK_PTHREAD','pthread','Default|On (-pthread)','Default')
