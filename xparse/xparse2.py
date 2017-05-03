@@ -53,7 +53,17 @@ def unite_ident(seq):
                 del seq[i+1]
                 n-=1
         i+=1
-                    
+
+def unite_chars(seq):
+    n=len(seq)
+    i=0
+    while i<(n-1):
+        if seq[i]=='FLOAT' and seq[i+1]=='CHAR':
+            seq[i+1].value=seq[i].value+' '+seq[i+1].value
+            del seq[i]
+            n=n-1
+        i+=1
+
 def match(seq,sub,i):
     if (i+len(sub))>len(seq):
         return False
@@ -102,6 +112,7 @@ def collapse_all(seq):
     collapse(seq,['TAG','EQUALS'])
     collapse(seq,['COMMA','TAG'])
     collapse_refs(seq)
+    unite_chars(seq)
     unite_ident(seq)
     n=len(seq)
     while True:
