@@ -49,7 +49,21 @@ class GDBWrapper:
         self.pathPattern=re.compile('(/.+)+')
         self.locPattern=re.compile('Located in (.+)$')
         # Read the gdb startup text
-        self.read()
+        time.sleep(10)
+        lines,ok=self.read()
+
+        # Wait for GDB to complete init
+        if False:
+            bla_index=0
+            while True:
+                s='BLA{}'.format(bla_index)
+                self.write(s)
+                lines,ok=self.read()
+                if s in lines:
+                    break
+                bla_index+=1
+                time.sleep(1)
+
 
         self.running=False   # Indicates the debugged program has started
         self.active=False    # Program is currenly running, debugger waiting for breakpoint or exit
@@ -63,7 +77,9 @@ class GDBWrapper:
         self.pid=''
 
         self.write('start {} > {}'.format(arglist,self.outputFileName))
-        self.read()
+        lines, ok =self.read()
+        if globals.dev:
+            print lines
         self.write('info inferior')
         lines,ok=self.read()
         if ok:
@@ -254,6 +270,8 @@ class GDBWrapper:
         
     def write(self,s):
         """ Writes a command to the gdb stdin """
+        if globals.dev:
+            print '>{}'.format(s)
         self.log('>{}'.format(s))
         self.gdb.stdin.write(s+'\n')
     
@@ -285,7 +303,8 @@ class GDBWrapper:
                         if line.find('exited normally')>0:
                             self.running=False
                     self.active=False
-
+                    if globals.dev:
+                        print res
                     return (res,True)
             except IOError:
                 time.sleep(0.01)
