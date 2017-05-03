@@ -231,7 +231,7 @@ class WorkSpace(QtGui.QTreeWidget):
         path=item.data(0,DirectoryRole).toString()
         mkPath=os.path.join(path,"mk.cfg")
         props=Properties(mkPath)
-        libs=re.split(' ;,',props.get('LINK_LIBS'))
+        libs=re.split(' |;|,',props.get('LINK_LIBS'))
         d=DependenciesDialog(libs)
         if d.exec_():
             props.assign("LINK_LIBS",",".join(d.libs))
