@@ -21,6 +21,7 @@ tabs={
         ('LINK_PTHREAD','pthread','Default|On (-pthread)','Default')
     ],
     'Advanced':[
+        ('COMPILER','Compiler','STR','g++'),
         ('COMPILE_CUSTOM','Custom Compile Flags','EDIT',''),
         ('LINK_CUSTOM','Custom Link Flags','EDIT',''),
         ('BUILD_WHOLE_ARCHIVE','Whole Archive','CB',False,'')
