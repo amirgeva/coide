@@ -643,7 +643,7 @@ class MainWindow(QtGui.QMainWindow):
             self.showStatus("Building "+os.path.basename(path))
             s=QtCore.QSettings()
             if s.value('parallel_make',False).toBool():
-                self.buildProcess=self.execute(path,'/usr/bin/make','-j',self.config)
+                self.buildProcess=self.execute(path,'/usr/bin/make','-j','3',self.config)
             else:
                 self.buildProcess=self.execute(path,'/usr/bin/make',self.config)
                 

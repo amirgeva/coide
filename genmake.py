@@ -301,9 +301,9 @@ class Generator:
             liblist.append(libname)
             libpath=libdeps.get(lib)
             o.write("{}:\n".format(libname))
-            o.write("\t@make --no-print-directory -C {} {}\n\n".format(libpath,cfg))
+            o.write("\t@$(MAKE) --no-print-directory -C {} {}\n\n".format(libpath,cfg))
             o.write("clean_{}:\n".format(libname))
-            o.write("\t@make --no-print-directory -C {} clean_{}\n\n".format(libpath,cfg))
+            o.write("\t@$(MAKE) --no-print-directory -C {} clean_{}\n\n".format(libpath,cfg))
         
         cleanlibs=''
         if type=='LIB':
