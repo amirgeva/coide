@@ -192,14 +192,20 @@ class Generator:
                         if value=='True':
                             flags=flags+' '+d[4]
                     else:
-                        if value and not value=='Default':
-                            m=re.match(parenPat,value)
-                            if m:
-                                g=m.groups()
-                                value=g[0]
-                            else:
+                        if d[2]!='EDIT':                        
+                            if value and not value=='Default':
+                                m=re.match(parenPat,value)
+                                if m:
+                                    g=m.groups()
+                                    value=g[0]
+                                else:
+                                    value=value.replace('\\n',' ')
+                                flags=flags+' '+value
+                        else:
+                            if value:
                                 value=value.replace('\\n',' ')
-                            flags=flags+' '+value
+                                value=value.replace('\n',' ')
+                                flags=flags+' '+value
         return flags
         
     def addCompileSettings(self,cflags,props,cfg):
