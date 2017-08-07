@@ -11,7 +11,7 @@
 tabs={
     'Compile':[
         ('OPT_Release','Optimization','-O0|-O1|-O2|-O3','-O2'),
-        ('COMPILE_PIC','Position Independent Compilation','CB',True,'-fPIC'),
+        ('COMPILE_PIC','Position Independent Compilation','CB',False,'-fPIC'),
         ('COMPILE_WARN','Warnings','Default|None (-w)|All (-Wall)','Default'),
         ('COMPILE_PEDANTIC','Pedantic','CB',False,'-pedantic-errors'),
         ('COMPILE_WARNERR','Warning as errors','CB',False,'-Werror'),
