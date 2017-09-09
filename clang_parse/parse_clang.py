@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import time
 import re
 import os
@@ -59,7 +60,7 @@ class Node:
             res=res+c.tostr(indent+2)
         return res
 
-def load_tree(f):
+def load_tree(f,limit):
     lastj=0
     root=Node('')
     stack=[root]
@@ -69,6 +70,8 @@ def load_tree(f):
         for line in f:
             j=0
             line_index=line_index+1
+            if line_index==limit:
+                break
             for i in xrange(0,len(line)):
                 if line[i].isalpha() or line[i]=='<':
                     j=i
@@ -89,8 +92,12 @@ def load_tree(f):
             
             
 if __name__=='__main__':
+    if len(sys.argv)>1:
+        limit=int(sys.argv[1])
+    else:
+        limit=-1
     t0=time.time()
-    root=load_tree(open('f200','r'))
+    root=load_tree(open('input','r'),limit)
     print time.time()-t0
     #print root.tostr()
     
