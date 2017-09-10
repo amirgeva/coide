@@ -247,9 +247,12 @@ class Generator:
         
         #o = open(output,'w')
         mkProps=Properties()
-        o.write('CPP_{}=g++\n'.format(cfg))
-        mkProps.assign('CPP_{}'.format(cfg),'g++')
-        o.write('INC_{}=-I{} {}\n'.format(cfg,self.globalInc,cfgInclude))
+        cmpl=pb.get("COMPILER")
+        if len(cmpl)==0:
+            cmpl='g++'
+        o.write('COMPILER_{}={}\n'.format(cfg,cmpl))
+        mkProps.assign('COMPILER_{}'.format(cfg),cmpl)
+        o.write('INC_{}=-I{} -I{} {}\n'.format(cfg,self.globalInc,dir,cfgInclude))
         mkProps.assign('INC_{}'.format(cfg),'-I{} {}'.format(self.globalInc,cfgInclude))
 
         cflags='-c $(OPT_{}) $(INC_{}) '.format(cfg,cfg)
@@ -317,7 +320,7 @@ class Generator:
                 cleanlibs='clean_'+' clean_'.join(liblist)
             liblist=' '.join(liblist)
             o.write('{}: $(OBJS_{}) {}\n'.format(outfile,cfg,liblist))
-            o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
+            o.write('\t$(COMPILER_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
             
         o.write('clean_{}: {}\n\t@rm -f $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
         o.write('{}: {}\n\n'.format(cfg,outfile))
@@ -334,7 +337,7 @@ class Generator:
             o.write('{}{}'.format(objs[i],hdeps))
             if self.cppcheck:
                 o.write('\tcppcheck {}/{}\n'.format(absdir,srcs[i]))
-            o.write('\t$(CPP_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
+            o.write('\t$(COMPILER_{}) $(CFLAGS_{}) -o {} {}/{}\n\n'.format(cfg,cfg,objs[i],absdir,srcs[i]))
             
         return True
         

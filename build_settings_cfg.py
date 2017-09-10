@@ -14,6 +14,7 @@ tabs={
         ('COMPILE_PIC','Position Independent Compilation','CB',False,'-fPIC'),
         ('COMPILE_WARN','Warnings','Default|None (-w)|All (-Wall)','Default'),
         ('COMPILE_PEDANTIC','Pedantic','CB',False,'-pedantic-errors'),
+        ('COMPILE_PERMISSIVE','Permissive','CB',False,'-fpermissive'),
         ('COMPILE_WARNERR','Warning as errors','CB',False,'-Werror'),
         ('COMPILE_FATAL_ERROR','Stop after first error','CB',False,'-Wfatal-errors'),
         ('COMPILE_CPP_STD','Standard','Default|-std=c++0x|-std=c++11|-std=c++14|-std=c++17','-std=c++11'),
