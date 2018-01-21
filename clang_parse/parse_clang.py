@@ -73,7 +73,7 @@ def load_tree(f,limit):
             if line_index==limit:
                 break
             for i in xrange(0,len(line)):
-                if line[i].isalpha() or line[i]=='<':
+                if line[i].isalpha() or line[i]=='<' or line[i]=='.':
                     j=i
                     break
             if j > lastj:
@@ -92,12 +92,15 @@ def load_tree(f,limit):
             
             
 if __name__=='__main__':
+    filename='input'
+    limit=-1
     if len(sys.argv)>1:
-        limit=int(sys.argv[1])
+        #limit=int(sys.argv[1])
+        filename=sys.argv[1]
     else:
         limit=-1
     t0=time.time()
-    root=load_tree(open('input','r'),limit)
+    root=load_tree(open(filename,'r'),limit)
     print time.time()-t0
     #print root.tostr()
     
