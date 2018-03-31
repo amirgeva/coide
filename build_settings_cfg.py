@@ -20,7 +20,8 @@ tabs={
         ('COMPILE_SIMD','SIMD Flag','Default|-mavx|-mavx2','Default')
     ],
     'Link':[
-        ('LINK_PTHREAD','pthread','Default|On (-pthread)','Default')
+        ('LINK_PTHREAD','pthread','Default|On (-pthread)','Default'),
+        ('LINK_SHARED','shared','Default|On (-shared)','Default')
     ],
     'Advanced':[
         ('COMPILER','Compiler','STR','g++'),

@@ -228,6 +228,7 @@ class Generator:
             else:
                 type="LIB"
         o.write('TYPE={}\n'.format(type))
+        shared=pb.get("LINK_SHARED").startswith('On')
         libs=re.split(',| ',pb.get("LINK_LIBS"))
         libs=filter(bool,libs)  # remove empty strings
         if len(type)==0:
@@ -310,9 +311,15 @@ class Generator:
         
         cleanlibs=''
         if type=='LIB':
-            outfile='{}/lib{}.a'.format(reloutdir,name)
+            if shared:
+                outfile='{}/{}.so'.format(reloutdir,name)
+            else:
+                outfile='{}/lib{}.a'.format(reloutdir,name)
             o.write('{}: $(OBJS_{})\n'.format(outfile,cfg))
-            o.write('\tar cr {} $(OBJS_{})\n\n'.format(outfile,cfg))
+            if shared:
+                o.write('\t$(CPP_{}) -o {} $(LFLAGS_{})\n\n'.format(cfg,outfile,cfg))
+            else:
+                o.write('\tar cr {} $(OBJS_{})\n\n'.format(outfile,cfg))
         else:
             outfile="{}/{}".format(reloutdir,name)
             o.write('OUTPUT_PATH_{}={}\n\n'.format(cfg,outfile))
