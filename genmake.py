@@ -252,7 +252,10 @@ class Generator:
         o.write('INC_{}=-I{} {}\n'.format(cfg,self.globalInc,cfgInclude))
         mkProps.assign('INC_{}'.format(cfg),'-I{} {}'.format(self.globalInc,cfgInclude))
 
-        cflags='-c $(OPT_{}) $(INC_{}) '.format(cfg,cfg)
+        predefs='-D_DEBUG'
+        if cfg=='Release':
+            predefs='-DNDEBUG'
+        cflags='-c $(OPT_{}) $(INC_{}) {} '.format(cfg,cfg,predefs)
         cflags=self.addCompileSettings(cflags,props,cfg)
         
         lflags='$(OPT_{}) $(OBJS_{}) '.format(cfg,cfg)
