@@ -7,14 +7,15 @@ import logging
 import platform
 import re
 
-from PyQt4 import QtGui,QtCore
-from PyQt4.QtCore import QRect, Qt, pyqtSignal, QSettings
-from PyQt4.QtGui import QAction, QApplication, QColor, QBrush, \
-                        QDialog, QFont, QHelpEvent,\
+from PyQt6 import QtGui, QtCore, QtWidgets
+from PyQt6.QtCore import QRect, Qt, pyqtSignal, QSettings
+from PyQt6.QtGui import QAction, QColor, QBrush, \
+                        QFont, QHelpEvent,\
                         QIcon, QKeySequence, QPainter, QPen, QPalette, \
-                        QPlainTextEdit, \
-                        QPrintDialog, QTextCharFormat, QTextCursor, \
-                        QTextBlock, QTextEdit, QTextFormat
+                        QTextCharFormat, QTextCursor, \
+                        QTextBlock, QTextFormat
+from PyQt6.QtWidgets import QApplication, QDialog, QPlainTextEdit, QTextEdit
+from PyQt6.QtPrintSupport import QPrintDialog
 
 from qutepart.syntax import SyntaxManager
 from qutepart.syntaxhlighter import SyntaxHighlighter
@@ -45,7 +46,7 @@ binaryParserAvailable = qutepart.syntax.loader.binaryParserAvailable
 
 
 patIdentifier=re.compile('[A-Za-z_0-9]')
-patFilename=re.compile('[A-Za-z0-9_\-\.]')
+patFilename=re.compile(r'[A-Za-z0-9_\-\.]')
 
 
 _ICONS_PATH = os.path.join(os.path.dirname(__file__), 'icons')
@@ -54,14 +55,7 @@ def getIconPath(iconFileName):
     return os.path.join(_ICONS_PATH, iconFileName)
 
 
-#Define for old Qt versions methods, which appeared in 4.7
-if not hasattr(QTextCursor, 'positionInBlock'):
-    def _positionInBlock(cursor):
-        return cursor.position() - cursor.block().position()
-    QTextCursor.positionInBlock = _positionInBlock
-
-
-def setPositionInBlock(cursor, positionInBlock, anchor=QTextCursor.MoveAnchor):
+def setPositionInBlock(cursor, positionInBlock, anchor=QTextCursor.MoveMode.MoveAnchor):
     return cursor.setPosition(cursor.block().position() + positionInBlock, anchor)
 
 
@@ -87,7 +81,7 @@ class Qutepart(QPlainTextEdit):
     ``selectedText`` attribute holds selected text. It may be read and written.
     Write operation replaces selection with new text. If nothing is selected - just inserts text::
 
-        print qpart.selectedText  # print selection
+        print(qpart.selectedText)  # print selection
         qpart.selectedText = 'new text'  # replace selection
 
     **Text lines**
@@ -108,7 +102,7 @@ class Qutepart(QPlainTextEdit):
         qpart.lines.append('new line')  # append new line to the end
         qpart.lines.insert(1, 'new line')  # insert new line before line 1
 
-        print qpart.lines  # print all text as list of strings
+        print(qpart.lines)  # print all text as list of strings
 
         # iterate over lines.
         for lineText in qpart.lines:
@@ -211,12 +205,12 @@ class Qutepart(QPlainTextEdit):
     **Public methods**
     '''
 
-    userWarning = pyqtSignal(unicode)
-    languageChanged = pyqtSignal(unicode)
+    userWarning = pyqtSignal(str)
+    languageChanged = pyqtSignal(str)
     indentWidthChanged = pyqtSignal(int)
     indentUseTabsChanged = pyqtSignal(bool)
-    eolChanged = pyqtSignal(unicode)
-    #breakpointToggled = pyqtSignal(unicode,int)
+    eolChanged = pyqtSignal(str)
+    #breakpointToggled = pyqtSignal(str,int)
 
     LINT_ERROR = 'e'
     LINT_WARNING = 'w'
@@ -238,7 +232,7 @@ class Qutepart(QPlainTextEdit):
         self._eol = self._DEFAULT_EOL
         self._indenter = Indenter(self)
         self.lineLengthEdge = None
-        self.lineLengthEdgeColor = Qt.red
+        self.lineLengthEdgeColor = Qt.GlobalColor.red
         self._atomicModificationDepth = 0
 
         self.drawIncorrectIndentation = True
@@ -251,8 +245,8 @@ class Qutepart(QPlainTextEdit):
         Hardcode same palette for not highlighted text
         """
         palette = self.palette()
-        palette.setColor(QPalette.Base, QColor('#ffffff'))
-        palette.setColor(QPalette.Text, QColor('#000000'))
+        palette.setColor(QPalette.ColorRole.Base, QColor('#ffffff'))
+        palette.setColor(QPalette.ColorRole.Text, QColor('#000000'))
         self.setPalette(palette)
 
         self._highlighter = None
@@ -262,7 +256,7 @@ class Qutepart(QPlainTextEdit):
 
         self.completionThreshold = self._DEFAULT_COMPLETION_THRESHOLD
         self.completionEnabled = self._DEFAULT_COMPLETION_ENABLED
-        self.clangCompletion = QSettings().value("clangCompletion",True).toBool()
+        self.clangCompletion = QSettings().value("clangCompletion",True)
         self._completer = Completer(self)
 
         self._initActions()
@@ -300,10 +294,11 @@ class Qutepart(QPlainTextEdit):
         
         #self.actToggleBreakpoint = QAction('Toggle Breakpoint',self,triggered=self.toggleBreakpoint)
         #self.actOpenHeader = QAction('Open Header',self,triggered=self.openHeader)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)
         self.contextFilename=''
         self.contextMenuLine=1
+        self.contextMenuWord=''
         self.contextBlock=None
         self.mainWindow=None
         self.workspace=None
@@ -315,9 +310,9 @@ class Qutepart(QPlainTextEdit):
     
     def getTextUnderMouse(self,pos,acceptPattern=patIdentifier):
         c=self.cursorForPosition(pos)
-        c.movePosition(QtGui.QTextCursor.StartOfWord,QtGui.QTextCursor.MoveAnchor)
+        c.movePosition(QtGui.QTextCursor.MoveOperation.StartOfWord,QtGui.QTextCursor.MoveMode.MoveAnchor)
         while True:
-            c.movePosition(QtGui.QTextCursor.NextCharacter,QtGui.QTextCursor.KeepAnchor)
+            c.movePosition(QtGui.QTextCursor.MoveOperation.NextCharacter,QtGui.QTextCursor.MoveMode.KeepAnchor)
             s=c.selectedText()
             last=s[-1:]
             if not re.match(acceptPattern,last):
@@ -342,11 +337,11 @@ class Qutepart(QPlainTextEdit):
         cursor = self.cursorForPosition(pos)
         self.contextBlock = cursor.block()
         self.contextMenuLine = self.contextBlock.blockNumber()
-        cursor.select(QtGui.QTextCursor.WordUnderCursor)
+        cursor.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
         self.contextMenuWord = cursor.selectedText()
         if self.mainWindow:
             self.mainWindow.insertContextMenuItems(self,menu)
-        menu.exec_(self.viewport().mapToGlobal(pos))
+        menu.exec(self.viewport().mapToGlobal(pos))
         
     def setPath(self,path):
         self.path=path
@@ -372,7 +367,7 @@ class Qutepart(QPlainTextEdit):
 
             keySeq = shortcut if isinstance(shortcut, QKeySequence) else QKeySequence(shortcut)
             action.setShortcut(keySeq)
-            action.setShortcutContext(Qt.WidgetShortcut)
+            action.setShortcutContext(Qt.ShortcutContext.WidgetShortcut)
             action.triggered.connect(slot)
 
             self.addAction(action)
@@ -406,9 +401,9 @@ class Qutepart(QPlainTextEdit):
         #                    lambda: self._indenter.onChangeSelectedBlocksIndent(increase=False,withSpace=True))
 
         # editing
-        self.undoAction = createAction('Undo', QKeySequence.Undo,
+        self.undoAction = createAction('Undo', QKeySequence.StandardKey.Undo,
                                        self.undo, 'undo.png')
-        self.redoAction = createAction('Redo', QKeySequence.Redo,
+        self.redoAction = createAction('Redo', QKeySequence.StandardKey.Redo,
                                        self.redo, 'redo.png')
 
         self.moveLineUpAction = createAction('Move line up', 'Alt+Up',
@@ -457,7 +452,7 @@ class Qutepart(QPlainTextEdit):
     def _updateTabStopWidth(self):
         """Update tabstop width after font or indentation changed
         """
-        self.setTabStopWidth(self.fontMetrics().width(' ' * self._indenter.width))
+        self.setTabStopDistance(self.fontMetrics().horizontalAdvance(' ' * self._indenter.width))
 
     @property
     def lines(self):
@@ -466,7 +461,7 @@ class Qutepart(QPlainTextEdit):
     @lines.setter
     def lines(self, value):
         if not isinstance(value, (list, tuple)) or \
-           not all([isinstance(item, basestring) for item in value]):
+           not all([isinstance(item, str) for item in value]):
             raise TypeError('Invalid new value of "lines" attribute')
         self.setPlainText('\n'.join(value))
 
@@ -558,7 +553,7 @@ class Qutepart(QPlainTextEdit):
         cursor = QTextCursor(self.document().findBlockByNumber(cursorLine))
         setPositionInBlock(cursor, cursorCol)
 
-        anchorCursor.setPosition(cursor.position(), QTextCursor.KeepAnchor)
+        anchorCursor.setPosition(cursor.position(), QTextCursor.MoveMode.KeepAnchor)
         self.setTextCursor(anchorCursor)
 
     @property
@@ -571,7 +566,7 @@ class Qutepart(QPlainTextEdit):
         anchorPos, cursorPos = pos
         cursor = self.textCursor()
         cursor.setPosition(anchorPos)
-        cursor.setPosition(cursorPos, QTextCursor.KeepAnchor)
+        cursor.setPosition(cursorPos, QTextCursor.MoveMode.KeepAnchor)
         self.setTextCursor(cursor)
 
     def resetSelection(self):
@@ -669,7 +664,7 @@ class Qutepart(QPlainTextEdit):
 
         cursor = QTextCursor(self.document())
         cursor.setPosition(pos)
-        cursor.setPosition(endPos, QTextCursor.KeepAnchor)
+        cursor.setPosition(endPos, QTextCursor.MoveMode.KeepAnchor)
 
         cursor.insertText(text)
 
@@ -810,7 +805,7 @@ class Qutepart(QPlainTextEdit):
             selection = QTextEdit.ExtraSelection()
             cursor = QTextCursor(self.document())
             cursor.setPosition(startAbsolutePosition)
-            cursor.setPosition(startAbsolutePosition + length, QTextCursor.KeepAnchor)
+            cursor.setPosition(startAbsolutePosition + length, QTextCursor.MoveMode.KeepAnchor)
             selection.cursor = cursor
             selection.format = self._userExtraSelectionFormat
             return selection
@@ -856,8 +851,8 @@ class Qutepart(QPlainTextEdit):
             # if block height not added to rect, last line number sometimes is not drawn
             blockHeight = self.blockBoundingRect(self.firstVisibleBlock()).height()
 
-            self._lineNumberArea.update(0, rect.y(), self._lineNumberArea.width(), rect.height() + blockHeight)
-            self._lineNumberArea.update(0, rect.y(), self._markArea.width(), rect.height() + blockHeight)
+            self._lineNumberArea.update(0, rect.y(), self._lineNumberArea.width(), int(rect.height() + blockHeight))
+            self._lineNumberArea.update(0, rect.y(), self._markArea.width(), int(rect.height() + blockHeight))
         self._countCache = (self.blockCount(), self.textCursor().block().lineCount())
 
         if rect.contains(self.viewport().rect()):
@@ -943,8 +938,8 @@ class Qutepart(QPlainTextEdit):
                     b=b.next()
                 for b in blocks:
                     p=b.position()
-                    c.movePosition(QtGui.QTextCursor.Start,QtGui.QTextCursor.MoveAnchor)
-                    c.movePosition(QtGui.QTextCursor.NextCharacter,QtGui.QTextCursor.MoveAnchor,p)
+                    c.movePosition(QtGui.QTextCursor.MoveOperation.Start,QtGui.QTextCursor.MoveMode.MoveAnchor)
+                    c.movePosition(QtGui.QTextCursor.MoveOperation.NextCharacter,QtGui.QTextCursor.MoveMode.MoveAnchor,p)
                     if doc.characterAt(p)=='/' and doc.characterAt(p+1)=='/':
                         c.deleteChar()
                         c.deleteChar()
@@ -953,22 +948,22 @@ class Qutepart(QPlainTextEdit):
                     
                     
                     
-        if event.matches(QKeySequence.InsertParagraphSeparator):
+        if event.matches(QKeySequence.StandardKey.InsertParagraphSeparator):
             self._insertNewBlock()
-        elif event.key() == Qt.Key_Slash and cursor.hasSelection():
+        elif event.key() == Qt.Key.Key_Slash and cursor.hasSelection():
             commentBlock()
-        elif event.matches(QKeySequence.Copy) and self._rectangularSelection.isActive():
+        elif event.matches(QKeySequence.StandardKey.Copy) and self._rectangularSelection.isActive():
             self._rectangularSelection.copy()
-        elif event.matches(QKeySequence.Cut) and self._rectangularSelection.isActive():
+        elif event.matches(QKeySequence.StandardKey.Cut) and self._rectangularSelection.isActive():
             self._rectangularSelection.cut()
         elif self._rectangularSelection.isDeleteKeyEvent(event):
             self._rectangularSelection.delete()
-        elif event.key() == Qt.Key_Insert and event.modifiers() == Qt.NoModifier:
+        elif event.key() == Qt.Key.Key_Insert and event.modifiers() == Qt.KeyboardModifier.NoModifier:
             self.setOverwriteMode(not self.overwriteMode())
-        elif event.key() == Qt.Key_Backspace and \
+        elif event.key() == Qt.Key.Key_Backspace and \
              shouldUnindentWithBackspace():
             self._indenter.onShortcutUnindentWithBackspace()
-        elif event.key() == Qt.Key_Backspace and \
+        elif event.key() == Qt.Key.Key_Backspace and \
              not cursor.hasSelection() and \
              self.overwriteMode() and \
              cursor.positionInBlock() > 0:
@@ -979,9 +974,9 @@ class Qutepart(QPlainTextEdit):
             not cursor.hasSelection() and \
             cursor.positionInBlock() < cursor.block().length():
             typeOverwrite(event.text())
-        elif event.matches(QKeySequence.MoveToStartOfLine):
+        elif event.matches(QKeySequence.StandardKey.MoveToStartOfLine):
             self._onShortcutHome(select=False)
-        elif event.matches(QKeySequence.SelectStartOfLine):
+        elif event.matches(QKeySequence.StandardKey.SelectStartOfLine):
             self._onShortcutHome(select=True)
         elif self._rectangularSelection.isExpandKeyEvent(event):
             self._rectangularSelection.onExpandKeyEvent(event)
@@ -993,7 +988,7 @@ class Qutepart(QPlainTextEdit):
             # make action shortcuts override keyboard events (non-default Qt behaviour)
             for action in self.actions():
                 seq = action.shortcut()
-                if seq.count() == 1 and seq[0] == event.key() | int(event.modifiers()):
+                if seq.count() == 1 and seq[0] == event.key() | int(event.modifiers().value):
                     action.trigger()
                     break
             else:
@@ -1077,14 +1072,14 @@ class Qutepart(QPlainTextEdit):
             leftCursorRect = cursorRect(block, column, 0)
             rightCursorRect = cursorRect(block, column + 1, 0)
             if leftCursorRect.top() == rightCursorRect.top():  # if on the same visual line
-                middleHeight = (leftCursorRect.top() + leftCursorRect.bottom()) / 2
+                middleHeight = (leftCursorRect.top() + leftCursorRect.bottom()) // 2
                 if char == ' ':
-                    painter.setPen(Qt.transparent)
-                    painter.setBrush(QBrush(Qt.gray))
-                    xPos = (leftCursorRect.x() + rightCursorRect.x()) / 2
+                    painter.setPen(Qt.GlobalColor.transparent)
+                    painter.setBrush(QBrush(Qt.GlobalColor.gray))
+                    xPos = (leftCursorRect.x() + rightCursorRect.x()) // 2
                     painter.drawRect(QRect(xPos, middleHeight, 2, 2))
                 else:
-                    painter.setPen(QColor(Qt.gray).lighter(factor=120))
+                    painter.setPen(QColor(Qt.GlobalColor.gray).lighter(factor=120))
                     painter.drawLine(leftCursorRect.x() + 3, middleHeight,
                                      rightCursorRect.x() - 3, middleHeight)
 
@@ -1120,7 +1115,7 @@ class Qutepart(QPlainTextEdit):
             painter.drawLine(rect.topLeft(), rect.bottomLeft())
 
         def drawIndentMarker(block, column):
-            painter.setPen(QColor(Qt.blue).lighter())
+            painter.setPen(QColor(Qt.GlobalColor.blue).lighter())
             rect = cursorRect(block, column, offset=0)
             painter.drawLine(rect.topLeft(), rect.bottomLeft())
 
@@ -1178,7 +1173,7 @@ class Qutepart(QPlainTextEdit):
         def makeSelection(cursor):
             selection = QTextEdit.ExtraSelection()
             selection.format.setBackground(lineColor)
-            selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+            selection.format.setProperty(QTextFormat.Property.FullWidthSelection, True)
             cursor.clearSelection()
             selection.cursor = cursor
             return selection
@@ -1227,7 +1222,7 @@ class Qutepart(QPlainTextEdit):
         Select line and scroll viewport
         """
         cursor = self.textCursor()
-        cursor.movePosition(QTextCursor.Down if down else QTextCursor.Up, QTextCursor.KeepAnchor)
+        cursor.movePosition(QTextCursor.MoveOperation.Down if down else QTextCursor.MoveOperation.Up, QTextCursor.MoveMode.KeepAnchor)
         self.setTextCursor(cursor)
         self._onShortcutScroll(down)
 
@@ -1235,7 +1230,7 @@ class Qutepart(QPlainTextEdit):
         """Home pressed, move cursor to the line start or to the text start
         """
         cursor = self.textCursor()
-        anchor = QTextCursor.KeepAnchor if select else QTextCursor.MoveAnchor
+        anchor = QTextCursor.MoveMode.KeepAnchor if select else QTextCursor.MoveMode.MoveAnchor
         text = cursor.block().text()
         spaceAtStartLen = len(text) - len(text.lstrip())
         if cursor.positionInBlock() == spaceAtStartLen:  # if at start of text
@@ -1250,8 +1245,8 @@ class Qutepart(QPlainTextEdit):
         startBlock = self.document().findBlockByNumber(startBlockNumber)
         endBlock = self.document().findBlockByNumber(endBlockNumber)
         cursor = QTextCursor(startBlock)
-        cursor.setPosition(endBlock.position(), QTextCursor.KeepAnchor)
-        cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+        cursor.setPosition(endBlock.position(), QTextCursor.MoveMode.KeepAnchor)
+        cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
         self.setTextCursor(cursor)
 
     def _selectedBlocks(self):
@@ -1362,7 +1357,7 @@ class Qutepart(QPlainTextEdit):
             cursor.insertText(text)
             # restore selection
             cursor.setPosition(selectionStart)
-            cursor.setPosition(selectionEnd, QTextCursor.KeepAnchor)
+            cursor.setPosition(selectionEnd, QTextCursor.MoveMode.KeepAnchor)
             self.setTextCursor(cursor)
         else:
             line = cursor.blockNumber()
@@ -1376,7 +1371,7 @@ class Qutepart(QPlainTextEdit):
         Show dialog, print file
         """
         dialog = QPrintDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             printer = dialog.printer()
             self.print_(printer)
 

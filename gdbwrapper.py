@@ -1,5 +1,6 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 import subprocess
 import re
 import fcntl
@@ -27,7 +28,7 @@ class GDBWrapper:
         self.debugged=os.path.abspath(args[0])
         arglist=''
         if len(args)>1:
-            for i in xrange(1,len(args)):
+            for i in range(1,len(args)):
                 arglist=arglist+' "{}"'.format(args[i])
         self.dumpLog=None
         # During development create a dump log
@@ -35,16 +36,16 @@ class GDBWrapper:
             self.parseCount=0
             self.dumpLog=open('dump.log','w')
         self.initHandlers()
-        self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
+        self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir,universal_newlines=True)
         fcntl.fcntl(self.gdb.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
         
-        self.outputFileName="/tmp/{}.coide".format(int(time.time()))
+        self.outputFileName=f"/tmp/{int(time.time())}.coide"
         self.outputFile=None
         self.outputText=[]
         
         # re for finding location pattern in backtrace
         #       #0  print_str (s=...) at /home/user/main.cpp:42
-        self.btPattern=re.compile('at (.+):(\d+)')
+        self.btPattern=re.compile(r'at (.+):(\d+)')
         self.curPattern=re.compile('File (.+):\n')
         self.pathPattern=re.compile('(/.+)+')
         self.locPattern=re.compile('Located in (.+)$')
@@ -71,7 +72,7 @@ class GDBWrapper:
         # dict:  str filepath -> dict of breakpoints ( int line -> Breakpoint )
         self.allFiles=set()
         
-        if settings.value('customPrinters',True).toBool():
+        if settings.value('customPrinters',True):
             self.initializePrettyPrints(dataRoot)
         
         self.pid=''
@@ -79,22 +80,29 @@ class GDBWrapper:
         self.write('start {} > {}'.format(arglist,self.outputFileName))
         lines, ok =self.read()
         if globals.dev:
-            print lines
+            print(lines)
         self.write('info inferior')
         lines,ok=self.read()
         if ok:
             for line in lines:
-                print line
-                m=re.match('\*\s+\d+\s+process\s+(\d+)',line)
+                print(line)
+                m=re.match(r'\*\s+\d+\s+process\s+(\d+)',line)
                 if not m is None:
                     g=m.groups()
                     self.pid=g[0]
                     self.running=True
         if len(self.pid)==0:
-            QtGui.QMessageBox.critical(None,'Problem','Failed to get debugged program PID')
+            QtWidgets.QMessageBox.critical(None,'Problem','Failed to get debugged program PID')
         self.setBreakpoints()
-        self.outputFile=os.open(self.outputFileName,os.O_RDONLY | os.O_NONBLOCK)
-        
+        # Wait for the output file to exist before opening
+        timeout = 5  # seconds
+        start_time = time.time()
+        while not os.path.exists(self.outputFileName):
+            if time.time() - start_time > timeout:
+                raise FileNotFoundError(f"Timeout waiting for output file: {self.outputFileName}")
+            time.sleep(0.05)
+        self.outputFile = os.open(self.outputFileName, os.O_RDONLY | os.O_NONBLOCK)
+
     def initHandlers(self):
         self.handlers=[]
         self.handlers.append(handlers.SignalHandler())
@@ -113,7 +121,7 @@ class GDBWrapper:
         self.write(cmd)
         lines,ok=self.read()
         if not ok:
-            print "Failed to install pretty prints"
+            print("Failed to install pretty prints")
 
     def quitDebugger(self):
         #print "Closing debugger"
@@ -271,7 +279,7 @@ class GDBWrapper:
     def write(self,s):
         """ Writes a command to the gdb stdin """
         if globals.dev:
-            print '>{}'.format(s)
+            print('>{}'.format(s))
         self.log('>{}'.format(s))
         self.gdb.stdin.write(s+'\n')
     
@@ -290,6 +298,9 @@ class GDBWrapper:
             try:
                 count+=1
                 l=self.gdb.stdout.read()
+                if l is None:
+                    time.sleep(0.01)
+                    continue
                 for h in self.handlers:
                     h.addLine(l)
                 res+=l
@@ -304,9 +315,9 @@ class GDBWrapper:
                             self.running=False
                     self.active=False
                     if globals.dev:
-                        print res
+                        print(res)
                     return (res,True)
-            except IOError:
+            except (IOError, TypeError):
                 time.sleep(0.01)
         return (res,False)
         
@@ -376,7 +387,7 @@ class GDBWrapper:
                 self.active=False
             else:
                 self.log("Break Failed")
-                print "Failed to break gdb"
+                print("Failed to break gdb")
             self.changed=True
 
     def actStop(self):
@@ -413,7 +424,7 @@ class GDBWrapper:
         import xparse
         lines=self.printVar(var)
         if globals.dev:
-            print "@@@\n{}\n@@@".format(lines)
+            print("@@@\n{}\n@@@".format(lines))
         return xparse.parse(lines)
         
     def flatten(self,root):

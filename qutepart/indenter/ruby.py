@@ -236,7 +236,7 @@ class IndentAlgRuby(IndentAlgBase):
         foundBlock, foundColumn, foundChar = self.lastAnchor(block, 0)
         if foundBlock is not None:
             shouldIndent = foundBlock == prevStmt.endBlock or \
-                           self.testAtEnd(prevStmt, re.compile(',\s*'))
+                           self.testAtEnd(prevStmt, re.compile(r',\s*'))
             if (not self._isLastCodeColumn(foundBlock, foundColumn)) or \
                 self.lastAnchor(foundBlock, foundColumn)[0] is not None:
                 # TODO This is alignment, should force using spaces instead of tabs:

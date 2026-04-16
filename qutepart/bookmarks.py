@@ -1,7 +1,7 @@
 """Bookmarks functionality implementation"""
 
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QAction, QIcon, QKeySequence, QTextCursor
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction, QIcon, QKeySequence, QTextCursor
 
 import qutepart
 
@@ -27,7 +27,7 @@ class Bookmarks:
         icon = QIcon(qutepart.getIconPath(iconFileName))
         action = QAction(icon, text, widget)
         action.setShortcut(QKeySequence(shortcut))
-        action.setShortcutContext(Qt.WidgetShortcut)
+        action.setShortcutContext(Qt.ShortcutContext.WidgetShortcut)
         action.triggered.connect(slot)
 
         widget.addAction(action)

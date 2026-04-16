@@ -1,7 +1,7 @@
 import re
 
-varPattern=re.compile('(\$\{[^\}]+\})')
-mkvarPattern=re.compile('(\$\([^\)]+\))')
+varPattern=re.compile(r'(\$\{[^\}]+\})')
+mkvarPattern=re.compile(r'(\$\([^\)]+\))')
 
 def replaceMacros(pat,code,props):
     while True:

@@ -6,50 +6,43 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui
+from PyQt6 import QtWidgets
 
-try:
-    _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
-    def _fromUtf8(s):
-        return s
+def _fromUtf8(s):
+    return s
 
-try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
-    def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
-except AttributeError:
-    def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+def _translate(context, text, disambig):
+    return QtCore.QCoreApplication.translate(context, text)
 
 class Ui_BuildSettingsDialog(object):
     def setupUi(self, BuildSettingsDialog):
         BuildSettingsDialog.setObjectName(_fromUtf8("BuildSettingsDialog"))
         BuildSettingsDialog.resize(662, 459)
-        BuildSettingsDialog.projTree = QtGui.QTreeWidget(BuildSettingsDialog)
+        BuildSettingsDialog.projTree = QtWidgets.QTreeWidget(BuildSettingsDialog)
         BuildSettingsDialog.projTree.setGeometry(QtCore.QRect(10, 10, 161, 341))
         BuildSettingsDialog.projTree.setHeaderHidden(True)
         BuildSettingsDialog.projTree.setObjectName(_fromUtf8("projTree"))
         BuildSettingsDialog.projTree.headerItem().setText(0, _fromUtf8("1"))
-        BuildSettingsDialog.closeButton = QtGui.QPushButton(BuildSettingsDialog)
+        BuildSettingsDialog.closeButton = QtWidgets.QPushButton(BuildSettingsDialog)
         BuildSettingsDialog.closeButton.setGeometry(QtCore.QRect(10, 420, 71, 27))
         BuildSettingsDialog.closeButton.setObjectName(_fromUtf8("closeButton"))
-        BuildSettingsDialog.tabWidget = QtGui.QTabWidget(BuildSettingsDialog)
+        BuildSettingsDialog.tabWidget = QtWidgets.QTabWidget(BuildSettingsDialog)
         BuildSettingsDialog.tabWidget.setGeometry(QtCore.QRect(192, 16, 449, 433))
         BuildSettingsDialog.tabWidget.setObjectName(_fromUtf8("tabWidget"))
-        BuildSettingsDialog.tab = QtGui.QWidget()
+        BuildSettingsDialog.tab = QtWidgets.QWidget()
         BuildSettingsDialog.tab.setObjectName(_fromUtf8("tab"))
         BuildSettingsDialog.tabWidget.addTab(BuildSettingsDialog.tab, _fromUtf8(""))
-        BuildSettingsDialog.tab_2 = QtGui.QWidget()
+        BuildSettingsDialog.tab_2 = QtWidgets.QWidget()
         BuildSettingsDialog.tab_2.setObjectName(_fromUtf8("tab_2"))
         BuildSettingsDialog.tabWidget.addTab(BuildSettingsDialog.tab_2, _fromUtf8(""))
-        BuildSettingsDialog.parallelCB = QtGui.QCheckBox(BuildSettingsDialog)
+        BuildSettingsDialog.parallelCB = QtWidgets.QCheckBox(BuildSettingsDialog)
         BuildSettingsDialog.parallelCB.setGeometry(QtCore.QRect(10, 380, 141, 20))
         BuildSettingsDialog.parallelCB.setObjectName(_fromUtf8("parallelCB"))
-        BuildSettingsDialog.symscanCB = QtGui.QCheckBox(BuildSettingsDialog)
+        BuildSettingsDialog.symscanCB = QtWidgets.QCheckBox(BuildSettingsDialog)
         BuildSettingsDialog.symscanCB.setGeometry(QtCore.QRect(10, 360, 161, 20))
         BuildSettingsDialog.symscanCB.setObjectName(_fromUtf8("symscanCB"))
-        BuildSettingsDialog.resetButton = QtGui.QPushButton(BuildSettingsDialog)
+        BuildSettingsDialog.resetButton = QtWidgets.QPushButton(BuildSettingsDialog)
         BuildSettingsDialog.resetButton.setGeometry(QtCore.QRect(100, 420, 71, 27))
         BuildSettingsDialog.resetButton.setObjectName(_fromUtf8("resetButton"))
 

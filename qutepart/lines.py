@@ -2,7 +2,7 @@
 list-like object for access text document lines
 """
 
-from PyQt4.QtGui import QTextCursor
+from PyQt6.QtGui import QTextCursor
 
 
 def _iterateBlocksFrom(block):
@@ -73,7 +73,7 @@ class Lines:
         """
         def _setBlockText(blockIndex, text):
             cursor = QTextCursor(self._doc.findBlockByNumber(blockIndex))
-            cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
             cursor.insertText(text)
 
         if isinstance(index, int):
@@ -103,15 +103,15 @@ class Lines:
             block = self._doc.findBlockByNumber(blockIndex)
             if block.next().isValid():  # not the last
                 cursor = QTextCursor(block)
-                cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.MoveOperation.NextBlock, QTextCursor.MoveMode.KeepAnchor)
             elif block.previous().isValid():  # the last, not the first
                 cursor = QTextCursor(block.previous())
-                cursor.movePosition(QTextCursor.EndOfBlock)
-                cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+                cursor.movePosition(QTextCursor.MoveOperation.NextBlock, QTextCursor.MoveMode.KeepAnchor)
+                cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
             else:  # only one block
                 cursor = QTextCursor(block)
-                cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
 
         if isinstance(index, int):
@@ -137,7 +137,7 @@ class Lines:
         def __iter__(self):
             return self
 
-        def next(self):
+        def __next__(self):
             if self._block.isValid():
                 self._block, result = self._block.next(), self._block.text()
                 return result
@@ -154,7 +154,7 @@ class Lines:
         """Append line to the end
         """
         cursor = QTextCursor(self._doc)
-        cursor.movePosition(QTextCursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.insertBlock()
         cursor.insertText(text)
 
@@ -171,7 +171,7 @@ class Lines:
             cursor.insertBlock()
         elif index != self._doc.blockCount():  # not the last
             cursor = QTextCursor(self._doc.findBlockByNumber(index).previous())
-            cursor.movePosition(QTextCursor.EndOfBlock)
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
             cursor.insertBlock()
             cursor.insertText(text)
         else:  # last append to the end

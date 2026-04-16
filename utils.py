@@ -2,7 +2,8 @@ import os
 import time
 import subprocess
 import select
-from PyQt4 import QtGui
+from PyQt6 import QtGui, QtWidgets
+from PyQt6.QtCore import Qt
 
 iconsDir='.'
 
@@ -22,9 +23,9 @@ def loadIcon(name):
     return icon
 
 def message(msg):
-    m=QtGui.QMessageBox()
+    m=QtWidgets.QMessageBox()
     m.setText(msg)
-    m.exec_()
+    m.exec()
 
 def errorMessage(msg):
     message(msg)
@@ -47,15 +48,16 @@ def appendOutput(output,text):
     #text=output.toPlainText()
     #output.setPlainText(text+added)
     #c=output.textCursor()
-    #c.movePosition(QtGui.QTextCursor.End)
+    #c.movePosition(QtGui.QTextCursor.MoveOperation.End)
     #output.setTextCursor(c)
     #output.ensureCursorVisible()
     output.appendLine(text)
 
 def appendColorLine(output,line,color):
-    line=line.decode('utf8')
+    if isinstance(line, bytes):
+        line=line.decode('utf8')
     c=output.textCursor()
-    c.movePosition(QtGui.QTextCursor.End)
+    c.movePosition(QtGui.QTextCursor.MoveOperation.End)
     f=c.charFormat()
     f.setForeground(QtGui.QBrush(QtGui.QColor(color)))
     c.setCharFormat(f)
@@ -104,13 +106,15 @@ def run(dir,cmd,*args):
     return runcmd(dir,[cmd]+list(args),False)
 
 def call(dir,cmd,*args):
-    return runcmd(dir,[cmd]+list(args)).communicate('')
+    out, err = runcmd(dir,[cmd]+list(args)).communicate(b'')
+    return (out.decode('utf-8', errors='replace'), err.decode('utf-8', errors='replace'))
 
 def shellrun(dir,cmd):
     return subprocess.Popen(['-c',cmd],shell=True, stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir)
     
 def shellcall(dir,cmd):
-    return shellrun(dir,cmd).communicate()
+    out, err = shellrun(dir,cmd).communicate()
+    return (out.decode('utf-8', errors='replace'), err.decode('utf-8', errors='replace'))
 
 class AsyncExecute:
     def __init__(self,output,dir,cmdlist):
@@ -130,13 +134,13 @@ class AsyncExecute:
         rc=select.select(reads,[],[],0)
         for fd in rc[0]:
             if fd==self.process.stdout.fileno():
-                line=self.process.stdout.readline().strip()
+                line=self.process.stdout.readline().strip().decode('utf-8', errors='replace')
                 appendLine(self.output,line)
                 self.text.append(line)
                 if len(line)>0:
                     self.act=self.act+1
             if fd==self.process.stderr.fileno():
-                line=self.process.stderr.readline().strip()
+                line=self.process.stderr.readline().strip().decode('utf-8', errors='replace')
                 appendLine(self.output,line)
                 self.text.append(line)
                 if len(line)>0:
@@ -152,7 +156,7 @@ async_executes=[]
 
 def pendingAsync():
     if len(async_executes)>0:
-        print "Pending: {}".format(async_executes[0].cmdlist)
+        print("Pending: {}".format(async_executes[0].cmdlist))
         return True
     return False
 
@@ -165,7 +169,7 @@ def execute(output,dir,cmd,*args):
 def pollAsync():
     res=[]
     n=len(async_executes)
-    for i in xrange(0,n):
+    for i in range(0,n):
         ae=async_executes[i]
         if ae.poll():
             res.append(async_executes[i].rc)
@@ -187,13 +191,13 @@ def old_execute(output,dir,cmd,*args):
         rc=select.select(reads,[],[])
         for fd in rc[0]:
             if fd==p.stdout.fileno():
-                line=p.stdout.readline().strip()
+                line=p.stdout.readline().strip().decode('utf-8', errors='replace')
                 appendLine(output,line)
                 text.append(line)
                 if len(line)>0:
                     act=act+1
             if fd==p.stderr.fileno():
-                line=p.stderr.readline().strip()
+                line=p.stderr.readline().strip().decode('utf-8', errors='replace')
                 appendLine(output,line)
                 text.append(line)
                 if len(line)>0:
@@ -216,13 +220,13 @@ def findLine(path,prefix,removePrefix=False):
        
 def browseDirectory(lineedit):
     cur=lineedit.text()
-    cur=QtGui.QFileDialog.getExistingDirectory(caption="Working Directory",directory=cur)
+    cur=QtWidgets.QFileDialog.getExistingDirectory(caption="Working Directory",directory=cur)
     if cur:
         lineedit.setText(cur)
 
 def setCheckbox(cb,on):
-    cb.setCheckState(QtCore.Qt.Checked if on else QtCore.Qt.Unchecked)
+    cb.setCheckState(Qt.CheckState.Checked if on else Qt.CheckState.Unchecked)
     
 def getCheckbox(cb):
-    return cb.checkState()==QtCore.Qt.Checked
+    return cb.checkState()==Qt.CheckState.Checked
 

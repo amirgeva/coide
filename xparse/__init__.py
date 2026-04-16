@@ -16,6 +16,6 @@ def parse(text):
     except EndOfText:
         pass
     except ParseException:
-        print "Failed to parse '{}'".format(text)
+        print("Failed to parse '{}'".format(text))
 
 

@@ -150,13 +150,13 @@ class Parser:
 
 def test():
     import sys
-    for i in xrange(1,len(sys.argv)):
+    for i in range(1,len(sys.argv)):
         arg=sys.argv[i]
-        print arg
+        print(arg)
         text=open(arg,'r').read()
-        print text
+        print(text)
         p=Parser(text)
-        print p.root
+        print(p.root)
 
 if __name__=='__main__':
     test()

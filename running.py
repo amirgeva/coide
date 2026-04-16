@@ -1,7 +1,8 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
-class RunningWidget(QtGui.QWidget):
+class RunningWidget(QtWidgets.QWidget):
     def __init__(self,parent=None):
         super(RunningWidget,self).__init__(parent)
         self.timer=QtCore.QTimer(self)
@@ -27,7 +28,7 @@ class RunningWidget(QtGui.QWidget):
         rad=24
         steps=8
         import math
-        for i in xrange(0,steps):
+        for i in range(0,steps):
             angle=self.angle+i*(2*3.14159265*(1.0/steps))
             cs=math.cos(angle)
             sn=math.sin(angle)

@@ -93,7 +93,7 @@ def _parseBoolAttribute(value):
 
 def _safeGetRequiredAttribute(xmlElement, name, default):
     if name in xmlElement.attrib:
-        return unicode(xmlElement.attrib[name])
+        return str(xmlElement.attrib[name])
     else:
         _logger.warning("Required attribute '%s' is not set for element '%s'", name, xmlElement.tag)
         return default
@@ -170,7 +170,7 @@ def _loadChildRules(context, xmlElement, attributeToFormatMap, formatConverterFu
     """Extract rules from Context or Rule xml element
     """
     rules = []
-    for ruleElement in xmlElement.getchildren():
+    for ruleElement in list(xmlElement):
         if not ruleElement.tag in _ruleClassDict:
             raise ValueError("Not supported rule '%s'" % ruleElement.tag)
         rule = _ruleClassDict[ruleElement.tag](context, ruleElement, attributeToFormatMap, formatConverterFunction)
@@ -233,7 +233,7 @@ def _loadDetectChar(parentContext, xmlElement, attributeToFormatMap, formatConve
             _logger.warning('Too little DetectChar index %d', index)
             index = 0
 
-    return _parserModule.DetectChar(abstractRuleParams, unicode(char), index)
+    return _parserModule.DetectChar(abstractRuleParams, str(char), index)
 
 def _loadDetect2Chars(parentContext, xmlElement, attributeToFormatMap, formatConverterFunction):
     char = _safeGetRequiredAttribute(xmlElement, 'char', None)
@@ -286,11 +286,11 @@ def _loadRegExpr(parentContext, xmlElement, attributeToFormatMap, formatConverte
         i.e. \0377 is character with code 255 in the unicode table
         Convert such notation to unicode text
         """
-        text = unicode(text)
+        text = str(text)
         def replFunc(matchObj):
             matchText = matchObj.group(0)
             charCode = eval(matchText[1:])
-            return chr(charCode).decode('latin1')
+            return chr(charCode)
         return re.sub(r"\\0\d\d\d", replFunc, text)
 
     insensitive = _parseBoolAttribute(xmlElement.attrib.get('insensitive', 'false'))
@@ -448,7 +448,7 @@ def _makeFormat(defaultTheme, defaultStyleName, textType, item=None):
 
     if item is not None:
         caseInsensitiveAttributes = {}
-        for key, value in item.attrib.iteritems():
+        for key, value in item.attrib.items():
             caseInsensitiveAttributes[key.lower()] = value.lower()
 
         if 'color' in caseInsensitiveAttributes:
@@ -503,7 +503,7 @@ def _loadLists(root, highlightingElement):
     lists = {}  # list name: list
     for listElement in highlightingElement.findall('list'):
         # Sometimes item.text is none. Broken xml files
-        items = [unicode(item.text.strip()) \
+        items = [str(item.text.strip()) \
                     for item in listElement.findall('item') \
                         if item.text is not None]
         name = _safeGetRequiredAttribute(listElement, 'name', 'Error: list name is not set!!!')
@@ -520,9 +520,9 @@ def _makeKeywordsLowerCase(listDict):
 def _loadSyntaxDescription(root, syntax):
     syntax.name = _safeGetRequiredAttribute(root, 'name', 'Error: .parser name is not set!!!')
     syntax.section = _safeGetRequiredAttribute(root, 'section', 'Error: Section is not set!!!')
-    syntax.extensions = filter(None, _safeGetRequiredAttribute(root, 'extensions', '').split(';'))
-    syntax.firstLineGlobs = filter(None, root.attrib.get('firstLineGlobs', '').split(';'))
-    syntax.mimetype = filter(None, root.attrib.get('mimetype', '').split(';'))
+    syntax.extensions = list(filter(None, _safeGetRequiredAttribute(root, 'extensions', '').split(';')))
+    syntax.firstLineGlobs = list(filter(None, root.attrib.get('firstLineGlobs', '').split(';')))
+    syntax.mimetype = list(filter(None, root.attrib.get('mimetype', '').split(';')))
     syntax.version = root.attrib.get('version', None)
     syntax.kateversion = root.attrib.get('kateversion', None)
     syntax.priority = int(root.attrib.get('priority', '0'))
@@ -539,7 +539,7 @@ def loadSyntax(syntax, filePath, formatConverterFunction = None):
         try:
             root = xml.etree.ElementTree.parse(definitionFile).getroot()
         except Exception as ex:
-            print >> sys.stderr, 'When opening %s:' % filePath
+            print('When opening %s:' % filePath, file=sys.stderr)
             raise
 
     highlightingElement = root.find('highlighting')

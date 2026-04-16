@@ -1,10 +1,12 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt
 import uis
 import os
 import utils
 
-class FontSettingsDialog(QtGui.QDialog):
+class FontSettingsDialog(QtWidgets.QDialog):
     """
     Dialog for selection of fonts for the various windows and panes
     Currently 3 window groups are supported:
@@ -15,24 +17,24 @@ class FontSettingsDialog(QtGui.QDialog):
     def __init__(self,parent=None):
         super(FontSettingsDialog,self).__init__(parent)
         self.fontsDict={}
-        self.mainLayout=QtGui.QVBoxLayout()
+        self.mainLayout=QtWidgets.QVBoxLayout()
         self.edFontButton,self.edFontText=self.addFontLayout("Code View Font","codefont")
         self.wtFontButton,self.wtFontText=self.addFontLayout("Watches Pane Font","watchesfont")
         self.flFontButton,self.flFontText=self.addFontLayout("Sources List Pane Font","sourcesfont")
-        buttons=QtGui.QHBoxLayout()
-        self.okButton=QtGui.QPushButton("Ok")
+        buttons=QtWidgets.QHBoxLayout()
+        self.okButton=QtWidgets.QPushButton("Ok")
         buttons.addWidget(self.okButton)
         self.okButton.clicked.connect(self.accept)
-        self.cancelButton=QtGui.QPushButton("Cancel")
+        self.cancelButton=QtWidgets.QPushButton("Cancel")
         buttons.addWidget(self.cancelButton)
         self.cancelButton.clicked.connect(self.reject)
         self.mainLayout.addLayout(buttons)
         self.setLayout(self.mainLayout)
         
     def addFontLayout(self,label,name):
-        fontLayout=QtGui.QHBoxLayout()
-        fontButton=QtGui.QPushButton("Select")
-        fontText=QtGui.QTextEdit()
+        fontLayout=QtWidgets.QHBoxLayout()
+        fontButton=QtWidgets.QPushButton("Select")
+        fontText=QtWidgets.QTextEdit()
         fontButton.clicked.connect(lambda : self.selectFont(fontText))
         fontText.setText(label)
         fontText.setMaximumHeight(48)
@@ -42,7 +44,7 @@ class FontSettingsDialog(QtGui.QDialog):
         self.mainLayout.addLayout(fontLayout)
         settings=QtCore.QSettings()
         if settings.contains(name):
-            fb=settings.value(name).toByteArray()
+            fb=settings.value(name)
             font=QtGui.QFont()
             QtCore.QDataStream(fb) >> font
             fontText.setFont(font)
@@ -52,7 +54,7 @@ class FontSettingsDialog(QtGui.QDialog):
         return fontButton,fontText
         
     def selectFont(self,textField):
-        (font,ok)=QtGui.QFontDialog.getFont(textField.font())
+        (font,ok)=QtWidgets.QFontDialog.getFont(textField.font())
         if ok:
             textField.setFont(font)
             
@@ -68,36 +70,36 @@ class FontSettingsDialog(QtGui.QDialog):
         settings.sync()
         super(FontSettingsDialog,self).accept()
 
-class GeneralSettingsDialog(QtGui.QDialog):
+class GeneralSettingsDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(GeneralSettingsDialog,self).__init__(parent)
         uis.loadDialog('general_settings',self)
         s=QtCore.QSettings()
-        self.sortFilesCB.setCheckState(QtCore.Qt.Checked if s.value('sortFiles',True).toBool() else QtCore.Qt.Unchecked)
-        self.customPrinters.setCheckState(QtCore.Qt.Checked if s.value('customPrinters',True).toBool() else QtCore.Qt.Unchecked)
+        self.sortFilesCB.setCheckState(Qt.CheckState.Checked if s.value('sortFiles',True) else Qt.CheckState.Unchecked)
+        self.customPrinters.setCheckState(Qt.CheckState.Checked if s.value('customPrinters',True) else Qt.CheckState.Unchecked)
         self.clearCacheButton.clicked.connect(self.clearCache)
     
     def save(self):
         s=QtCore.QSettings()
-        s.setValue('sortFiles',(self.sortFilesCB.checkState() == QtCore.Qt.Checked))
-        s.setValue('customPrinters',(self.customPrinters.checkState() == QtCore.Qt.Checked))
+        s.setValue('sortFiles',(self.sortFilesCB.checkState() == Qt.CheckState.Checked))
+        s.setValue('customPrinters',(self.customPrinters.checkState() == Qt.CheckState.Checked))
         s.sync()
         
     def clearCache(self):
         s=QtCore.QSettings()
         s.remove('all_packages')
         s.sync()
-        QtGui.QMessageBox.information(self,"Clear Cache","Restart IDE to reload...")
+        QtWidgets.QMessageBox.information(self,"Clear Cache","Restart IDE to reload...")
     
 
-class EditorSettingsDialog(QtGui.QDialog):
+class EditorSettingsDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(EditorSettingsDialog,self).__init__(parent)
         uis.loadDialog('editor_settings',self)
         s=QtCore.QSettings()
-        self.indentSpaces.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp('\d+')))
-        self.indentSpaces.setText(s.value('indent','2').toString())
-        self.clangCB.setCheckState(QtCore.Qt.Checked if s.value('clangCompletion',True).toBool() else QtCore.Qt.Unchecked)
+        self.indentSpaces.setValidator(QtGui.QRegularExpressionValidator(QtCore.QRegularExpression(r'\\d+')))
+        self.indentSpaces.setText(s.value('indent','2'))
+        self.clangCB.setCheckState(Qt.CheckState.Checked if s.value('clangCompletion',True) else Qt.CheckState.Unchecked)
 
     def save(self):
         s=QtCore.QSettings()
@@ -107,10 +109,10 @@ class EditorSettingsDialog(QtGui.QDialog):
         except ValueError:
             pass
         s.setValue('indent',indent)
-        s.setValue('clangCompletion',(self.clangCB.checkState() == QtCore.Qt.Checked))
+        s.setValue('clangCompletion',(self.clangCB.checkState() == Qt.CheckState.Checked))
         s.sync()
      
-class MacrosHelpDialog(QtGui.QDialog):
+class MacrosHelpDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(MacrosHelpDialog,self).__init__(parent)
         uis.loadDialog('macros_help',self)
@@ -123,24 +125,24 @@ class MacrosHelpDialog(QtGui.QDialog):
         self.macrosTable.setColumnCount(2)
         row=0
         for m in helpData:
-            self.macrosTable.setItem(row,0,QtGui.QTableWidgetItem(m))
-            self.macrosTable.setItem(row,1,QtGui.QTableWidgetItem(helpData.get(m)))
+            self.macrosTable.setItem(row,0,QtWidgets.QTableWidgetItem(m))
+            self.macrosTable.setItem(row,1,QtWidgets.QTableWidgetItem(helpData.get(m)))
             row=row+1
-        self.macrosTable.setHorizontalHeaderItem(0,QtGui.QTableWidgetItem('Macro'))
-        self.macrosTable.setHorizontalHeaderItem(1,QtGui.QTableWidgetItem('Description'))
+        self.macrosTable.setHorizontalHeaderItem(0,QtWidgets.QTableWidgetItem('Macro'))
+        self.macrosTable.setHorizontalHeaderItem(1,QtWidgets.QTableWidgetItem('Description'))
         self.macrosTable.resizeRowsToContents()
         
-class TemplatesDialog(QtGui.QDialog):
+class TemplatesDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(TemplatesDialog,self).__init__(parent)
         uis.loadDialog('templates',self)
         s=QtCore.QSettings()
-        self.dir=s.value('tmplDir','').toString()
+        self.dir=s.value('tmplDir','')
         self.tmplDir.setText(self.dir)
         self.updateTemplates()
         self.templatesList.itemSelectionChanged.connect(self.selChanged)
         self.curEdit=''
-        self.codeEdit.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
+        self.codeEdit.setLineWrapMode(QtWidgets.QPlainTextEdit.LineWrapMode.NoWrap)
         self.addButton.clicked.connect(self.addClicked)
         self.delButton.clicked.connect(self.delClicked)
         self.macrosButton.clicked.connect(self.macrosClicked)
@@ -157,10 +159,10 @@ class TemplatesDialog(QtGui.QDialog):
         self.codeEdit.setPlainText('')
         
     def macrosClicked(self):
-        MacrosHelpDialog().exec_()
+        MacrosHelpDialog().exec()
     
     def browseTmplDir(self):
-        d=QtGui.QFileDialog.getExistingDirectory(directory=self.dir)
+        d=QtWidgets.QFileDialog.getExistingDirectory(directory=self.dir)
         if d:
             self.dir=d
             self.tmplDir.setText(d)
@@ -171,7 +173,7 @@ class TemplatesDialog(QtGui.QDialog):
         if not self.dir:
             utils.errorMessage('Please set template directory first')
         else:
-            (label,ok)=QtGui.QInputDialog.getText(self,"New Template","Template Name")
+            (label,ok)=QtWidgets.QInputDialog.getText(self,"New Template","Template Name")
             if ok:
                 self.templatesList.addItem(label)
                 try:

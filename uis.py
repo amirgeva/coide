@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import os
 from subprocess import call
-from PyQt4 import QtGui
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 import re
 import inspect
 import importlib
@@ -11,7 +12,7 @@ def loadDialog(name,dlg=None):
     for name,obj in inspect.getmembers(module):
         if name.startswith("Ui_"):
             if not dlg:
-                dlg=QtGui.QDialog()
+                dlg=QtWidgets.QDialog()
             ui=obj()
             ui.setupUi(dlg)
             return dlg
@@ -28,14 +29,14 @@ def generate():
         f=open(outpath,"r")
         lines=f.readlines()
         f.close()
-        for i in xrange(0,len(lines)):
+        for i in range(0,len(lines)):
             line=lines[i]
             line=line.replace('QtGui.QPixmap(_fromUtf8("../icons','QtGui.QPixmap(_fromUtf8("icons')
             lines[i]=line
             if line.startswith('# Created'):
                 lines[i]='#\n'
             if line.startswith("class Ui_"):
-                dlg=(re.split('\W+',line))[1]
+                dlg=(re.split(r'\W+',line))[1]
                 dlg=dlg[3:]
             p=line.find('self.')
             if p>0:

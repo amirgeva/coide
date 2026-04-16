@@ -1,17 +1,19 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt
 import uis
 
 def check(cb,state):
     if state:
-        cb.setCheckState(QtCore.Qt.Checked)
+        cb.setCheckState(Qt.CheckState.Checked)
     else:
-        cb.setCheckState(QtCore.Qt.Unchecked)
+        cb.setCheckState(Qt.CheckState.Unchecked)
 
 def getCheck(cb):
-    return (cb.checkState() == QtCore.Qt.Checked)
+    return (cb.checkState() == Qt.CheckState.Checked)
 
-class FindDialog(QtGui.QDialog):
+class FindDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(FindDialog,self).__init__(parent)
         uis.loadDialog('find_replace',self)
@@ -19,13 +21,13 @@ class FindDialog(QtGui.QDialog):
         self.cancelButton.clicked.connect(self.reject)
         self.replaceButton.clicked.connect(self.replace)
         s=QtCore.QSettings()
-        check(self.caseCB,s.value('find_case',False).toBool())
-        check(self.backCB,s.value('find_back',False).toBool())
-        check(self.wordsCB,s.value('find_words',False).toBool())
-        check(self.allCB,s.value('find_all',False).toBool())
-        self.findEdit.setText(s.value('find_text','').toString())
-        self.replaceEdit.setText(s.value('find_replace_text','').toString())
-        self.findEdit.setFocus(QtCore.Qt.OtherFocusReason)
+        check(self.caseCB,s.value('find_case',False))
+        check(self.backCB,s.value('find_back',False))
+        check(self.wordsCB,s.value('find_words',False))
+        check(self.allCB,s.value('find_all',False))
+        self.findEdit.setText(s.value('find_text',''))
+        self.replaceEdit.setText(s.value('find_replace_text',''))
+        self.findEdit.setFocus(QtCore.Qt.FocusReason.OtherFocusReason)
         self.replaceClicked=False
         
     def setFindText(self,text):

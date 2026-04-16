@@ -3,10 +3,11 @@ htmldelegate --- QStyledItemDelegate delegate. Draws HTML
 =========================================================
 """
 
-from PyQt4.QtGui import QApplication, QAbstractTextDocumentLayout, \
-                        QStyledItemDelegate, QStyle, QStyleOptionViewItemV4, \
+from PyQt6.QtGui import QAbstractTextDocumentLayout, \
                         QTextDocument, QPalette
-from PyQt4.QtCore import QSize
+from PyQt6.QtWidgets import QApplication, \
+                        QStyledItemDelegate, QStyle, QStyleOptionViewItem
+from PyQt6.QtCore import QSize
 
 _HTML_ESCAPE_TABLE = \
 {
@@ -37,7 +38,7 @@ class HTMLDelegate(QStyledItemDelegate):
         """
         option.state &= ~QStyle.State_HasFocus  # never draw focus rect
 
-        options = QStyleOptionViewItemV4(option)
+        options = QStyleOptionViewItem(option)
         self.initStyleOption(options,index)
 
         style = QApplication.style() if options.widget is None else options.widget.style()
@@ -56,7 +57,7 @@ class HTMLDelegate(QStyledItemDelegate):
 
         # Highlighting text if item is selected
         if option.state & QStyle.State_Selected:
-            ctx.palette.setColor(QPalette.Text, option.palette.color(QPalette.Active, QPalette.HighlightedText))
+            ctx.palette.setColor(QPalette.ColorRole.Text, option.palette.color(QPalette.ColorGroup.Active, QPalette.ColorRole.HighlightedText))
 
         textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options)
         painter.save()
@@ -72,7 +73,7 @@ class HTMLDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
         """QStyledItemDelegate.sizeHint implementation
         """
-        options = QStyleOptionViewItemV4(option)
+        options = QStyleOptionViewItem(option)
         self.initStyleOption(options,index)
 
         doc = QTextDocument()

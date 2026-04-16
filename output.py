@@ -1,9 +1,10 @@
 import re
-from PyQt4 import QtGui, QtCore
+from PyQt6 import QtCore, QtGui
+from PyQt6 import QtWidgets
 
 posStrPatterns=[
-    re.compile('(.+):(\d+):(\d+):'),
-    re.compile('\[(.+):(\d+)\]:')
+    re.compile(r'(.+):(\d+):(\d+):'),
+    re.compile(r'\[(.+):(\d+)\]:')
 ]
 tagPattern=re.compile('<[^<>]*>')
 
@@ -17,7 +18,7 @@ def removeTags(s):
     return s
     
 
-class OutputWidget(QtGui.QPlainTextEdit):
+class OutputWidget(QtWidgets.QPlainTextEdit):
     def __init__(self,pane,mainwin):
         super(OutputWidget,self).__init__(pane)
         self.mainWindow=mainwin
@@ -64,9 +65,9 @@ class OutputWidget(QtGui.QPlainTextEdit):
         
     def highlightLine(self,row):
         c=self.textCursor()
-        c.movePosition(QtGui.QTextCursor.Start,QtGui.QTextCursor.MoveAnchor)
-        c.movePosition(QtGui.QTextCursor.NextBlock,QtGui.QTextCursor.MoveAnchor,row+1)
-        c.movePosition(QtGui.QTextCursor.PreviousBlock,QtGui.QTextCursor.KeepAnchor)
+        c.movePosition(QtGui.QTextCursor.MoveOperation.Start,QtGui.QTextCursor.MoveMode.MoveAnchor)
+        c.movePosition(QtGui.QTextCursor.MoveOperation.NextBlock,QtGui.QTextCursor.MoveMode.MoveAnchor,row+1)
+        c.movePosition(QtGui.QTextCursor.MoveOperation.PreviousBlock,QtGui.QTextCursor.MoveMode.KeepAnchor)
         self.setTextCursor(c)
         self.ensureCursorVisible()        
         

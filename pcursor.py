@@ -1,4 +1,5 @@
-from PyQt4 import QtGui
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 
 class PluginCursor(QtGui.QTextCursor):

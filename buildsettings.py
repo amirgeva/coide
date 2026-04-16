@@ -1,5 +1,7 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt
 import os
 import uis
 from build_settings_cfg import tabs
@@ -25,22 +27,22 @@ def setStr(props,name,value):
     props.assign(name,value)
         
 def setPartialCheck(checkbox):
-    checkbox.setCheckState(QtCore.Qt.PartiallyChecked)
+    checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         
 def check(checkbox,boolState):
-    state = QtCore.Qt.Checked if boolState else QtCore.Qt.Unchecked
+    state = Qt.CheckState.Checked if boolState else Qt.CheckState.Unchecked
     checkbox.setCheckState(state)
     return boolState
     
 def getCheck(checkbox):
-    return (checkbox.checkState() == QtCore.Qt.Checked)
+    return (checkbox.checkState() == Qt.CheckState.Checked)
     
 def isPartialCheck(checkbox):
-    return (checkbox.checkState() == QtCore.Qt.PartiallyChecked)
+    return (checkbox.checkState() == Qt.CheckState.PartiallyChecked)
     
 def setCombo(cb,value):
     n=cb.count()
-    for i in xrange(0,n):
+    for i in range(0,n):
         if cb.itemText(i)==value:
             cb.setCurrentIndex(i)
             return
@@ -67,7 +69,7 @@ def save(widget):
     if t=='QComboBox':
         return widget.itemText(widget.currentIndex())
 
-class SettingsTabDialog(QtGui.QDialog):
+class SettingsTabDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(SettingsTabDialog,self).__init__(parent)
         # fields maps setting name to widget
@@ -81,9 +83,9 @@ class SettingsTabDialog(QtGui.QDialog):
         Add widgets based on the description in desc
         which is a list of tuples describing individual widgets
         '''
-        topLayout=QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
-        topLayout.addWidget(QtGui.QLabel('Inherit'))
-        layout=QtGui.QGridLayout()
+        topLayout=QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.Direction.TopToBottom)
+        topLayout.addWidget(QtWidgets.QLabel('Inherit'))
+        layout=QtWidgets.QGridLayout()
         layout.setColumnStretch(0,1)
         layout.setColumnStretch(1,2)
         layout.setColumnStretch(2,3)
@@ -93,30 +95,30 @@ class SettingsTabDialog(QtGui.QDialog):
             name=d[0]
             title=d[1]
             details=d[2]
-            hcb=QtGui.QCheckBox()
+            hcb=QtWidgets.QCheckBox()
             check(hcb,True)
             hcb.stateChanged.connect(lambda state,cur=row:self.inheritChanged(cur,state))
             self.inheritCBs.append(hcb)
             layout.addWidget(hcb,row,0)
-            layout.addWidget(QtGui.QLabel(title),row,1)
+            layout.addWidget(QtWidgets.QLabel(title),row,1)
             w=None
             if details=='STR':
-                w=QtGui.QLineEdit()
+                w=QtWidgets.QLineEdit()
                 w.setText(d[3])
                 hcb.setTristate(True)
-                self.resetCommands.append((QtGui.QLineEdit.setText,w,d[3]))
+                self.resetCommands.append((QtWidgets.QLineEdit.setText,w,d[3]))
             if details=='EDIT':
-                w=QtGui.QPlainTextEdit()
+                w=QtWidgets.QPlainTextEdit()
                 text=d[3].replace('\\n','\n')
                 w.setPlainText(text)
                 hcb.setTristate(True)
-                self.resetCommands.append((QtGui.QPlainTextEdit.setPlainText,w,text))
+                self.resetCommands.append((QtWidgets.QPlainTextEdit.setPlainText,w,text))
             if details=='CB':
-                w=QtGui.QCheckBox()
+                w=QtWidgets.QCheckBox()
                 check(w,d[3])
                 self.resetCommands.append((check,w,d[3]))
             if '|' in details:
-                w=QtGui.QComboBox()
+                w=QtWidgets.QComboBox()
                 opts=details.split('|')
                 for o in opts:
                     w.addItem(o)
@@ -133,7 +135,7 @@ class SettingsTabDialog(QtGui.QDialog):
         self.setLayout(topLayout)
         
     def inheritChanged(self,index,state):
-        dis=(state==QtCore.Qt.Checked)
+        dis=(state==Qt.CheckState.Checked)
         w=self.fieldList[index]
         w.setDisabled(dis)
                 
@@ -169,14 +171,14 @@ class SettingsTabDialog(QtGui.QDialog):
             else:
                 props.remove(name)
                 
-class BuildSettingsDialog(QtGui.QDialog):
+class BuildSettingsDialog(QtWidgets.QDialog):
     def __init__(self,mainwin,startPath,parent=None):
         super(BuildSettingsDialog,self).__init__(parent)
         self.mainWindow=mainwin
         uis.loadDialog('build_settings',self)
         s=QtCore.QSettings()
-        check(self.parallelCB,s.value('parallel_make',False).toBool())
-        check(self.symscanCB,s.value('symbol_scan',True).toBool())
+        check(self.parallelCB,s.value('parallel_make',False))
+        check(self.symscanCB,s.value('symbol_scan',True))
         self.tabWidget.clear()
         self.tabs=[]
         for t in tabs:
@@ -186,9 +188,9 @@ class BuildSettingsDialog(QtGui.QDialog):
             self.tabs.append((t,dlg))
         for (name,tab) in self.tabs:
             self.tabWidget.addTab(tab,name)
-        self.workspaceItem=QtGui.QTreeWidgetItem(['Workspace'])
+        self.workspaceItem=QtWidgets.QTreeWidgetItem(['Workspace'])
         self.mainWindow.workspaceTree.addProjectsToTree(self.workspaceItem)
-        self.workspaceDir=self.workspaceItem.data(0,DirectoryRole).toString()
+        self.workspaceDir=self.workspaceItem.data(0,DirectoryRole)
         self.projTree.addTopLevelItem(self.workspaceItem)
         self.workspaceItem.setExpanded(True)
         self.projTree.itemSelectionChanged.connect(self.selectionChanged)
@@ -204,14 +206,14 @@ class BuildSettingsDialog(QtGui.QDialog):
             firstItem=self.workspaceItem
         self.projTree.setCurrentItem(firstItem)
         self.projTree.scrollToItem(firstItem)
-        dir=firstItem.data(0,DirectoryRole).toString()
+        dir=firstItem.data(0,DirectoryRole)
         self.prevPath=os.path.join(dir,'mk.cfg')
         
     def findItem(self,parent,path):
         n=parent.childCount()
-        for i in xrange(0,n):
+        for i in range(0,n):
             item=parent.child(i)
-            dir=item.data(0,DirectoryRole).toString()
+            dir=item.data(0,DirectoryRole)
             if dir==path:
                 return item
             res=self.findItem(item,path)
@@ -228,8 +230,8 @@ class BuildSettingsDialog(QtGui.QDialog):
         self.close()
         
     def resetClicked(self):
-        res=QtGui.QMessageBox.question(self,'Delete File','Delete '+self.prevPath,QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
-        if res==QtGui.QMessageBox.Yes:
+        res=QtWidgets.QMessageBox.question(self,'Delete File','Delete '+self.prevPath,QtWidgets.QMessageBox.StandardButton.Yes,QtWidgets.QMessageBox.StandardButton.No)
+        if res==QtWidgets.QMessageBox.StandardButton.Yes:
             try:
                 os.remove(self.prevPath)
                 for (t,dlg) in self.tabs:
@@ -241,7 +243,7 @@ class BuildSettingsDialog(QtGui.QDialog):
         if self.prevPath:
             self.save(self.prevPath)
         item=self.projTree.currentItem()
-        dir=item.data(0,DirectoryRole).toString()
+        dir=item.data(0,DirectoryRole)
         path=os.path.join(dir,'mk.cfg')
         self.load(path)
         self.prevPath=path
@@ -261,9 +263,9 @@ class BuildSettingsDialog(QtGui.QDialog):
 if __name__=='__main__':
     import sys
     from build_settings_cfg import tabs
-    app=QtGui.QApplication(sys.argv)
+    app=QtWidgets.QApplication(sys.argv)
     d=SettingsTabDialog()
     d.addWidgets(tabs.get('Compile'))
     d.show()
-    app.exec_()
+    app.exec()
     

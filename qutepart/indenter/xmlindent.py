@@ -74,7 +74,7 @@ class IndentAlgXml(IndentAlgBase):
                 return ''
             elif re.match(r'^<(\?xml|!DOCTYPE).*', lineText):
                 return ''
-            elif re.match('^\s*</', lineText):
+            elif re.match(r'^\s*</', lineText):
                 #closing tag, decrease indentation when previous didn't open a tag
                 if re.match(r'\s*<[^/][^>]*[^/]>[^<>]*$', prevLineText):
                     # keep indent when prev line opened a tag

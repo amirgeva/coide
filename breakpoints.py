@@ -1,4 +1,5 @@
-from PyQt4 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui
+from PyQt6 import QtWidgets
 import uis
 import json
 
@@ -119,7 +120,7 @@ class BreakpointsDB(QtCore.QObject):
         self.breakpoints.clear()
         
     def printall(self):
-        print self.breakpoints
+        print(self.breakpoints)
         
     def paths(self):
         return self.breakpoints.keys()
@@ -191,7 +192,7 @@ class BreakpointsDB(QtCore.QObject):
                     self.pathBreakpoints(path).extend(bps)
             self.breakpointsChanged.emit()
         except ValueError:
-            print "Failed to load breakpoints from: '{}'".format(s)
+            print("Failed to load breakpoints from: '{}'".format(s))
 
     def save(self):
         todel=[]
@@ -205,7 +206,7 @@ class BreakpointsDB(QtCore.QObject):
         return s
 
 
-class BreakpointDialog(QtGui.QDialog):
+class BreakpointDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(BreakpointDialog,self).__init__(parent)
         uis.loadDialog('breakpoint',self)

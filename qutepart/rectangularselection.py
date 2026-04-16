@@ -1,5 +1,6 @@
-from PyQt4.QtCore import Qt, QMimeData
-from PyQt4.QtGui import QApplication, QKeyEvent, QKeySequence, QPalette, QTextCursor, QTextEdit, QWidget
+from PyQt6.QtCore import Qt, QMimeData
+from PyQt6.QtGui import QKeyEvent, QKeySequence, QPalette, QTextCursor
+from PyQt6.QtWidgets import QApplication, QTextEdit, QWidget
 
 
 class RectangularSelection:
@@ -11,9 +12,9 @@ class RectangularSelection:
 
     # any of this modifiers with mouse select text
     # if hasattr(Qt, 'AltModifier') to make the docs buildable on rtfd.org
-    MOUSE_MODIFIERS = (Qt.AltModifier | Qt.ControlModifier,
-                       Qt.AltModifier | Qt.ShiftModifier,
-                       Qt.AltModifier) if hasattr(Qt, 'AltModifier') else None
+    MOUSE_MODIFIERS = (Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier,
+                       Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ShiftModifier,
+                       Qt.KeyboardModifier.AltModifier) if hasattr(Qt.KeyboardModifier, 'AltModifier') else None
 
     _MAX_SIZE = 256
 
@@ -35,8 +36,8 @@ class RectangularSelection:
     def isDeleteKeyEvent(self, keyEvent):
         """Check if key event should be handled as Delete command"""
         return self._start is not None and \
-               (keyEvent.matches(QKeySequence.Delete) or \
-                (keyEvent.key() == Qt.Key_Backspace and keyEvent.modifiers() == Qt.NoModifier))
+               (keyEvent.matches(QKeySequence.StandardKey.Delete) or \
+                (keyEvent.key() == Qt.Key.Key_Backspace and keyEvent.modifiers() == Qt.KeyboardModifier.NoModifier))
 
     def delete(self):
         """Del or Backspace pressed. Delete selection"""
@@ -47,10 +48,10 @@ class RectangularSelection:
 
     def isExpandKeyEvent(self, keyEvent):
         """Check if key event should expand rectangular selection"""
-        return keyEvent.modifiers() & Qt.ShiftModifier and \
-               keyEvent.modifiers() & Qt.AltModifier and \
-               keyEvent.key() in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Down, Qt.Key_Up,
-                                  Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End)
+        return keyEvent.modifiers() & Qt.KeyboardModifier.ShiftModifier and \
+               keyEvent.modifiers() & Qt.KeyboardModifier.AltModifier and \
+               keyEvent.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Down, Qt.Key.Key_Up,
+                                  Qt.Key.Key_PageUp, Qt.Key.Key_PageDown, Qt.Key.Key_Home, Qt.Key.Key_End)
 
     def onExpandKeyEvent(self, keyEvent):
         """One of expand selection key events"""
@@ -59,7 +60,7 @@ class RectangularSelection:
             line = self._qpart.cursorPosition[0]
             visibleColumn = self._realToVisibleColumn(currentBlockText, self._qpart.cursorPosition[1])
             self._start = (line, visibleColumn)
-        modifiersWithoutAltShift = keyEvent.modifiers() & ( ~ (Qt.AltModifier | Qt.ShiftModifier))
+        modifiersWithoutAltShift = keyEvent.modifiers() & ( ~ (Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ShiftModifier))
         newEvent = QKeyEvent(keyEvent.type(),
                              keyEvent.key(),
                              modifiersWithoutAltShift,
@@ -82,7 +83,7 @@ class RectangularSelection:
             if char == '\t':
                 currentPos += self._qpart.indentWidth
                 # trim reminder. If width('\t') == 4,   width('abc\t') == 4
-                currentPos = currentPos / self._qpart.indentWidth * self._qpart.indentWidth
+                currentPos = currentPos // self._qpart.indentWidth * self._qpart.indentWidth
             else:
                 currentPos += 1
             yield currentPos
@@ -93,8 +94,8 @@ class RectangularSelection:
         """
         generator = self._visibleCharPositionGenerator(text)
         for i in range(realColumn):
-            val = generator.next()
-        return generator.next()
+            val = next(generator)
+        return next(generator)
 
     def _visibleToRealColumn(self, text, visiblePos):
         """If \t is used, real position of symbol in block and visible position differs
@@ -145,7 +146,7 @@ class RectangularSelection:
 
                 cursor.setPosition(cursor.block().position() + min(realStartCol, block.length() - 1))
                 cursor.setPosition(cursor.block().position() + min(realCurrentCol, block.length() - 1),
-                                   QTextCursor.KeepAnchor)
+                                   QTextCursor.MoveMode.KeepAnchor)
                 cursors.append(cursor)
 
         return cursors
@@ -155,8 +156,8 @@ class RectangularSelection:
         selections = []
         cursors = self.cursors()
         if cursors:
-            background = self._qpart.palette().color(QPalette.Highlight)
-            foreground = self._qpart.palette().color(QPalette.HighlightedText)
+            background = self._qpart.palette().color(QPalette.ColorRole.Highlight)
+            foreground = self._qpart.palette().color(QPalette.ColorRole.HighlightedText)
             for cursor in cursors:
                 selection = QTextEdit.ExtraSelection()
                 selection.format.setBackground(background)
@@ -203,7 +204,7 @@ class RectangularSelection:
             return ''
         elif self._qpart.indentUseTabs and \
            all([char == '\t' for char in text]):  # if using tabs and only tabs in text
-            return '\t' * (diff / self._qpart.indentWidth) + \
+            return '\t' * (diff // self._qpart.indentWidth) + \
                    ' ' * (diff % self._qpart.indentWidth)
         else:
             return ' ' * diff
@@ -217,7 +218,7 @@ class RectangularSelection:
         elif self._qpart.textCursor().hasSelection():
             self._qpart.textCursor().deleteChar()
 
-        text = str(mimeData.data(self.MIME_TYPE)).decode('utf8')
+        text = mimeData.data(self.MIME_TYPE).data().decode('utf8')
         lines = text.splitlines()
         cursorLine, cursorCol = self._qpart.cursorPosition
         if cursorLine + len(lines) > len(self._qpart.lines):
