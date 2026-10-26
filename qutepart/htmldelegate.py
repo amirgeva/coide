@@ -36,7 +36,7 @@ class HTMLDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         """QStyledItemDelegate.paint implementation
         """
-        option.state &= ~QStyle.State_HasFocus  # never draw focus rect
+        option.state &= ~QStyle.StateFlag.State_HasFocus  # never draw focus rect
 
         options = QStyleOptionViewItem(option)
         self.initStyleOption(options,index)
@@ -51,15 +51,15 @@ class HTMLDelegate(QStyledItemDelegate):
         #  bad long (multiline) strings processing doc.setTextWidth(options.rect.width())
 
         options.text = ""
-        style.drawControl(QStyle.CE_ItemViewItem, options, painter);
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, options, painter);
 
         ctx = QAbstractTextDocumentLayout.PaintContext()
 
         # Highlighting text if item is selected
-        if option.state & QStyle.State_Selected:
+        if option.state & QStyle.StateFlag.State_Selected:
             ctx.palette.setColor(QPalette.ColorRole.Text, option.palette.color(QPalette.ColorGroup.Active, QPalette.ColorRole.HighlightedText))
 
-        textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options)
+        textRect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, options)
         painter.save()
         painter.translate(textRect.topLeft())
         """Original example contained line
@@ -80,5 +80,5 @@ class HTMLDelegate(QStyledItemDelegate):
         doc.setDocumentMargin(1)
         #  bad long (multiline) strings processing doc.setTextWidth(options.rect.width())
         doc.setHtml(options.text)
-        return QSize(doc.idealWidth(),
+        return QSize(int(doc.idealWidth()),
                      QStyledItemDelegate.sizeHint(self, option, index).height())

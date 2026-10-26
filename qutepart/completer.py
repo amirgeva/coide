@@ -6,10 +6,12 @@ import time
 import traceback
 
 from PyQt6.QtCore import pyqtSignal, QAbstractItemModel, QEvent, QModelIndex, QObject, QSize, Qt, QTimer
-from PyQt6.QtGui import QCursor
+from PyQt6.QtGui import QCursor, QPalette, QTextCursor
 from PyQt6.QtWidgets import QListView, QStyle, QMessageBox
 
-from qutepart.htmldelegate import HTMLDelegate
+from qutepart.htmldelegate import HTMLDelegate, htmlEscape
+
+import lsp
 
 
 _wordPattern = r"\w+"
@@ -100,7 +102,7 @@ class _CompletionModel(QAbstractItemModel):
     def data(self, index, role):
         """QAbstractItemModel method implementation
         """
-        if role == Qt.DisplayRole and \
+        if role == Qt.ItemDataRole.DisplayRole and \
            index.row() < len(self.words):
             text = self.words[index.row()]
             typed = text[:len(self._typedText)]
@@ -128,6 +130,11 @@ class _CompletionModel(QAbstractItemModel):
         """Get current typed text
         """
         return self._typedText
+
+    def insertText(self, index):
+        """Text, which replaces the typed text, when item is selected
+        """
+        return self.words[index]
 
     def _commonWordStart(self, words):
         """Get common start of all words.
@@ -157,11 +164,54 @@ class _CompletionModel(QAbstractItemModel):
 
     """Trivial QAbstractItemModel methods implementation
     """
-    def flags(self, index):                                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+    def flags(self, index):                                 return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
     def headerData(self, index):                            return None
     def columnCount(self, index):                           return 1
     def index(self, row, column, parent = QModelIndex()):   return self.createIndex(row, column)
     def parent(self, index):                                return QModelIndex()
+
+
+class _LspCompletionModel(_CompletionModel):
+    """Completion model, filled with items received from the language server
+    words attribute contains the item labels, which are shown in the list
+    """
+    def __init__(self, items):
+        _CompletionModel.__init__(self, set())
+        self._items = items
+        self._filtered = []
+
+    def setItems(self, items):
+        self._items = items
+
+    def setData(self, wordBeforeCursor, wholeWord):
+        self._typedText = wordBeforeCursor
+        prefix = wordBeforeCursor.lower()
+        self._filtered = [item for item in self._items \
+                                if item['filterText'].lower().startswith(prefix)]
+        self.words = [item['label'] for item in self._filtered]
+        insertTexts = [item['insertText'] for item in self._filtered]
+        if all(text.startswith(wordBeforeCursor) for text in insertTexts):
+            self.canCompleteText = self._commonWordStart(insertTexts)[len(wordBeforeCursor):]
+        else:
+            self.canCompleteText = ''
+        self.layoutChanged.emit()
+
+    def tooManyWords(self):
+        return False  # server already limits the result count
+
+    def insertText(self, index):
+        return self._filtered[index]['insertText']
+
+    def data(self, index, role):
+        if role == Qt.ItemDataRole.DisplayRole and \
+           index.row() < len(self._filtered):
+            item = self._filtered[index.row()]
+            text = htmlEscape(item['label'])
+            if item['detail']:
+                text += '&nbsp;&nbsp;<font color="#808080">%s</font>' % htmlEscape(item['detail'])
+            return '<html>%s</html>' % text
+        else:
+            return None
 
 
 class _CompletionList(QListView):
@@ -178,18 +228,19 @@ class _CompletionList(QListView):
 
         # ensure good selected item background on Windows
         palette = self.palette()
-        palette.setColor(palette.Inactive, palette.Highlight, palette.color(palette.Active, palette.Highlight))
+        palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Highlight,
+                         palette.color(QPalette.ColorGroup.Active, QPalette.ColorRole.Highlight))
         self.setPalette(palette)
 
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self.setItemDelegate(HTMLDelegate(self))
 
         self._qpart = qpart
         self.setFont(qpart.font())
 
-        self.setCursor(QCursor(Qt.PointingHandCursor))
-        self.setFocusPolicy(Qt.NoFocus)
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.setModel(model)
 
@@ -224,11 +275,14 @@ class _CompletionList(QListView):
         """Explicitly called destructor.
         Removes widget from the qpart
         """
-        self._closeIfNotUpdatedTimer.stop()
-        self._qpart.removeEventFilter(self)
-        self._qpart.cursorPositionChanged.disconnect(self._onCursorPositionChanged)
+        try:
+            self._closeIfNotUpdatedTimer.stop()
+            self._qpart.removeEventFilter(self)
+            self._qpart.cursorPositionChanged.disconnect(self._onCursorPositionChanged)
 
-        QListView.close(self)
+            QListView.close(self)
+        except RuntimeError:
+            pass  # C++ object already deleted during shutdown
 
     def sizeHint(self):
         """QWidget.sizeHint implementation
@@ -245,12 +299,12 @@ class _CompletionList(QListView):
         rowCount = min(self.model().rowCount(), self._MAX_VISIBLE_ROWS)
         height = self.sizeHintForRow(0) * (rowCount + 0.5)  # + 0.5 row margin
 
-        return QSize(width, height)
+        return QSize(int(width), int(height))
 
     def minimumHeight(self):
         """QWidget.minimumSizeHint implementation
         """
-        return self.sizeHintForRow(0) * 1.5  # + 0.5 row margin
+        return int(self.sizeHintForRow(0) * 1.5)  # + 0.5 row margin
 
     def _horizontalShift(self):
         """List should be plased such way, that typed text in the list is under
@@ -294,7 +348,7 @@ class _CompletionList(QListView):
         if xPos + width + WIDGET_BORDER_MARGIN > parentSize.width():
             xPos = max(3, parentSize.width() - WIDGET_BORDER_MARGIN - width)
 
-        self.setGeometry(xPos, yPos, width, height)
+        self.setGeometry(int(xPos), int(yPos), int(width), int(height))
         self._closeIfNotUpdatedTimer.stop()
 
     def _onCursorPositionChanged(self):
@@ -359,6 +413,12 @@ class Completer(QObject):
 
         self._wordSet = None
 
+        self._lsp = None
+        self._lspPath = None
+        self._lspKey = None         # (line, word start column) of the last completion request
+        self._lspItems = None       # result of the last completion request
+        self._lspIncomplete = False
+
         qpart.installEventFilter(self)
         qpart.textChanged.connect(self._onTextChanged)
 
@@ -374,6 +434,103 @@ class Completer(QObject):
         
     def setFilename(self,filename):
         self.filename=filename
+
+    def connectLanguageServer(self, root, path):
+        """Use the language server (clangd) for completion in this editor, if available"""
+        self.disconnectLanguageServer()
+        if lsp.languageId(path) is None:
+            return
+        client = lsp.getClient(root)
+        if client is not None:
+            client.openDocument(path, lambda: self._qpart.text)
+            self._lsp = client
+            self._lspPath = path
+
+    def disconnectLanguageServer(self):
+        if self._lsp is not None:
+            self._lsp.closeDocument(self._lspPath)
+        self._lsp = None
+        self._lspPath = None
+
+    def documentSaved(self):
+        if self._lspEnabled():
+            self._lsp.documentSaved(self._lspPath)
+
+    def _lspEnabled(self):
+        return self._lsp is not None and self._qpart.clangCompletion and \
+               self._lsp.isAlive() and self._lsp.isOpen(self._lspPath)
+
+    def _lspContext(self):
+        """Return (key, wordBeforeCursor) for the current cursor position.
+        key identifies the word being completed
+        """
+        cursor = self._qpart.textCursor()
+        word = self._wordBeforeCursor()
+        return (cursor.blockNumber(), cursor.positionInBlock() - len(word)), word
+
+    def _requestLspCompletion(self, forceShow):
+        cursor = self._qpart.textCursor()
+        key, word = self._lspContext()
+        self._lspKey = key
+        self._lspItems = None
+
+        def onResult(items, incomplete):
+            if self._lspKey != key or items is None:
+                return  # stale result or error
+            self._lspItems = items
+            self._lspIncomplete = incomplete
+            self._showLspItems(forceShow)
+
+        self._lsp.completion(self._lspPath, cursor.blockNumber(), cursor.positionInBlock(), onResult)
+
+    def _showLspItems(self, forceShow):
+        """Show (or update) the list using the last language server result"""
+        key, word = self._lspContext()
+        if key != self._lspKey or self._lspItems is None:
+            return False
+        if not (word or forceShow):
+            self._closeCompletion()
+            return False
+        wholeWord = word + self._wordAfterCursor()
+        if self._widget is not None and not isinstance(self._widget.model(), _LspCompletionModel):
+            self._closeCompletion()
+        if self._widget is None:
+            model = _LspCompletionModel(self._lspItems)
+            model.setData(word, wholeWord)
+            if not model.hasWords():
+                return False
+            self._createWidget(model)
+            self._widget._selectItem(0)
+        else:
+            model = self._widget.model()
+            model.setItems(self._lspItems)
+            model.setData(word, wholeWord)
+            if not model.hasWords():
+                self._closeCompletion()
+                return False
+            self._widget._selectItem(0)
+            self._widget.updateGeometry()
+        return True
+
+    def _invokeLspCompletion(self, requestedByUser):
+        key, word = self._lspContext()
+        forceShow = requestedByUser or self._completionOpenedManually or self._isTriggerCharacter(key)
+        if not (forceShow or len(word) >= self._qpart.completionThreshold):
+            return False
+        if requestedByUser or key != self._lspKey or self._lspIncomplete or self._lspItems is None:
+            # Keep showing the previous list (if any) while waiting for the new one
+            if self._widget is not None and self._lspItems is not None and key == self._lspKey:
+                self._showLspItems(forceShow)
+            self._requestLspCompletion(forceShow)
+            return True
+        return self._showLspItems(forceShow)
+
+    def _isTriggerCharacter(self, key):
+        """Check if the word being completed follows '.', '->' or '::'"""
+        line, column = key
+        block = self._qpart.document().findBlockByNumber(line)
+        text = block.text()[:column]
+        return text.endswith('.') or text.endswith('->') or text.endswith('::')
         
     def parseClang(self,text):
         lines=text.split('\n')
@@ -396,6 +553,13 @@ class Completer(QObject):
     def _onTextChanged(self):
         """Text in the qpart changed. Update word set"""
         self._globalUpdateWordSetTimer.schedule(self._updateWordSet)
+        if self._lspEnabled():
+            self._lsp.documentChanged(self._lspPath)
+            if self._lspContext()[0] != self._lspKey:
+                self._lspItems = None  # edited somewhere else, cached result is no longer valid
+            if self._qpart.hasFocus() and self._isDot()[0]:
+                self._requestLspCompletion(forceShow=True)
+            return
         (dot,row,col)=self._isDot()
         #wbc=self._wordBeforeCursor()
         if self._qpart.clangCompletion:
@@ -471,6 +635,8 @@ class Completer(QObject):
         """Invoke completion, if available. Called after text has been typed in qpart
         Returns True, if invoked
         """
+        if self._qpart.completionEnabled and self._lspEnabled():
+            return self._invokeLspCompletion(requestedByUser)
         if self._qpart.completionEnabled and self._wordSet is not None:
             wordBeforeCursor = self._wordBeforeCursor()
             wholeWord = wordBeforeCursor + self._wordAfterCursor()
@@ -509,7 +675,7 @@ class Completer(QObject):
     def _isDot(self):
         cursor = self._qpart.textCursor()
         p=cursor.positionInBlock()
-        opts=['.','->']
+        opts=['.','->','::']
         for o in opts:
             text=cursor.block().text()[p-len(o):p]
             if text==o:
@@ -542,9 +708,10 @@ class Completer(QObject):
         """Item selected. Insert completion to editor
         """
         model = self._widget.model()
-        selectedWord = model.words[index]
-        textToInsert = selectedWord[len(model.typedText()):]
-        self._qpart.textCursor().insertText(textToInsert)
+        cursor = self._qpart.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor,
+                            len(model.typedText()))
+        cursor.insertText(model.insertText(index))
         self._closeCompletion()
 
     def _onCompletionListTabPressed(self):
