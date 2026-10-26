@@ -850,8 +850,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     if self.symbolScan:
                         from system import getLibrarySymbols
                         getLibrarySymbols()
-                        from symbolscanner import rescanOnFileSave
-                        rescanOnFileSave(path)
 
 
     def saveFile(self):

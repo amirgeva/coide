@@ -251,11 +251,6 @@ def getLibrarySymbols(ws):
 def setInitialResults(ws,libSyms,wsSyms,wsLibs):
     Scanner.instance=Scanner(ws,libSyms,wsSyms,wsLibs)
 
-def rescanOnFileSave(filepath):
-    dir=os.path.dirname(filepath)
-    if Scanner.instance and isLibraryDir(dir):
-        Scanner.instance.scanWorkspaceDirectory(dir)
-
 def setWorkspacePath(ws):
     if Scanner.instance:
         Scanner.instance.setWorkspacePath(ws)
