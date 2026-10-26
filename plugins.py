@@ -1,7 +1,9 @@
-from PyQt4 import QtCore,QtGui
+from PyQt6 import QtCore, QtGui
+from PyQt6 import QtWidgets
 import uis
 import os
-import imp
+import importlib
+import importlib.util
 import globals
 from buildsettings import check
 
@@ -10,7 +12,7 @@ class Plugin(QtCore.QObject):
         super(Plugin,self).__init__()
         self.filename=filename
         self.dir=dir
-        self.shortcut=QtCore.QSettings().value('plugin_'+filename).toString()
+        self.shortcut=QtCore.QSettings().value('plugin_'+filename)
         self.action=None
     
     def activated(self):
@@ -19,24 +21,21 @@ class Plugin(QtCore.QObject):
             self.activate(c)
 
     def load(self):
-        fp=None
         try:
             self.name=self.filename[0:-3]
             path=os.path.join(self.dir,self.filename)
-            (fp, pathname, description)=imp.find_module(self.name,[self.dir])
-            self.module=imp.load_module(self.name,fp,pathname,description)
+            spec=importlib.util.spec_from_file_location(self.name, path)
+            self.module=importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(self.module)
             if 'activate' in dir(self.module):
                 self.activate=getattr(self.module,'activate')
                 if self.shortcut:
                     self.action=QtGui.QAction(self.name,self,shortcut=self.shortcut,triggered=self.activated)
                 return True
             return False
-        except ImportError,e:
-            print "Failed to import {}".format(filename)
+        except ImportError as e:
+            print("Failed to import {}".format(self.filename))
             return False
-        finally:
-            if fp:
-                fp.close()
             
 
 class PluginsManager(QtCore.QObject):
@@ -44,7 +43,7 @@ class PluginsManager(QtCore.QObject):
         super(PluginsManager,self).__init__()
         s=QtCore.QSettings()
         self.plugins={}
-        self.dir=s.value('pluginsDir').toString()
+        self.dir=s.value('pluginsDir')
         self.loadPlugins()
         
     def loadPlugins(self):
@@ -60,7 +59,7 @@ class PluginsManager(QtCore.QObject):
         for name in self.plugins:
             menu.addAction(self.plugins.get(name).action)
                 
-class ShortcutDialog(QtGui.QDialog):
+class ShortcutDialog(QtWidgets.QDialog):
     def __init__(self,shortcut,parent=None):
         super(ShortcutDialog,self).__init__(parent)
         uis.loadDialog('shortcut',self)
@@ -100,17 +99,17 @@ class ShortcutDialog(QtGui.QDialog):
         self.shortcut=''.join(s)
         super(ShortcutDialog,self).accept()
 
-class PluginsDialog(QtGui.QDialog):
+class PluginsDialog(QtWidgets.QDialog):
     def __init__(self,parent=None):
         super(PluginsDialog,self).__init__(parent)
         uis.loadDialog('plugins',self)
         s=QtCore.QSettings()
-        self.dir=s.value('pluginsDir','').toString()
+        self.dir=s.value('pluginsDir','')
         self.pluginsDirectory.setText(self.dir)
         self.dirBrowse.clicked.connect(self.browsePluginsDir)
         self.pluginsTable.setColumnCount(2);
-        self.pluginsTable.setHorizontalHeaderItem(0,QtGui.QTableWidgetItem('Plugin'))
-        self.pluginsTable.setHorizontalHeaderItem(1,QtGui.QTableWidgetItem('Shortcut'))
+        self.pluginsTable.setHorizontalHeaderItem(0,QtWidgets.QTableWidgetItem('Plugin'))
+        self.pluginsTable.setHorizontalHeaderItem(1,QtWidgets.QTableWidgetItem('Shortcut'))
         self.updatePlugins()
         self.pluginsTable.resizeRowsToContents()
 
@@ -120,30 +119,30 @@ class PluginsDialog(QtGui.QDialog):
             files=os.listdir(self.dir)
             files=[f for f in files if f.endswith('.py')]
             self.pluginsTable.setRowCount(len(files))
-            for i in xrange(0,len(files)):
+            for i in range(0,len(files)):
                 name=os.path.basename(files[i])
-                item=QtGui.QTableWidgetItem(name)
-                item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
+                item=QtWidgets.QTableWidgetItem(name)
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.pluginsTable.setItem(i,0,item)
-                shortcut=s.value('plugin_'+name).toString()
-                self.pluginsTable.setItem(i,1,QtGui.QTableWidgetItem(shortcut))
+                shortcut=s.value('plugin_'+name)
+                self.pluginsTable.setItem(i,1,QtWidgets.QTableWidgetItem(shortcut))
                 
     def contextMenuEvent(self,event):
-        menu=QtGui.QMenu()
+        menu=QtWidgets.QMenu()
         menu.addAction(QtGui.QAction('Select Keys',self,triggered=self.shortcutDialog))
-        menu.exec_(event.globalPos())
+        menu.exec(event.globalPosition().toPoint())
         
     def shortcutDialog(self):
         row=self.pluginsTable.currentRow()
         item=self.pluginsTable.currentItem()
         d=ShortcutDialog(item.text())
-        if d.exec_():
+        if d.exec():
             scriptName=self.pluginsTable.item(row,0).text()
             item.setText(d.shortcut)
             QtCore.QSettings().setValue('plugin_'+scriptName,d.shortcut)
                 
     def browsePluginsDir(self):
-        d=QtGui.QFileDialog.getExistingDirectory(directory=self.dir)
+        d=QtWidgets.QFileDialog.getExistingDirectory(directory=self.dir)
         if d:
             self.dir=d
             self.pluginsDirectory.setText(d)

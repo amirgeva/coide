@@ -25,7 +25,7 @@ def waitForThread():
 def genThreadDone():
     global genThreadDoneFlag
     if genThread:
-        if genThread.isAlive():
+        if genThread.is_alive():
             return False
         else:
             genThreadDoneFlag=True
@@ -55,7 +55,7 @@ class C:
     ENDC = '\033[0m'
     
 def prt(c,s):
-    print c + s + C.ENDC
+    print(c + s + C.ENDC)
 
 def green(s):
     prt(C.GREEN,s)
@@ -106,7 +106,7 @@ def findMain(dir):
     Search the directory for a source file that
     has the `main` function
     '''
-    pat=re.compile('^(int|void)( )+main( )*\(')
+    pat=re.compile(r'^(int|void)( )+main( )*\(')
     files=os.listdir(dir)
     for f in files:
         if isSourceFile(f):
@@ -117,7 +117,7 @@ def findMain(dir):
                     return True
     return False
 
-flagsPat=re.compile('\((.+)\)')
+flagsPat=re.compile(r'\((.+)\)')
 def extractFlags(s):
     m=re.search(flagsPat,s)
     if m:
@@ -181,7 +181,7 @@ class Generator:
         
     def addSettings(self,flags,props,cfg,prefix):
         from build_settings_cfg import tabs
-        parenPat=re.compile('.+\((.+)\)')
+        parenPat=re.compile(r'.+\((.+)\)')
         for t in tabs:
             desc=tabs.get(t)
             for d in desc:
@@ -230,7 +230,7 @@ class Generator:
         o.write('TYPE={}\n'.format(type))
         shared=pb.get("LINK_SHARED").startswith('On')
         libs=re.split(',| ',pb.get("LINK_LIBS"))
-        libs=filter(bool,libs)  # remove empty strings
+        libs=list(filter(bool,libs))  # remove empty strings
         if len(type)==0:
             return False
         srcs=filterSources(files)
@@ -290,7 +290,7 @@ class Generator:
         objs=srcs
         for e in src_exts:
             objs = arreplace(objs,e,'.o')
-        for i in xrange(0,len(objs)):
+        for i in range(0,len(objs)):
             objs[i]=os.path.join(intr,objs[i])
             
         o.write("OBJS_{}=".format(cfg))
@@ -332,7 +332,7 @@ class Generator:
         o.write('clean_{}: {}\n\t@rm -f $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
         o.write('{}: {}\n\n'.format(cfg,outfile))
             
-        for i in xrange(0,len(objs)):
+        for i in range(0,len(objs)):
             src=os.path.join(absdir,srcs[i])
             depcmd='g++ {} -MM {}'.format(cflags,src)
             depcmd=templates.generateMkCommand(depcmd,mkProps)

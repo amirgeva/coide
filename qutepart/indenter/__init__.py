@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger('qutepart')
 
 
-from PyQt4.QtGui import QTextCursor
+from PyQt6.QtGui import QTextCursor
 
 
 def _getSmartIndenter(indenterName, qpart, indenter):
@@ -131,7 +131,7 @@ class Indenter:
 
             if charsToRemove:
                 cursor = cursorAtSpaceEnd(block)
-                cursor.setPosition(cursor.position() - charsToRemove, QTextCursor.KeepAnchor)
+                cursor.setPosition(cursor.position() - charsToRemove, QTextCursor.MoveMode.KeepAnchor)
                 cursor.removeSelectedText()
 
         cursor = self._qpart.textCursor()
@@ -156,7 +156,7 @@ class Indenter:
                     block = block.next()
 
             newCursor = QTextCursor(startBlock)
-            newCursor.setPosition(endBlock.position() + len(endBlock.text()), QTextCursor.KeepAnchor)
+            newCursor.setPosition(endBlock.position() + len(endBlock.text()), QTextCursor.MoveMode.KeepAnchor)
             self._qpart.setTextCursor(newCursor)
         else:  # indent 1 line
             indentFunc(startBlock)
@@ -194,7 +194,7 @@ class Indenter:
             charsToRemove = len(self.text())
 
         cursor = self._qpart.textCursor()
-        cursor.setPosition(cursor.position() - charsToRemove, QTextCursor.KeepAnchor)
+        cursor.setPosition(cursor.position() - charsToRemove, QTextCursor.MoveMode.KeepAnchor)
         cursor.removeSelectedText()
 
     def onAutoIndentTriggered(self):

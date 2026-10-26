@@ -1,4 +1,5 @@
-from PyQt4 import QtGui
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 import re
 
 class Handler(object):
@@ -24,6 +25,6 @@ class SignalHandler(Handler):
         if m:
             g=m.groups()
             sig=g[0]
-            QtGui.QMessageBox.critical(None,"Unhandled Signal",sig)
+            QtWidgets.QMessageBox.critical(None,"Unhandled Signal",sig)
             
     

@@ -78,7 +78,7 @@ def main():
     with open('syntax_db.json', 'w') as syntaxDbFile:
         json.dump(result, syntaxDbFile, sort_keys=True, indent=4)
 
-    print 'Done. Do not forget to commit the changes'
+    print('Done. Do not forget to commit the changes')
 
 if __name__ == '__main__':
     main()

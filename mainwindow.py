@@ -1,5 +1,7 @@
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt
 
 import os
 import re
@@ -21,7 +23,7 @@ import uis
 import plugins
 import dwarf
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
     """ Main IDE Window
 
     Contains the main code view, along with docking panes for: source files,    
@@ -35,9 +37,9 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow,self).__init__(parent)
 
         s=QtCore.QSettings()
-        self.recent_ws=[d for d in s.value('recent_ws','').toString().split(':') if d]
+        self.recent_ws=[d for d in s.value('recent_ws','').split(':') if d]
 
-        self.symbolScan=s.value('symbol_scan',True).toBool()
+        self.symbolScan=s.value('symbol_scan',True)
         self.setMinimumSize(QtCore.QSize(1024,768))
 
         self.currentLine=0
@@ -55,7 +57,7 @@ class MainWindow(QtGui.QMainWindow):
         self.generateQueue=set()        
         self.editors={}
         self.file_times={}
-        self.central=QtGui.QTabWidget()
+        self.central=QtWidgets.QTabWidget()
         self.setCentralWidget(self.central)
         self.central.setTabsClosable(True)
         self.central.tabCloseRequested.connect(self.closeTab)
@@ -76,8 +78,8 @@ class MainWindow(QtGui.QMainWindow):
         self.timerCall=None
         
 
-        self.config=s.value("config").toString()
-        if self.config=='':
+        self.config=s.value("config")
+        if not self.config:
             self.config="Debug"
         self.configCombo.setCurrentIndex(0 if self.config=='Debug' else 1)
         self.workspaceTree.setConfig(self.config)
@@ -153,25 +155,31 @@ class MainWindow(QtGui.QMainWindow):
         Restore previous debug windows layout
         """
         settings = QtCore.QSettings()
-        self.restoreState(settings.value("debugWindowState").toByteArray())
+        v = settings.value("debugWindowState")
+        if v:
+            self.restoreState(v)
         
     def loadWindowSettings(self):
         """
         Restore the window size settings from the previous session
         """
         settings = QtCore.QSettings()
-        self.restoreGeometry(settings.value("geometry").toByteArray())
-        self.restoreState(settings.value("windowState").toByteArray())
+        v = settings.value("geometry")
+        if v:
+            self.restoreGeometry(v)
+        v = settings.value("windowState")
+        if v:
+            self.restoreState(v)
         self.loadTabs()
         
     def loadTabs(self):
         self.closeAllTabs()
         ws=self.workspaceTree.settings()
-        opentabs=ws.value('opentabs','').toString()
+        opentabs=ws.value('opentabs','')
         opentabs=opentabs.split(',')
         for path in opentabs:
             self.openSourceFile(path)
-        curtab=ws.value('curtab','').toString()
+        curtab=ws.value('curtab','')
         if curtab:
             self.setActiveSourceFile(curtab)
 
@@ -325,7 +333,7 @@ class MainWindow(QtGui.QMainWindow):
             d=BreakpointDialog()
             d.condition.setText(bp.condition())
             utils.setCheckbox(d.enabled,bp.isEnabled())
-            if d.exec_():
+            if d.exec():
                 bp.setCondition(d.condition.text())
                 bp.able(utils.getCheckbox(d.enabled))
                 self.breakpoints.update()
@@ -412,20 +420,20 @@ class MainWindow(QtGui.QMainWindow):
             c=e.textCursor()
             if c.hasSelection:
                 d.setFindText(c.selectedText())
-            if d.exec_():
+            if d.exec():
                 self.findDetails=d.details
                 self.onFindNext()
         
     def onFindNext(self):
         (e,p)=self.currentEditor()
         if e and self.findDetails:
-            flags=QtGui.QTextDocument.FindFlags()
+            flags=QtGui.QTextDocument.FindFlag(0)
             if not self.findDetails.get('find_case'):
-                flags = flags | QtGui.QTextDocument.FindCaseSensitively
+                flags = flags | QtGui.QTextDocument.FindFlag.FindCaseSensitively
             if self.findDetails.get('find_words'):
-                flags = flags | QtGui.QTextDocument.FindWholeWords
+                flags = flags | QtGui.QTextDocument.FindFlag.FindWholeWords
             if self.findDetails.get('find_back'):
-                flags = flags | QtGui.QTextDocument.FindBackward
+                flags = flags | QtGui.QTextDocument.FindFlag.FindBackward
             text=self.findDetails.get('find_text')
             replaceText=self.findDetails.get('find_replace_text')
             replace=self.findDetails.get('find_replace')
@@ -441,7 +449,7 @@ class MainWindow(QtGui.QMainWindow):
         """ Show the code templates editing dialog """
         from settings import TemplatesDialog
         d=TemplatesDialog()
-        if d.exec_():
+        if d.exec():
             d.save()
             self.updateTemplates()
             
@@ -449,14 +457,14 @@ class MainWindow(QtGui.QMainWindow):
         """ Show the python plugins settings dialog """
         from plugins import PluginsDialog
         d=PluginsDialog()
-        if d.exec_():
+        if d.exec():
             d.save()
 
     def settingsGeneral(self):
         """ Show the general settings """
         from settings import GeneralSettingsDialog
         d=GeneralSettingsDialog()
-        if d.exec_():
+        if d.exec():
             d.save()
             self.updateGeneralSettings()
 
@@ -464,7 +472,7 @@ class MainWindow(QtGui.QMainWindow):
         """ Show the editor settings """
         from settings import EditorSettingsDialog
         d=EditorSettingsDialog()
-        if d.exec_():
+        if d.exec():
             d.save()
             self.updateEditorsSettings()
 
@@ -472,16 +480,16 @@ class MainWindow(QtGui.QMainWindow):
         """ Edit the font settings for the code window and various panes """
         from settings import FontSettingsDialog
         d=FontSettingsDialog()
-        if d.exec_():
+        if d.exec():
             self.setAllFonts()
             
     def loadFont(self,name,target):
         """ Load previously saved font settings """
         settings=QtCore.QSettings()
         if settings.contains(name):
-            fb=settings.value(name).toByteArray()
+            fb=settings.value(name)
             buf=QtCore.QBuffer(fb)
-            buf.open(QtCore.QIODevice.ReadOnly)
+            buf.open(QtCore.QIODevice.OpenModeFlag.ReadOnly)
             font=QtGui.QFont()
             QtCore.QDataStream(fb) >> font
             target.setFont(font)
@@ -500,14 +508,14 @@ class MainWindow(QtGui.QMainWindow):
     def updateGeneralSettings(self):
         """ Apply general settings """
         s=QtCore.QSettings()
-        sortFiles=s.value('sortFiles',True).toBool()
+        sortFiles=s.value('sortFiles',True)
         self.workspaceTree.setSorting(sortFiles)
         
     def updateEditorsSettings(self):
         """ Apply editor settings to all open tabs """
         s=QtCore.QSettings()
-        indent=(s.value('indent',2).toInt())[0]
-        clang=s.value('clangCompletion',True).toBool()
+        indent=int(s.value('indent',2))
+        clang=s.value('clangCompletion',True)
         for e in self.editors:
             self.editors.get(e).indentWidth=indent
             self.editors.get(e).clangCompletion=clang
@@ -515,7 +523,7 @@ class MainWindow(QtGui.QMainWindow):
     def updateTemplates(self):
         self.tmplCombo.clear()
         self.tmplCombo.addItem("= Templates =")
-        d=QtCore.QSettings().value('tmplDir','').toString()
+        d=QtCore.QSettings().value('tmplDir','')
         if d:
             templates=os.listdir(d)
             templates=[os.path.splitext(t)[0] for t in templates if t.endswith('.template')]
@@ -596,7 +604,7 @@ class MainWindow(QtGui.QMainWindow):
                 model.appendRow(item)
             d.libsList.setModel(model)
             model.itemChanged.connect(lambda item : self.toggleAdded(item))
-            if d.exec_():
+            if d.exec():
                 self.workspaceTree.addLibrariesToProject(self.added)
         
         
@@ -607,7 +615,7 @@ class MainWindow(QtGui.QMainWindow):
             if not path:
                 path=self.workspaceTree.root
         d=BuildSettingsDialog(self,path)
-        d.exec_()
+        d.exec()
         self.generateQueue.add(path)
         
     def checkBuildOutput(self):
@@ -642,7 +650,7 @@ class MainWindow(QtGui.QMainWindow):
         if len(path)>0:
             self.showStatus("Building "+os.path.basename(path))
             s=QtCore.QSettings()
-            if s.value('parallel_make',False).toBool():
+            if s.value('parallel_make',False):
                 self.buildProcess=self.execute(path,'/usr/bin/make','-j','3',self.config)
             else:
                 self.buildProcess=self.execute(path,'/usr/bin/make',self.config)
@@ -737,8 +745,8 @@ class MainWindow(QtGui.QMainWindow):
             cur=os.path.getmtime(path)
             if cur!=last:
                 self.file_times[path]=cur
-                res=QtGui.QMessageBox.question(self,'File changed','Reload {}'.format(path),QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
-                if res==QtGui.QMessageBox.Yes:
+                res=QtWidgets.QMessageBox.question(self,'File changed','Reload {}'.format(path),QtWidgets.QMessageBox.StandardButton.Yes,QtWidgets.QMessageBox.StandardButton.No)
+                if res==QtWidgets.QMessageBox.StandardButton.Yes:
                     text=''.join(open(path,'r').readlines())
                     self.editors.get(path).text=text
                 
@@ -750,13 +758,13 @@ class MainWindow(QtGui.QMainWindow):
         genmake.generateTree(self.workspaceTree.root,True)
         
     def generate(self):
-        mb=QtGui.QMessageBox()
+        mb=QtWidgets.QMessageBox()
         mb.setText("Generate make files")
         mb.setInformativeText("Overwrite all make files?")
-        mb.setStandardButtons(QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
-        mb.setDefaultButton(QtGui.QMessageBox.Yes)
-        rc=mb.exec_()
-        if rc==QtGui.QMessageBox.Yes:
+        mb.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes|QtWidgets.QMessageBox.StandardButton.No)
+        mb.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Yes)
+        rc=mb.exec()
+        if rc==QtWidgets.QMessageBox.StandardButton.Yes:
             self.generateAll()
             utils.message("Done")
             
@@ -775,10 +783,10 @@ class MainWindow(QtGui.QMainWindow):
         self.workspaceTree.setMainPath(dir)
 
     def initWorkspace(self):
-        d=QtGui.QFileDialog()
-        d.setFileMode(QtGui.QFileDialog.Directory)
-        d.setOption(QtGui.QFileDialog.ShowDirsOnly)
-        if d.exec_():
+        d=QtWidgets.QFileDialog()
+        d.setFileMode(QtWidgets.QFileDialog.FileMode.Directory)
+        d.setOption(QtWidgets.QFileDialog.Option.ShowDirsOnly)
+        if d.exec():
             ws=(d.selectedFiles())[0]
             os.makedirs(os.path.join(ws,'include'))
             dir=os.path.join(ws,'src','hello')
@@ -814,10 +822,10 @@ class MainWindow(QtGui.QMainWindow):
         self.updateRecents()
 
     def openWorkspace(self):
-        d=QtGui.QFileDialog()
-        d.setFileMode(QtGui.QFileDialog.Directory)
-        d.setOption(QtGui.QFileDialog.ShowDirsOnly)
-        if d.exec_():
+        d=QtWidgets.QFileDialog()
+        d.setFileMode(QtWidgets.QFileDialog.FileMode.Directory)
+        d.setOption(QtWidgets.QFileDialog.Option.ShowDirsOnly)
+        if d.exec():
             ws=(d.selectedFiles())[0]
             self.openRecent(ws)
 
@@ -853,7 +861,7 @@ class MainWindow(QtGui.QMainWindow):
                     
     def saveAll(self):
         n=self.central.tabBar().count()
-        for i in xrange(0,n):
+        for i in range(0,n):
             self.saveTabFile(i)
 
     def saveAsFile(self):
@@ -866,7 +874,7 @@ class MainWindow(QtGui.QMainWindow):
         return True
     
     def tabChanged(self,index):
-        for i in xrange(0,len(self.tabOrder)):
+        for i in range(0,len(self.tabOrder)):
             if self.tabOrder[i]==index:
                 self.tabOrder=self.tabOrder[i:]+self.tabOrder[:i]
                 break
@@ -877,20 +885,20 @@ class MainWindow(QtGui.QMainWindow):
         if editor:
             doc=editor.document()
             if doc.isModified():
-                mb = QtGui.QMessageBox()
+                mb = QtWidgets.QMessageBox()
                 mb.setText("{} has been modified.".format(os.path.basename(path)))
                 mb.setInformativeText("Do you want to save your changes?")
-                mb.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
-                mb.setDefaultButton(QtGui.QMessageBox.Save)
-                rc = mb.exec_()
-                if rc == QtGui.QMessageBox.Save:
+                mb.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Save | QtWidgets.QMessageBox.StandardButton.Discard | QtWidgets.QMessageBox.StandardButton.Cancel)
+                mb.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Save)
+                rc = mb.exec()
+                if rc == QtWidgets.QMessageBox.StandardButton.Save:
                     f=open(path,'w')
                     if not f:
                         utils.errorMessage('Cannot write file: {}'.format(path))
                         return False
                     f.write(doc.toPlainText())
                     f.close()
-                elif rc == QtGui.QMessageBox.Cancel:
+                elif rc == QtWidgets.QMessageBox.StandardButton.Cancel:
                     return False
             del self.editors[path]
             del self.file_times[path]
@@ -916,7 +924,7 @@ class MainWindow(QtGui.QMainWindow):
         (editor,path)=self.currentEditor()
         if index>0 and editor:
             template=self.tmplCombo.itemText(index)
-            d=QtCore.QSettings().value('tmplDir','').toString()
+            d=QtCore.QSettings().value('tmplDir','')
             if d:
                 tpath=os.path.join(d,template+".template")
                 try:
@@ -943,13 +951,13 @@ class MainWindow(QtGui.QMainWindow):
 
     def showWorkspacePane(self):
         """ Creates a docking pane that shows a list of source files """
-        self.paneWorkspace=QtGui.QDockWidget("Workspace",self)
+        self.paneWorkspace=QtWidgets.QDockWidget("Workspace",self)
         self.paneWorkspace.setObjectName("Workspace")
-        self.paneWorkspace.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
+        self.paneWorkspace.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea|Qt.DockWidgetArea.RightDockWidgetArea)
         self.workspaceTree=WorkSpace(self.paneWorkspace,self)
         self.workspaceTree.depsChanged.connect(lambda path: self.generateQueue.add(path))
         self.paneWorkspace.setWidget(self.workspaceTree)
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea,self.paneWorkspace)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,self.paneWorkspace)
         self.updateWorkspace()
         self.workspaceTree.doubleClicked.connect(self.docDoubleClicked)
         self.showStatus(MainWindow.LIBRARY_SCAN)
@@ -968,7 +976,7 @@ class MainWindow(QtGui.QMainWindow):
         if path in self.editors:
             editor=self.editors.get(path)
             n=self.central.tabBar().count()
-            for i in xrange(0,n):
+            for i in range(0,n):
                 if self.central.widget(i) == editor:
                     self.central.tabBar().setCurrentIndex(i)
                     return True
@@ -1006,9 +1014,9 @@ class MainWindow(QtGui.QMainWindow):
                     editor.drawIncorrectIndentation = True
                     editor.drawAnyWhitespace = False
                     editor.indentUseTabs = False
-                    editor.indentWidth = (s.value('indent',2).toInt())[0]
+                    editor.indentWidth = int(s.value('indent',2))
                     editor.text="".join(lines)
-                    editor.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
+                    editor.setLineWrapMode(QtWidgets.QPlainTextEdit.LineWrapMode.NoWrap)
                     editor.setWorkspace(self.workspaceTree)
                     editor.setMainWindow(self)
                     index=self.central.addTab(editor,os.path.basename(path))
@@ -1027,11 +1035,11 @@ class MainWindow(QtGui.QMainWindow):
 
     def docDoubleClicked(self,index):
         item=self.workspaceTree.currentItem()
-        path=item.data(0,FileRole).toString()
-        if len(path)>0:
+        path=item.data(0,FileRole)
+        if path and len(path)>0:
             self.openSourceFile(path)
             if path in self.editors:
-                self.editors.get(path).setFocus(QtCore.Qt.MouseFocusReason)
+                self.editors.get(path).setFocus(QtCore.Qt.FocusReason.MouseFocusReason)
 
     def goToSource(self,path,row,col,color=''):
         """
@@ -1046,61 +1054,61 @@ class MainWindow(QtGui.QMainWindow):
             if editor:
                 self.setActiveSourceFile(path)
                 c=editor.textCursor()
-                c.movePosition(QtGui.QTextCursor.Start)
-                c.movePosition(QtGui.QTextCursor.Down,n=row-1)
-                c.movePosition(QtGui.QTextCursor.Right,n=col-1)
+                c.movePosition(QtGui.QTextCursor.MoveOperation.Start)
+                c.movePosition(QtGui.QTextCursor.MoveOperation.Down,n=row-1)
+                c.movePosition(QtGui.QTextCursor.MoveOperation.Right,n=col-1)
                 editor.setTextCursor(c)
                 editor.ensureCursorVisible()
                 if len(color)>0:
                     editor.colorLine(row,color)
         
     def showCallStackPane(self):
-        self.paneStack=QtGui.QDockWidget("Call Stack",self)
+        self.paneStack=QtWidgets.QDockWidget("Call Stack",self)
         self.paneStack.setObjectName("CallStack")
-        self.paneStack.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
-        self.stackList=QtGui.QListWidget(self.paneStack)
+        self.paneStack.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
+        self.stackList=QtWidgets.QListWidget(self.paneStack)
         self.paneStack.setWidget(self.stackList)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneStack)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,self.paneStack)
         self.loadFont('watchesfont',self.stackList)
         self.stackList.itemDoubleClicked.connect(self.stackItemDoubleClicked)
     
     def showLocalsPane(self):
-        self.paneLocals=QtGui.QDockWidget("Locals",self)
+        self.paneLocals=QtWidgets.QDockWidget("Locals",self)
         self.paneLocals.setObjectName("Locals")
-        self.paneLocals.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
+        self.paneLocals.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
         self.localsTree=WatchesTree(self.paneLocals)
         self.localsTree.setColumnCount(2)
         self.localsTree.setHeaderLabels(['Name','Value'])
         self.paneLocals.setWidget(self.localsTree)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneLocals)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,self.paneLocals)
         self.loadFont('watchesfont',self.watchesTree)
     
     def showWatchesPane(self):
-        self.paneWatches=QtGui.QDockWidget("Watches",self)
+        self.paneWatches=QtWidgets.QDockWidget("Watches",self)
         self.paneWatches.setObjectName("Watches")
-        self.paneWatches.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
+        self.paneWatches.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
         self.watchesTree=WatchesTree(self.paneWatches)
         self.watchesTree.setColumnCount(2)
         self.watchesTree.setHeaderLabels(['Name','Value'])
         self.paneWatches.setWidget(self.watchesTree)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneWatches)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,self.paneWatches)
         self.loadFont('watchesfont',self.watchesTree)
-        self.watchesTree.addTopLevelItem(QtGui.QTreeWidgetItem(['* Double-Click for new watch']))
+        self.watchesTree.addTopLevelItem(QtWidgets.QTreeWidgetItem(['* Double-Click for new watch']))
         self.watchesTree.resizeColumnToContents(0)
         self.watchesTree.itemDoubleClicked.connect(lambda item,column : self.watchDoubleClicked(item,column))
         
         
     def showOutputPane(self):        
-        self.paneOutput=QtGui.QDockWidget("Output",self)
+        self.paneOutput=QtWidgets.QDockWidget("Output",self)
         self.paneOutput.setObjectName("Output")
-        self.paneOutput.setAllowedAreas(QtCore.Qt.BottomDockWidgetArea)
+        self.paneOutput.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
         self.outputEdit=output.OutputWidget(self.paneOutput,self)
         self.outputEdit.setReadOnly(True)
         self.paneOutput.setWidget(self.outputEdit)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea,self.paneOutput)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,self.paneOutput)
 
     def stackItemDoubleClicked(self,item):
-        pat='at (.+):(\d+)'
+        pat=r'at (.+):(\d+)'
         m=re.search(pat,item.text())
         if m:
             g=m.groups()
@@ -1118,15 +1126,15 @@ class MainWindow(QtGui.QMainWindow):
         changed=False
         index=self.watchesTree.indexOfTopLevelItem(item)
         if item.text(column)=='* Double-Click for new watch':
-            res=QtGui.QInputDialog.getText(self,'New Watch','Expression')
+            res=QtWidgets.QInputDialog.getText(self,'New Watch','Expression')
             expr=res[0]
             if len(expr)>0 and res[1]:
-                self.watchesTree.insertTopLevelItem(index,QtGui.QTreeWidgetItem([expr]))
+                self.watchesTree.insertTopLevelItem(index,QtWidgets.QTreeWidgetItem([expr]))
                 changed=True
                 self.updateWatches()
         else:
             watch=item.text(0)
-            res=QtGui.QInputDialog.getText(self,"Edit Watch",'Expression',text=watch)
+            res=QtWidgets.QInputDialog.getText(self,"Edit Watch",'Expression',text=watch)
             watch=res[0]
             if res[1]:
                 changed=True
@@ -1140,14 +1148,14 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def createConfigCombo(self,parent):
-        configCombo=QtGui.QComboBox(parent)
+        configCombo=QtWidgets.QComboBox(parent)
         configCombo.addItem("Debug")
         configCombo.addItem("Release")
         configCombo.currentIndexChanged.connect(self.configChanged)
         return configCombo
         
     def createTemplatesCombo(self,parent):
-        self.tmplCombo=QtGui.QComboBox(parent)
+        self.tmplCombo=QtWidgets.QComboBox(parent)
         self.tmplCombo.currentIndexChanged.connect(self.templateSelected)
         self.updateTemplates()
         
@@ -1169,7 +1177,7 @@ class MainWindow(QtGui.QMainWindow):
         text=self.outputEdit.toPlainText()
         self.outputEdit.setPlainText(text+added)
         c=self.outputEdit.textCursor()
-        c.movePosition(QtGui.QTextCursor.End)
+        c.movePosition(QtGui.QTextCursor.MoveOperation.End)
         self.outputEdit.setTextCursor(c)
         self.outputEdit.ensureCursorVisible()
         
@@ -1243,7 +1251,7 @@ class MainWindow(QtGui.QMainWindow):
         """ Save all watches to settings, for future sessions """
         res=[]
         n=self.watchesTree.topLevelItemCount()-1
-        for i in xrange(0,n):
+        for i in range(0,n):
             item=self.watchesTree.topLevelItem(i)
             if len(res)>0:
                 res.append(';')
@@ -1258,20 +1266,20 @@ class MainWindow(QtGui.QMainWindow):
             self.watchesTree.takeTopLevelItem(0)
         settings=QtCore.QSettings()
         key='watches:{}'.format(self.debugger.debugged)
-        val=settings.value(key,'').toString()
+        val=settings.value(key,'')
         if len(val)>0:
             arr=val.split(';')
             if len(arr)>0:
                 res=[]
                 for watch in arr:
-                    res.append(QtGui.QTreeWidgetItem([watch]))
+                    res.append(QtWidgets.QTreeWidgetItem([watch]))
                 self.watchesTree.insertTopLevelItems(0,res)
         
     def updateLocals(self):
         locals=self.debugger.getLocals()
         self.localsTree.clear()
         for var in locals.keys():
-            item=QtGui.QTreeWidgetItem([var])
+            item=QtWidgets.QTreeWidgetItem([var])
             self.localsTree.addTopLevelItem(item)
             res=locals.get(var)
             if res:
@@ -1280,7 +1288,7 @@ class MainWindow(QtGui.QMainWindow):
     def updateWatches(self):
         """ Re-evaluate the value of each watch and update view """
         n=self.watchesTree.topLevelItemCount()-1
-        for i in xrange(0,n):
+        for i in range(0,n):
             item=self.watchesTree.topLevelItem(i)
             item.takeChildren()
             expr=item.text(0)
@@ -1292,7 +1300,7 @@ class MainWindow(QtGui.QMainWindow):
         item.setText(1,root.value)
         def addChildren(item,node):
             for c in node.children:
-                subitem=QtGui.QTreeWidgetItem([c.name])
+                subitem=QtWidgets.QTreeWidgetItem([c.name])
                 subitem.setText(1,c.value)
                 item.addChild(subitem)
                 addChildren(subitem,c)
@@ -1355,7 +1363,7 @@ class MainWindow(QtGui.QMainWindow):
     def clearBreakpoints(self):
         self.breakpoints.clear()
         n=self.central.count()
-        for i in xrange(0,n):
+        for i in range(0,n):
             self.central.widget(i).bpMarks={}
         if self.debugger:
             self.debugger.clearBreakpoints()

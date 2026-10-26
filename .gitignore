@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 
+# Temporary config
+settings.ini
+
 # C extensions
 *.so
 
@@ -53,3 +56,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# AI
+.codex
