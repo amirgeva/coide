@@ -1,482 +1,919 @@
 from PyQt6 import QtCore
-from PyQt6 import QtGui
 from PyQt6 import QtWidgets
-import subprocess
-import re
+import errno
 import fcntl
 import os
+import subprocess
+import termios
 import time
-import handlers
 import globals
 
-class GDBWrapper:
-    """ Wrapper above the GDB process
 
-    Use subprocess.Popen methods to communicate with gdb.  Write commands
-    and read/parse responses    
-    
-    """
+class VarNode:
+    def __init__(self, name='', value=''):
+        self.name = name
+        self.value = value
+        self.children = []
 
-    def __init__(self,bps,args,dir):
-        """ Start gdb. """
-        settings=QtCore.QSettings()
-        self.breakpoints=bps
-        self.breakpoints.breakpointsChanged.connect(self.setBreakpoints)
-        dataRoot=os.path.dirname(os.path.abspath(__file__))
-        #print "Starting debugger for: {}".format(args)
-        self.args=['gdb','--args']+args
-        self.debugged=os.path.abspath(args[0])
-        arglist=''
-        if len(args)>1:
-            for i in range(1,len(args)):
-                arglist=arglist+' "{}"'.format(args[i])
-        self.dumpLog=None
-        # During development create a dump log
-        if len(os.getenv('COIDE',''))>0:
-            self.parseCount=0
-            self.dumpLog=open('dump.log','w')
-        self.initHandlers()
-        self.gdb=subprocess.Popen(self.args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=dir,universal_newlines=True)
-        fcntl.fcntl(self.gdb.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
-        
-        self.outputFileName=f"/tmp/{int(time.time())}.coide"
-        self.outputFile=None
-        self.outputText=[]
-        
-        # re for finding location pattern in backtrace
-        #       #0  print_str (s=...) at /home/user/main.cpp:42
-        self.btPattern=re.compile(r'at (.+):(\d+)')
-        self.curPattern=re.compile('File (.+):\n')
-        self.pathPattern=re.compile('(/.+)+')
-        self.locPattern=re.compile('Located in (.+)$')
-        # Read the gdb startup text
-        time.sleep(10)
-        lines,ok=self.read()
+    def add_child(self, child):
+        self.children.append(child)
 
-        # Wait for GDB to complete init
-        if False:
-            bla_index=0
-            while True:
-                s='BLA{}'.format(bla_index)
-                self.write(s)
-                lines,ok=self.read()
-                if s in lines:
+
+def _bool_setting(value):
+    if isinstance(value, str):
+        return value.lower() not in ('0', 'false', 'no', '')
+    return bool(value)
+
+
+def _mi_quote(text):
+    if isinstance(text, list):
+        if len(text) == 1:
+            text = text[0]
+        else:
+            text = ''.join(str(part) for part in text)
+    elif text is None:
+        text = ''
+    elif not isinstance(text, str):
+        text = str(text)
+    res = ['"']
+    for ch in text:
+        if ch == '\\':
+            res.append('\\\\')
+        elif ch == '"':
+            res.append('\\"')
+        elif ch == '\n':
+            res.append('\\n')
+        elif ch == '\r':
+            res.append('\\r')
+        elif ch == '\t':
+            res.append('\\t')
+        else:
+            code = ord(ch)
+            if 32 <= code < 127:
+                res.append(ch)
+            else:
+                res.append('\\{:03o}'.format(code))
+    res.append('"')
+    return ''.join(res)
+
+
+def _decode_mi_string(text):
+    res = []
+    index = 0
+    while index < len(text):
+        ch = text[index]
+        if ch != '\\':
+            res.append(ch)
+            index += 1
+            continue
+        index += 1
+        if index >= len(text):
+            break
+        esc = text[index]
+        if esc == 'n':
+            res.append('\n')
+            index += 1
+        elif esc == 'r':
+            res.append('\r')
+            index += 1
+        elif esc == 't':
+            res.append('\t')
+            index += 1
+        elif esc == 'a':
+            res.append('\a')
+            index += 1
+        elif esc == 'b':
+            res.append('\b')
+            index += 1
+        elif esc == 'f':
+            res.append('\f')
+            index += 1
+        elif esc == 'v':
+            res.append('\v')
+            index += 1
+        elif esc in ('\\', '"', "'"):
+            res.append(esc)
+            index += 1
+        elif esc == 'x':
+            index += 1
+            digits = []
+            while index < len(text) and text[index] in '0123456789abcdefABCDEF':
+                digits.append(text[index])
+                index += 1
+            if digits:
+                res.append(chr(int(''.join(digits), 16)))
+        elif esc in '01234567':
+            digits = [esc]
+            index += 1
+            for _ in range(2):
+                if index < len(text) and text[index] in '01234567':
+                    digits.append(text[index])
+                    index += 1
+                else:
                     break
-                bla_index+=1
-                time.sleep(1)
+            res.append(chr(int(''.join(digits), 8)))
+        else:
+            res.append(esc)
+            index += 1
+    return ''.join(res)
 
 
-        self.running=False   # Indicates the debugged program has started
-        self.active=False    # Program is currenly running, debugger waiting for breakpoint or exit
-        self.changed=True
-        # dict:  str filepath -> dict of breakpoints ( int line -> Breakpoint )
-        self.allFiles=set()
-        
-        if settings.value('customPrinters',True):
+def _store_result(mapping, key, value):
+    if key in mapping:
+        cur = mapping[key]
+        if isinstance(cur, list):
+            cur.append(value)
+        else:
+            mapping[key] = [cur, value]
+    else:
+        mapping[key] = value
+
+
+def _as_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def _named_items(value, key):
+    if isinstance(value, dict):
+        items = value.get(key, [])
+        if isinstance(items, list):
+            return items
+        if items is None:
+            return []
+        return [items]
+    return []
+
+
+def _as_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _record_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if not isinstance(value, dict):
+        return [value]
+    if not value:
+        return []
+
+    max_len = 1
+    for item in value.values():
+        if isinstance(item, list):
+            max_len = max(max_len, len(item))
+
+    if max_len == 1:
+        return [value]
+
+    res = []
+    for index in range(max_len):
+        row = {}
+        for key, item in value.items():
+            if isinstance(item, list):
+                if index < len(item):
+                    row[key] = item[index]
+            elif index == 0:
+                row[key] = item
+        if row:
+            res.append(row)
+    return res
+
+
+class MIParser:
+    def __init__(self, text):
+        self.text = text
+        self.index = 0
+
+    def parse_record(self):
+        token = ''
+        while self.index < len(self.text) and self.text[self.index].isdigit():
+            token += self.text[self.index]
+            self.index += 1
+        if self.index >= len(self.text):
+            return None
+        kind = self.text[self.index]
+        self.index += 1
+        if kind in ('~', '@', '&'):
+            payload = self.parse_value()
+            return {
+                'type': 'stream',
+                'channel': kind,
+                'token': token,
+                'payload': payload,
+            }
+        record_class = self.read_until(',').strip()
+        results = {}
+        if self.index < len(self.text) and self.text[self.index] == ',':
+            self.index += 1
+            results = self.parse_results(())
+        record_type = 'result'
+        if kind in ('*', '+', '='):
+            record_type = 'async'
+        return {
+            'type': record_type,
+            'kind': kind,
+            'token': token,
+            'class': record_class,
+            'results': results,
+        }
+
+    def read_until(self, *terminators):
+        start = self.index
+        while self.index < len(self.text) and self.text[self.index] not in terminators:
+            self.index += 1
+        return self.text[start:self.index]
+
+    def parse_results(self, terminators):
+        res = {}
+        while self.index < len(self.text):
+            if self.text[self.index] in terminators:
+                break
+            name = self.read_until('=')
+            if self.index >= len(self.text) or self.text[self.index] != '=':
+                break
+            self.index += 1
+            value = self.parse_value()
+            _store_result(res, name, value)
+            if self.index < len(self.text) and self.text[self.index] == ',':
+                self.index += 1
+        return res
+
+    def parse_value(self):
+        if self.index >= len(self.text):
+            return ''
+        ch = self.text[self.index]
+        if ch == '"':
+            return self.parse_c_string()
+        if ch == '{':
+            return self.parse_tuple()
+        if ch == '[':
+            return self.parse_list()
+        return self.parse_atom()
+
+    def parse_c_string(self):
+        self.index += 1
+        raw = []
+        while self.index < len(self.text):
+            ch = self.text[self.index]
+            if ch == '"':
+                self.index += 1
+                break
+            if ch == '\\' and self.index + 1 < len(self.text):
+                raw.append(ch)
+                self.index += 1
+                raw.append(self.text[self.index])
+                self.index += 1
+                continue
+            raw.append(ch)
+            self.index += 1
+        return _decode_mi_string(''.join(raw))
+
+    def parse_tuple(self):
+        self.index += 1
+        if self.index < len(self.text) and self.text[self.index] == '}':
+            self.index += 1
+            return {}
+        res = self.parse_results(('}',))
+        if self.index < len(self.text) and self.text[self.index] == '}':
+            self.index += 1
+        return res
+
+    def parse_list(self):
+        self.index += 1
+        if self.index < len(self.text) and self.text[self.index] == ']':
+            self.index += 1
+            return []
+        if self.is_result_list():
+            res = self.parse_results((']',))
+            if self.index < len(self.text) and self.text[self.index] == ']':
+                self.index += 1
+            return res
+        res = []
+        while self.index < len(self.text):
+            if self.text[self.index] == ']':
+                self.index += 1
+                break
+            res.append(self.parse_value())
+            if self.index < len(self.text) and self.text[self.index] == ',':
+                self.index += 1
+        return res
+
+    def is_result_list(self):
+        probe = self.index
+        while probe < len(self.text) and self.text[probe] not in ',]':
+            if self.text[probe] == '=':
+                return True
+            if self.text[probe] in '"{[':
+                return False
+            probe += 1
+        return False
+
+    def parse_atom(self):
+        start = self.index
+        while self.index < len(self.text) and self.text[self.index] not in ',}]':
+            self.index += 1
+        return self.text[start:self.index]
+
+
+class GDBWrapper:
+    """Wrapper above the GDB process using the MI interface."""
+
+    MAX_VAR_DEPTH = 3
+    MAX_VAR_CHILDREN = 64
+
+    def __init__(self, bps, args, dir):
+        settings = QtCore.QSettings()
+        self.breakpoints = bps
+        self.breakpoints.breakpointsChanged.connect(self.setBreakpoints)
+        dataRoot = os.path.dirname(os.path.abspath(__file__))
+
+        self.args = ['gdb', '--quiet', '--interpreter=mi2', '--args'] + args
+        self.debugged = os.path.abspath(args[0])
+
+        self.dumpLog = None
+        if len(os.getenv('COIDE', '')) > 0:
+            self.dumpLog = open('dump.log', 'w')
+
+        self.gdb = None
+        self.stdoutBuffer = ''
+        self.stderrBuffer = ''
+        self.pendingResults = {}
+        self.nextToken = 1
+        self.outputText = []
+
+        self.running = False
+        self.active = False
+        self.changed = True
+        self.allFiles = set()
+        self.pid = ''
+        self.expectingInterrupt = False
+
+        self.inferiorMaster = None
+        self.inferiorSlave = None
+        self.inferiorTTY = ''
+        self.initInferiorTTY()
+
+        self.gdb = subprocess.Popen(
+            self.args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=dir,
+        )
+        self.setNonBlocking(self.gdb.stdout.fileno())
+        self.setNonBlocking(self.gdb.stderr.fileno())
+
+        self.poll(0.2)
+        self.sendCommand('-gdb-set confirm off', allow_error=True)
+        self.sendCommand('-gdb-set pagination off', allow_error=True)
+        self.sendCommand('-gdb-set mi-async on', allow_error=True)
+        self.sendCommand('-inferior-tty-set {}'.format(_mi_quote(self.inferiorTTY)), allow_error=True)
+        self.sendCommand('-enable-pretty-printing', allow_error=True)
+
+        if _bool_setting(settings.value('customPrinters', True)):
             self.initializePrettyPrints(dataRoot)
-        
-        self.pid=''
 
-        self.write('start {} > {}'.format(arglist,self.outputFileName))
-        lines, ok =self.read()
-        if globals.dev:
-            print(lines)
-        self.write('info inferior')
-        lines,ok=self.read()
-        if ok:
-            for line in lines:
-                print(line)
-                m=re.match(r'\*\s+\d+\s+process\s+(\d+)',line)
-                if not m is None:
-                    g=m.groups()
-                    self.pid=g[0]
-                    self.running=True
-        if len(self.pid)==0:
-            QtWidgets.QMessageBox.critical(None,'Problem','Failed to get debugged program PID')
         self.setBreakpoints()
-        # Wait for the output file to exist before opening
-        timeout = 5  # seconds
-        start_time = time.time()
-        while not os.path.exists(self.outputFileName):
-            if time.time() - start_time > timeout:
-                raise FileNotFoundError(f"Timeout waiting for output file: {self.outputFileName}")
-            time.sleep(0.05)
-        self.outputFile = os.open(self.outputFileName, os.O_RDONLY | os.O_NONBLOCK)
+        self.startInferior()
 
-    def initHandlers(self):
-        self.handlers=[]
-        self.handlers.append(handlers.SignalHandler())
+    def initInferiorTTY(self):
+        master, slave = os.openpty()
+        attrs = termios.tcgetattr(slave)
+        attrs[3] &= ~termios.ECHO
+        if hasattr(termios, 'ECHONL'):
+            attrs[3] &= ~termios.ECHONL
+        termios.tcsetattr(slave, termios.TCSANOW, attrs)
+        self.setNonBlocking(master)
+        self.inferiorMaster = master
+        self.inferiorTTY = os.ttyname(slave)
+        os.close(slave)
+        self.inferiorSlave = None
 
-    def initializePrettyPrints(self,dataRoot):
-        """ Installs the python extension for pretty printing """
-        path=os.path.join(dataRoot,"gdb_printers","python")
-        cmd=("python\nimport sys\nsys.path.insert(0,'{}')\n"+
-#            "from libstdcxx.v6.printers import register_libstdcxx_printers\n"+
-#            "from prims.printers import register_prim_printers\n"+
-#            "register_libstdcxx_printers(None)\n"+
-#            "register_prim_printers()\n"+
-            "from eigen.printers import register_eigen_printers\n"+
-            "register_eigen_printers(None)\n"+
-            "end").format(path)
-        self.write(cmd)
-        lines,ok=self.read()
-        if not ok:
-            print("Failed to install pretty prints")
+    def setNonBlocking(self, fd):
+        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
+    def startInferior(self):
+        self.sendCommand('-break-insert -t {}'.format(_mi_quote('main')), allow_error=True, timeout=5.0)
+        self.sendCommand('-exec-run', allow_error=True, timeout=5.0)
+        self.waitForStop(30.0)
+
+    def initializePrettyPrints(self, dataRoot):
+        path = os.path.join(dataRoot, 'gdb_printers', 'python')
+        cmd = (
+            'python import sys;'
+            'sys.path.insert(0,{!r});'
+            'from eigen.printers import register_eigen_printers;'
+            'register_eigen_printers(None)'
+        ).format(path)
+        res = self.runConsoleCommand(cmd, allow_error=True)
+        if res and res.get('class') == 'error':
+            print('Failed to install pretty prints')
 
     def quitDebugger(self):
-        #print "Closing debugger"
-        if self.active:
-            self.actBreak()
+        if not self.gdb:
+            return
         if self.running:
             self.actStop()
-        self.write('quit')
-        self.gdb.wait()
-        if self.outputFile:
-            os.close(self.outputFile)
-            self.outputFile=None
-        os.remove(self.outputFileName)
-        self.gdb=None
-        
+        try:
+            self.sendCommand('-gdb-exit', allow_error=True, timeout=2.0)
+        except (BrokenPipeError, OSError, TimeoutError):
+            pass
+        try:
+            self.gdb.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            self.gdb.kill()
+            self.gdb.wait()
+        self.closeResources()
+
+    def closeResources(self):
+        if self.inferiorMaster is not None:
+            os.close(self.inferiorMaster)
+            self.inferiorMaster = None
+        if self.inferiorSlave is not None:
+            os.close(self.inferiorSlave)
+            self.inferiorSlave = None
+        if self.dumpLog is not None:
+            self.dumpLog.close()
+            self.dumpLog = None
+        self.gdb = None
+
     def closingApp(self):
-        """ Called before the application window is closed
-        
-        Performs cleanup by optionally breaking and killing the program's
-        process.
-        Quits and waits for gdb to exit
-        
-        """
         self.quitDebugger()
 
     def update(self):
-        """ Polls the gdb to see if it stopped at a breakpoint or finished """
-        if self.outputFile:
-            s=os.read(self.outputFile,1024)
-            if len(s)>0:
-                self.outputText.append(s)
-        if self.active:
-            lines,ok=self.read(1)
-            #if ok:
-            #    for line in lines:
-            #        if line.find('exited normally')>0:
-            #            self.running=False
-            #    self.active=False
-            #    return ''
-            #return lines
+        self.poll(0.0)
         return ''
-        
-    def sendInput(self,s):
-        self.gdb.stdin.write(s)
-        
+
+    def sendInput(self, s):
+        if self.inferiorMaster is None or not s:
+            return
+        try:
+            os.write(self.inferiorMaster, s.encode('utf-8', errors='replace'))
+        except OSError:
+            pass
+
     def hasOutput(self):
-        return len(self.outputText)>0
-        
+        return len(self.outputText) > 0
+
     def getOutput(self):
-        s=''.join(self.outputText)
-        self.outputText=[]
+        s = ''.join(self.outputText)
+        self.outputText = []
         return s
 
     def getBackTrace(self):
-        if self.active:
+        if self.active or not self.running:
             return []
-        self.write('bt')
-        lines,ok=self.read()
-        if not ok:
-            return []
-        return lines
+        frames = self.getFrames()
+        return [self.formatFrame(frame) for frame in frames]
 
-    def isValidSource(self,cand):
-        """ Checks if a string looks like a valid source file
-        
-        Assumes /usr/* files are library files that should not be included
-        in the source files list.
-        
-        """
-        
+    def isValidSource(self, cand):
         if cand.startswith('/usr'):
             return False
-        if cand.find('built-in')>0:
+        if cand.find('built-in') > 0:
             return False
-        validExts={'.c','.cpp','.cxx','.C','.cc'}
-        for e in validExts:
-            if cand.endswith(e):
+        validExts = {'.c', '.cpp', '.cxx', '.C', '.cc'}
+        for ext in validExts:
+            if cand.endswith(ext):
                 return True
         return False
-        
-    def getAllFiles(self):
-        """ Queries all source files and returns a list of valid files """
-        files=set()
-        self.write("info sources")
-        lines,ok=self.read()
-        if not ok:
-            return []
-        for line in lines:
-            comps=line.strip().split(',')
-            for cand in comps:
-                cand=cand.strip()
-                if self.isValidSource(cand):
-                    files|={cand}
-        self.allFiles=files
-        return sorted(list(files))
-        
 
-    
-    def updatePath(self,name):
-        """ Given a file name, find the first file path that matches """
-        if name[0]=='/':
+    def getAllFiles(self):
+        res = self.sendCommand('-file-list-exec-source-files', allow_error=True)
+        if not res or res.get('class') != 'done':
+            return []
+        files = set()
+        for item in _as_list(res.get('results', {}).get('files')):
+            if not isinstance(item, dict):
+                continue
+            cand = item.get('fullname') or item.get('file') or ''
+            if cand and self.isValidSource(cand):
+                files.add(cand)
+        self.allFiles = files
+        return sorted(list(files))
+
+    def updatePath(self, name):
+        if not name:
             return name
-        for f in self.allFiles:
-            if f.endswith(name):
-                return f
-        return name                        
-        
+        if name[0] == '/':
+            return name
+        for path in self.allFiles:
+            if path.endswith(name):
+                return path
+        return name
+
     def getCurrentPos(self):
-        """ Queries the current file,line and return them
-        
-        If none can be found, returns an empty path
-        
-        """
-        res=[("","1")]
-        if self.running:
-            self.write("bt")
-            lines,ok=self.read()
-            if ok:
-                self.changed=False
-                ml='\n'.join(lines)
-                m=re.findall(self.btPattern,ml)
-                if not m is None:
-                    res=[]
-                    for i in range(0,len(m)):
-                        r=m[i]
-                        res.append((self.updatePath(r[0]),int(r[1])))
-            #self.write("info source")
-            #lines,ok=self.read()
-            #if ok:
-            #    for line in lines:
-            #        m=re.match(self.locPattern,line)
-            #        if not m is None:
-            #            g=m.groups()
-            #            res=[(g[0],int(g[1]))]
-            #            break
-        else:
-            self.write("info function main")
-            lines,ok=self.read()
-            if ok:
-                self.changed=False
-                ml='\n'.join(lines)
-                m=re.search(self.curPattern,ml)
-                if not m is None:
-                    path=self.updatePath((m.groups())[0])
-                    res=[(path,1)]
+        res = [('', 1)]
+        if not self.running or self.active:
+            return res
+        frames = self.getFrames()
+        if frames:
+            res = []
+            for frame in frames:
+                path = self.framePath(frame)
+                line = _as_int(frame.get('line'), 0)
+                if path and line > 0:
+                    res.append((path, line))
+            if res:
+                self.changed = False
         return res
-        
-    def log(self,s):
-        """ Logs text during development (DEBUGUI env var) """
-        if not self.dumpLog is None:
+
+    def log(self, s):
+        if self.dumpLog is not None:
             self.dumpLog.write(s)
             self.dumpLog.write('\n')
             self.dumpLog.flush()
-        
-    def write(self,s):
-        """ Writes a command to the gdb stdin """
-        if globals.dev:
-            print('>{}'.format(s))
-        self.log('>{}'.format(s))
-        self.gdb.stdin.write(s+'\n')
-    
-    def read(self,tries=100):
-        """ Reads response lines from the gdb stdout
-        
-        tries indicates number of times to poll until the (gdb) prompt
-        is encountered.  Each failed try waits for 10ms
-        
-        """
-        res=""
-        count=0
-        for h in self.handlers:
-            h.reset()
-        while count<tries:
-            try:
-                count+=1
-                l=self.gdb.stdout.read()
-                if l is None:
-                    time.sleep(0.01)
-                    continue
-                for h in self.handlers:
-                    h.addLine(l)
-                res+=l
-                if res.endswith('(gdb) '):
-                    self.changed=True
-                    res=res.split('\n')
-                    del res[-1]
-                    self.log('<<{}'.format('\n'.join(res)))
 
-                    for line in res:
-                        if line.find('exited normally')>0:
-                            self.running=False
-                    self.active=False
-                    if globals.dev:
-                        print(res)
-                    return (res,True)
-            except (IOError, TypeError):
+    def sendCommand(self, command, timeout=5.0, allow_error=False):
+        if not self.gdb or not self.gdb.stdin:
+            raise RuntimeError('Debugger is not running')
+        token = str(self.nextToken)
+        self.nextToken += 1
+        line = '{}{}\n'.format(token, command)
+        if globals.dev:
+            print('>{}'.format(line.rstrip()))
+        self.log('>{}'.format(line.rstrip()))
+        self.gdb.stdin.write(line.encode('utf-8'))
+        self.gdb.stdin.flush()
+        return self.waitForResult(token, timeout, allow_error)
+
+    def waitForResult(self, token, timeout=5.0, allow_error=False):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            rec = self.pendingResults.pop(token, None)
+            if rec is not None:
+                if globals.dev:
+                    print(rec)
+                self.log('<<{}'.format(rec))
+                if rec.get('class') == 'error' and not allow_error:
+                    raise RuntimeError(self.resultMessage(rec))
+                return rec
+            self.poll(0.05)
+        raise TimeoutError('Timeout waiting for gdb command {}'.format(token))
+
+    def waitForStop(self, timeout=5.0):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            self.poll(0.05)
+            if not self.active:
+                return True
+        return False
+
+    def runConsoleCommand(self, command, allow_error=False, timeout=5.0):
+        return self.sendCommand(
+            '-interpreter-exec console {}'.format(_mi_quote(command)),
+            allow_error=allow_error,
+            timeout=timeout,
+        )
+
+    def resultMessage(self, rec):
+        msg = rec.get('results', {}).get('msg', '')
+        if msg:
+            return msg
+        return rec.get('class', 'error')
+
+    def poll(self, timeout=0.0):
+        deadline = time.time() + timeout
+        while True:
+            progressed = False
+            progressed |= self.readGDBOutput()
+            progressed |= self.readGDBErrors()
+            progressed |= self.readInferiorOutput()
+            if not progressed:
+                if timeout <= 0.0 or time.time() >= deadline:
+                    break
                 time.sleep(0.01)
-        return (res,False)
-        
+        if self.gdb and self.gdb.poll() is not None:
+            self.running = False
+            self.active = False
+
+    def readChunk(self, fd):
+        try:
+            return os.read(fd, 4096)
+        except BlockingIOError:
+            return b''
+        except OSError as e:
+            if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EIO):
+                return b''
+            raise
+
+    def readGDBOutput(self):
+        if not self.gdb or not self.gdb.stdout:
+            return False
+        chunk = self.readChunk(self.gdb.stdout.fileno())
+        if not chunk:
+            return False
+        self.stdoutBuffer += chunk.decode('utf-8', errors='replace')
+        progressed = True
+        while True:
+            if self.stdoutBuffer.startswith('(gdb) '):
+                self.stdoutBuffer = self.stdoutBuffer[6:]
+                continue
+            pos = self.stdoutBuffer.find('\n')
+            if pos < 0:
+                break
+            line = self.stdoutBuffer[:pos].rstrip('\r')
+            self.stdoutBuffer = self.stdoutBuffer[(pos + 1):]
+            if line and line != '(gdb)':
+                self.handleRecord(line)
+        if self.stdoutBuffer in ('(gdb)', '(gdb) '):
+            self.stdoutBuffer = ''
+        return progressed
+
+    def readGDBErrors(self):
+        if not self.gdb or not self.gdb.stderr:
+            return False
+        chunk = self.readChunk(self.gdb.stderr.fileno())
+        if not chunk:
+            return False
+        text = chunk.decode('utf-8', errors='replace')
+        self.stderrBuffer += text
+        self.outputText.append(text)
+        return True
+
+    def readInferiorOutput(self):
+        if self.inferiorMaster is None:
+            return False
+        try:
+            chunk = os.read(self.inferiorMaster, 4096)
+        except BlockingIOError:
+            return False
+        except OSError as e:
+            if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EIO):
+                return False
+            raise
+        if not chunk:
+            return False
+        self.outputText.append(chunk.decode('utf-8', errors='replace'))
+        return True
+
+    def handleRecord(self, line):
+        if globals.dev:
+            print(line)
+        self.log('<<{}'.format(line))
+        rec = MIParser(line).parse_record()
+        if rec is None:
+            return
+        if rec.get('type') == 'stream':
+            if rec.get('channel') == '@':
+                self.outputText.append(rec.get('payload', ''))
+            return
+        if rec.get('type') == 'result':
+            self.pendingResults[rec.get('token', '')] = rec
+            return
+        self.handleAsyncRecord(rec)
+
+    def handleAsyncRecord(self, rec):
+        results = rec.get('results', {})
+        kind = rec.get('kind')
+        rec_class = rec.get('class')
+        if kind == '*' and rec_class == 'running':
+            self.active = True
+            self.running = True
+            return
+        if kind == '*' and rec_class == 'stopped':
+            reason = results.get('reason', '')
+            self.active = False
+            self.changed = True
+            if reason.startswith('exited') or reason == 'exited':
+                self.running = False
+            else:
+                self.running = True
+            if reason == 'signal-received':
+                sig = results.get('signal-name', '')
+                if sig and not (sig == 'SIGINT' and self.expectingInterrupt):
+                    QtWidgets.QMessageBox.critical(None, 'Unhandled Signal', sig)
+            return
+        if kind == '=' and rec_class == 'thread-group-started':
+            self.pid = results.get('pid', '')
+            return
+        if kind == '=' and rec_class == 'thread-group-exited':
+            self.running = False
+            self.active = False
+            self.changed = True
+
     def clearBreakpoints(self):
-        self.write("set confirm off")
-        self.read()
-        self.write("delete")
-        self.read()
-        
-    def setBreakpoint(self,path,line,cond):
-        cmd='break {}:{}'.format(path,line)
+        self.sendCommand('-break-delete', allow_error=True)
+
+    def setBreakpoint(self, path, line, cond):
+        cmd = '-break-insert'
         if cond:
-            cmd=cmd+' if {}'.format(cond)
-        self.write(cmd)
-        self.read()
-        self.changed=True
-    
+            cmd += ' -c {}'.format(_mi_quote(cond))
+        cmd += ' {}'.format(_mi_quote('{}:{}'.format(path, line)))
+        self.sendCommand(cmd, allow_error=True)
+        self.changed = True
+
     def setBreakpoints(self):
         if not self.gdb:
             return
         self.clearBreakpoints()
         for path in self.breakpoints.paths():
-            bps=self.breakpoints.pathBreakpoints(path)
+            bps = self.breakpoints.pathBreakpoints(path)
             for bp in bps:
                 if bp.isEnabled():
-                    line=bp.line()+1
-                    self.setBreakpoint(path,line,bp.condition())
-    
+                    self.setBreakpoint(path, bp.line() + 1, bp.condition())
+
+    def runExecCommand(self, command):
+        if self.active or (not self.running and command != '-exec-run'):
+            return
+        self.sendCommand(command, allow_error=True, timeout=5.0)
+
     def actStep(self):
-        """ Single steps going into function calls """
-        if not self.active and self.running:
-            self.write('step')
-            lines,ok=self.read()
+        if self.running and not self.active:
+            self.runExecCommand('-exec-step')
 
     def actNext(self):
-        """ Single steps going over function calls """
-        if not self.active and self.running:
-            self.write('next')
-            lines,ok=self.read()
-            if not ok:
-                self.active=True
+        if self.running and not self.active:
+            self.runExecCommand('-exec-next')
 
     def actOut(self):
-        """ Executes until current function (stack frame) ends """
-        if not self.active:
-            self.write('finish')
-            lines,ok=self.read()
-            if not ok:
-                self.active=True
+        if self.running and not self.active:
+            self.runExecCommand('-exec-finish')
 
     def actCont(self):
-        """ Continue running the program (until done, or breakpoint) """
         if not self.running:
-            self.write('run')
-            self.running=True
-            self.active=True
-        else:
-            self.write('cont')
-            self.active=True
-            
+            self.runExecCommand('-exec-run')
+        elif not self.active:
+            self.runExecCommand('-exec-continue')
+
     def actBreak(self):
-        """ Breaks a running program by sending it a SIGINT """
-        if self.active and len(self.pid)>0:
-            subprocess.call(['kill','-s','SIGINT',self.pid])
-            lines,ok=self.read(200)
-            if ok:
-                self.active=False
+        if not self.active:
+            return
+        self.expectingInterrupt = True
+        try:
+            self.sendCommand('-exec-interrupt --all', allow_error=True, timeout=2.0)
+            if self.waitForStop(5.0):
+                self.active = False
             else:
-                self.log("Break Failed")
-                print("Failed to break gdb")
-            self.changed=True
+                self.log('Break Failed')
+                print('Failed to break gdb')
+        finally:
+            self.expectingInterrupt = False
+        self.changed = True
 
     def actStop(self):
-        """ Kills the program's process and terminates debugging """
-        if self.active:
-            self.actBreak()
-        if not self.active:
-            self.write('kill')
-            time.sleep(0.1)
-            self.write('y')
-            lines,ok=self.read()
-            if ok:
-                self.running=False
-        
-    def printVar(self,var):        
-        """ Evaluates the value of expression """
+        if not self.running:
+            return
+        self.runConsoleCommand('kill', allow_error=True, timeout=5.0)
+        deadline = time.time() + 5.0
+        while time.time() < deadline:
+            self.poll(0.05)
+            if not self.running:
+                break
+
+    def printVar(self, var):
         if self.active or not self.running:
             return ''
-        ch=self.changed
-        self.write('print {}'.format(var))
-        lines,ok=self.read()
-        self.changed=ch
-        if not ok: 
-            #print "Failed to evaluate {}".format(var)
+        res = self.sendCommand(
+            '-data-evaluate-expression {}'.format(_mi_quote(var)),
+            allow_error=True,
+        )
+        if not res or res.get('class') != 'done':
             return ''
-        #print '{} = {}'.format(var,lines)
-        if type(lines) is list:
-            lines='\n'.join(lines)
-        while lines.find('  ')>=0:
-            lines=lines.replace('  ',' ')
-        return lines
-        
-    def evaluate(self,var):
-        import xparse
-        lines=self.printVar(var)
-        if globals.dev:
-            print("@@@\n{}\n@@@".format(lines))
-        return xparse.parse(lines)
-        
-    def flatten(self,root):
+        return res.get('results', {}).get('value', '')
+
+    def evaluate(self, var):
+        if self.active or not self.running:
+            return None
+        obj = self.createVarObject(var)
+        if not obj:
+            value = self.printVar(var)
+            if not value:
+                return None
+            return VarNode(var, value)
+        try:
+            return self.varObjectToNode(var, obj)
+        finally:
+            name = obj.get('name', '')
+            if name:
+                self.sendCommand('-var-delete {}'.format(_mi_quote(name)), allow_error=True)
+
+    def createVarObject(self, expr):
+        res = self.sendCommand(
+            '-var-create - * {}'.format(_mi_quote(expr)),
+            allow_error=True,
+        )
+        if not res or res.get('class') != 'done':
+            return None
+        return res.get('results', {})
+
+    def varObjectToNode(self, displayName, varObj):
+        value = varObj.get('value', '')
+        if not value and _as_int(varObj.get('numchild'), 0) > 0:
+            value = varObj.get('type', '')
+        node = VarNode(displayName, value)
+        self.populateVarChildren(node, varObj, 0)
+        return node
+
+    def populateVarChildren(self, node, varObj, depth):
+        if _as_int(varObj.get('numchild'), 0) <= 0 and varObj.get('dynamic') != '1':
+            return
+        if depth >= self.MAX_VAR_DEPTH:
+            node.add_child(VarNode('...', 'depth limit'))
+            return
+        name = varObj.get('name', '')
+        if not name:
+            return
+        res = self.sendCommand(
+            '-var-list-children --all-values {}'.format(_mi_quote(name)),
+            allow_error=True,
+        )
+        if not res or res.get('class') != 'done':
+            return
+        children = _named_items(res.get('results', {}).get('children'), 'child')
+        totalChildren = len(children)
+        if totalChildren > self.MAX_VAR_CHILDREN:
+            children = children[:self.MAX_VAR_CHILDREN]
+        for child in children:
+            if not isinstance(child, dict):
+                continue
+            childName = child.get('exp') or child.get('name', '').rsplit('.', 1)[-1]
+            childValue = child.get('value', '')
+            if not childValue and _as_int(child.get('numchild'), 0) > 0:
+                childValue = child.get('type', '')
+            childNode = VarNode(childName, childValue)
+            node.add_child(childNode)
+            self.populateVarChildren(childNode, child, depth + 1)
+        if totalChildren > self.MAX_VAR_CHILDREN or res.get('results', {}).get('has_more') == '1':
+            node.add_child(VarNode('...', 'truncated'))
+
+    def flatten(self, root):
         if not root:
             return ''
-        res=root.value
-        if len(root.children)>0:
-            res=res+' { '
-            index=0
-            for c in root.children:
-                if index>0:
-                    res=res+', '
-                res=res+self.flatten(c)
-                index=index+1
-            res=res+' } '
+        res = root.value
+        if len(root.children) > 0:
+            res += ' { '
+            for index, child in enumerate(root.children):
+                if index > 0:
+                    res += ', '
+                res += self.flatten(child)
+            res += ' } '
         return res
-        
-    def evaluateAsText(self,var):
-        root=self.evaluate(var)
+
+    def evaluateAsText(self, var):
+        root = self.evaluate(var)
         return self.flatten(root)
 
-    def getVarsInfo(self,vartype,res):
+    def nodeFromSimpleItem(self, item):
+        name = item.get('name', '')
+        if not name:
+            return None
+        value = item.get('value')
+        if value is not None:
+            return VarNode(name, value)
+        return self.evaluate(name)
+
+    def localsInfo(self):
         if self.active or not self.running:
-            return res
-        ch=self.changed
-        self.write('info {}'.format(vartype))
-        lines,ok=self.read()
-        self.changed=ch
-        if not ok:
-            #print "Failed to evaluate {}".format(var)
-            return res
-        if type(lines) is list:
-            lines='\n'.join(lines)
-        lines=lines.split('\n')
-        groups=[]
-        for line in lines:
-            if line:
-                if line[0]!=' ':
-                    groups.append([])
-                groups[-1].append(line)
-        for group in groups:
-            all='\n'.join(group)
-            import xparse
-            #from xparse.xparse import Node
-            cur=xparse.parse(all)
-            if cur:
-                res[cur.name]=cur
+            return {}
+        res = {}
+        args = self.sendCommand('-stack-list-arguments --simple-values 0 0', allow_error=True)
+        if args and args.get('class') == 'done':
+            frames = _named_items(args.get('results', {}).get('stack-args'), 'frame')
+            if frames:
+                for arg in _record_list(frames[0].get('args')):
+                    if isinstance(arg, dict) and 'name' in arg:
+                        node = self.nodeFromSimpleItem(arg)
+                        if node:
+                            res[arg['name']] = node
+        locals_res = self.sendCommand('-stack-list-locals --simple-values', allow_error=True)
+        if locals_res and locals_res.get('class') == 'done':
+            for item in _record_list(locals_res.get('results', {}).get('locals')):
+                if isinstance(item, dict) and 'name' in item and item['name'] not in res:
+                    node = self.nodeFromSimpleItem(item)
+                    if node:
+                        res[item['name']] = node
+        return res
 
     def getLocals(self):
-        res={}
-        self.getVarsInfo('args',res)
-        self.getVarsInfo('locals',res)
-        return res
-        
+        return self.localsInfo()
 
+    def getFrames(self):
+        res = self.sendCommand('-stack-list-frames', allow_error=True)
+        if not res or res.get('class') != 'done':
+            return []
+        return _named_items(res.get('results', {}).get('stack'), 'frame')
+
+    def framePath(self, frame):
+        path = frame.get('fullname') or frame.get('file') or ''
+        return self.updatePath(path)
+
+    def formatFrame(self, frame):
+        level = frame.get('level', '?')
+        func = frame.get('func', '??')
+        path = self.framePath(frame)
+        line = frame.get('line', '')
+        if path and line:
+            return '#{} {} at {}:{}'.format(level, func, path, line)
+        source = frame.get('from') or frame.get('addr', '')
+        if source:
+            return '#{} {} from {}'.format(level, func, source)
+        return '#{} {}'.format(level, func)
