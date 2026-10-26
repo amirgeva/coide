@@ -5,9 +5,10 @@ Uses syntax module for doing the job
 import time
 
 
-from PyQt4.QtCore import QObject, QTimer
-from PyQt4.QtGui import QApplication, QBrush, QColor, QFont, \
+from PyQt6.QtCore import QObject, QTimer
+from PyQt6.QtGui import QBrush, QColor, QFont, \
                         QTextBlockUserData, QTextCharFormat, QTextLayout
+from PyQt6.QtWidgets import QApplication
 
 import qutepart.syntax
 
@@ -69,7 +70,10 @@ class GlobalTimer:
             self._scheduledCallbacks.remove(callback)
 
         if not self._scheduledCallbacks:
-            self._timer.stop()
+            try:
+                self._timer.stop()
+            except RuntimeError:
+                pass  # C++ object already deleted during shutdown
 
     def isCallbackScheduled(self, callback):
         return callback in self._scheduledCallbacks
@@ -120,7 +124,7 @@ class SyntaxHighlighter(QObject):
         self._globalTimer.unScheduleCallback(self._onContinueHighlighting)
         block = self._document.firstBlock()
         while block.isValid():
-            block.layout().setAdditionalFormats([])
+            block.layout().clearFormats()
             block.setUserData(None)
             self._document.markContentsDirty(block.position(), block.length())
             block = block.next()
@@ -178,7 +182,7 @@ class SyntaxHighlighter(QObject):
         qtFormat.setForeground(QBrush(QColor(format.color)))
         qtFormat.setBackground(QBrush(QColor(format.background)))
         qtFormat.setFontItalic(format.italic)
-        qtFormat.setFontWeight(QFont.Bold if format.bold else QFont.Normal)
+        qtFormat.setFontWeight(QFont.Weight.Bold if format.bold else QFont.Weight.Normal)
         qtFormat.setFontUnderline(format.underline)
         qtFormat.setFontStrikeOut(format.strikeOut)
 
@@ -244,7 +248,10 @@ class SyntaxHighlighter(QObject):
                 self._globalTimer.scheduleCallback(self._onContinueHighlighting)
                 return
 
-            contextStack = lineData[0] if lineData is not None else None
+            if lineData is not None and hasattr(lineData, '__getitem__') and len(lineData) > 0:
+                contextStack = lineData[0]
+            else:
+                contextStack = None
             if block.length() < 4096:
                 lineData, highlightedSegments = self._syntax.highlightBlock(block.text(), contextStack)
             else:
@@ -305,6 +312,6 @@ class SyntaxHighlighter(QObject):
                 ranges.append(range)
             currentPos += length
 
-        if not _formatRangeListsEqual(block.layout().additionalFormats(), ranges):
-            block.layout().setAdditionalFormats(ranges)
+        if not _formatRangeListsEqual(block.layout().formats(), ranges):
+            block.layout().setFormats(ranges)
             self._document.markContentsDirty(block.position(), block.length())

@@ -6,53 +6,46 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui
+from PyQt6 import QtWidgets
 
-try:
-    _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
-    def _fromUtf8(s):
-        return s
+def _fromUtf8(s):
+    return s
 
-try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
-    def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
-except AttributeError:
-    def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+def _translate(context, text, disambig):
+    return QtCore.QCoreApplication.translate(context, text)
 
 class Ui_ShortcutDialog(object):
     def setupUi(self, ShortcutDialog):
         ShortcutDialog.setObjectName(_fromUtf8("ShortcutDialog"))
         ShortcutDialog.resize(251, 236)
-        ShortcutDialog.buttonBox = QtGui.QDialogButtonBox(ShortcutDialog)
+        ShortcutDialog.buttonBox = QtWidgets.QDialogButtonBox(ShortcutDialog)
         ShortcutDialog.buttonBox.setGeometry(QtCore.QRect(30, 190, 181, 32))
-        ShortcutDialog.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        ShortcutDialog.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        ShortcutDialog.buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
+        ShortcutDialog.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Cancel|QtWidgets.QDialogButtonBox.StandardButton.Ok)
         ShortcutDialog.buttonBox.setObjectName(_fromUtf8("buttonBox"))
-        ShortcutDialog.keyCB = QtGui.QComboBox(ShortcutDialog)
+        ShortcutDialog.keyCB = QtWidgets.QComboBox(ShortcutDialog)
         ShortcutDialog.keyCB.setGeometry(QtCore.QRect(100, 20, 131, 33))
         ShortcutDialog.keyCB.setObjectName(_fromUtf8("keyCB"))
-        ShortcutDialog.label = QtGui.QLabel(ShortcutDialog)
+        ShortcutDialog.label = QtWidgets.QLabel(ShortcutDialog)
         ShortcutDialog.label.setGeometry(QtCore.QRect(20, 20, 56, 17))
         ShortcutDialog.label.setObjectName(_fromUtf8("label"))
-        ShortcutDialog.ctrlCB = QtGui.QCheckBox(ShortcutDialog)
+        ShortcutDialog.ctrlCB = QtWidgets.QCheckBox(ShortcutDialog)
         ShortcutDialog.ctrlCB.setGeometry(QtCore.QRect(20, 60, 88, 22))
         ShortcutDialog.ctrlCB.setObjectName(_fromUtf8("ctrlCB"))
-        ShortcutDialog.altCB = QtGui.QCheckBox(ShortcutDialog)
+        ShortcutDialog.altCB = QtWidgets.QCheckBox(ShortcutDialog)
         ShortcutDialog.altCB.setGeometry(QtCore.QRect(20, 90, 88, 22))
         ShortcutDialog.altCB.setObjectName(_fromUtf8("altCB"))
-        ShortcutDialog.shiftCB = QtGui.QCheckBox(ShortcutDialog)
+        ShortcutDialog.shiftCB = QtWidgets.QCheckBox(ShortcutDialog)
         ShortcutDialog.shiftCB.setGeometry(QtCore.QRect(20, 120, 88, 22))
         ShortcutDialog.shiftCB.setObjectName(_fromUtf8("shiftCB"))
-        ShortcutDialog.metaCB = QtGui.QCheckBox(ShortcutDialog)
+        ShortcutDialog.metaCB = QtWidgets.QCheckBox(ShortcutDialog)
         ShortcutDialog.metaCB.setGeometry(QtCore.QRect(20, 150, 88, 22))
         ShortcutDialog.metaCB.setObjectName(_fromUtf8("metaCB"))
 
         self.retranslateUi(ShortcutDialog)
-        QtCore.QObject.connect(ShortcutDialog.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), ShortcutDialog.accept)
-        QtCore.QObject.connect(ShortcutDialog.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), ShortcutDialog.reject)
+        ShortcutDialog.buttonBox.accepted.connect(ShortcutDialog.accept)
+        ShortcutDialog.buttonBox.rejected.connect(ShortcutDialog.reject)
         QtCore.QMetaObject.connectSlotsByName(ShortcutDialog)
 
     def retranslateUi(self, ShortcutDialog):

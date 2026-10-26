@@ -4,8 +4,9 @@ Calculates list of QTextEdit.ExtraSelection
 
 import time
 
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QTextCursor, QTextEdit
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QTextCursor
+from PyQt6.QtWidgets import QTextEdit
 
 
 class _TimeoutException(UserWarning):
@@ -98,14 +99,14 @@ class BracketHighlighter:
         selection = QTextEdit.ExtraSelection()
 
         if matched:
-            bgColor = Qt.green
+            bgColor = Qt.GlobalColor.green
         else:
-            bgColor = Qt.red
+            bgColor = Qt.GlobalColor.red
 
         selection.format.setBackground(bgColor)
         selection.cursor = QTextCursor(block)
         selection.cursor.setPosition(block.position() + columnIndex)
-        selection.cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor)
+        selection.cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor)
 
         return selection
 

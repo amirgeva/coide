@@ -114,11 +114,11 @@ class Lexer(object):
 
 def test():
     import sys
-    for i in xrange(1,len(sys.argv)):
+    for i in range(1,len(sys.argv)):
         arg=sys.argv[i]
-        print "Analyzing: {}".format(arg)
+        print("Analyzing: {}".format(arg))
         text=open(arg,'r').read()
-        print text
+        print(text)
         lex=Lexer(text)
         indent=0
         for tok in lex.all():
@@ -127,7 +127,7 @@ def test():
             spacing=''
             if indent>0:
                 spacing=' '*indent
-            print "{}{}:{}".format(spacing,tok.token,tok.value)
+            print("{}{}:{}".format(spacing,tok.token,tok.value))
             if tok.token=='LBRACE':
                 indent+=2
         

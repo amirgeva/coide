@@ -1,19 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import sys
 import os
 
 try:
-    import sip
-    sip.setapi('QString', 2)
+    from PyQt6 import QtCore, QtGui, QtWidgets
 except ImportError:
-    print "sip not installed.  try:   sudo apt-get install python-sip"
-    sys.exit(1)
-
-try:
-    from PyQt4 import QtCore
-    from PyQt4 import QtGui
-except ImportError:
-    print "PyQt4 not installed.  try:   sudo apt-get install python-qt4"
+    print("PyQt6 not installed.  try:   pip install PyQt6")
     sys.exit(1)
 
 import globals    
@@ -23,11 +15,11 @@ import callbacks
 version = '1.20160121'
 
 def migrateSettings(oldver):
-    print "Migrating settings from {} to {}".format(oldver,version)
+    print("Migrating settings from {} to {}".format(oldver,version))
 
 def checkVersion():
     s=QtCore.QSettings()
-    sver=s.value('version','').toString()
+    sver=s.value('version','')
     if sver!=version:
         migrateSettings(sver)
         s.setValue('version',version)
@@ -40,7 +32,7 @@ def main():
     directory where the 'parsers' and 'icons' sub-dirs are
     
     """
-    app=QtGui.QApplication(sys.argv)
+    app=QtWidgets.QApplication(sys.argv)
     QtCore.QCoreApplication.setOrganizationName("MLGSoft")
     QtCore.QCoreApplication.setOrganizationDomain("mlgsoft.com")
     QtCore.QCoreApplication.setApplicationName("Coide")
@@ -53,10 +45,10 @@ def main():
     os.chdir(root)
     globals.mw=MainWindow(root)
     globals.mw.show()
-    app.exec_()
+    app.exec()
     import system
     if not system.isScannerDone():
-        print "Hold on a few seconds..."
+        print("Hold on a few seconds...")
     for cb in callbacks.closeCallbacks:
         cb()
 

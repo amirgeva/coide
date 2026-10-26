@@ -5,13 +5,14 @@ import re
 import time
 import traceback
 
-from PyQt4.QtCore import pyqtSignal, QAbstractItemModel, QEvent, QModelIndex, QObject, QSize, Qt, QTimer, Qt
-from PyQt4.QtGui import QCursor, QListView, QStyle, QMessageBox
+from PyQt6.QtCore import pyqtSignal, QAbstractItemModel, QEvent, QModelIndex, QObject, QSize, Qt, QTimer
+from PyQt6.QtGui import QCursor
+from PyQt6.QtWidgets import QListView, QStyle, QMessageBox
 
 from qutepart.htmldelegate import HTMLDelegate
 
 
-_wordPattern = "\w+"
+_wordPattern = r"\w+"
 _wordRegExp = re.compile(_wordPattern)
 _wordAtEndRegExp = re.compile(_wordPattern + '$')
 _wordAtStartRegExp = re.compile('^' + _wordPattern)
@@ -235,7 +236,7 @@ class _CompletionList(QListView):
 
         FIXME very bad algorithm. Remove all this margins, if you can
         """
-        width = max([self.fontMetrics().width(word) \
+        width = max([self.fontMetrics().horizontalAdvance(word) \
                         for word in self.model().words])
         width = width * 1.4  # FIXME bad hack. invent better formula
         width += 30  # margin
@@ -256,7 +257,7 @@ class _CompletionList(QListView):
         typed text in the editor
         """
         strangeAdjustment = 2  # I don't know why. Probably, won't work on other systems and versions
-        return self.fontMetrics().width(self.model().typedText()) + strangeAdjustment
+        return self.fontMetrics().horizontalAdvance(self.model().typedText()) + strangeAdjustment
 
     def updateGeometry(self):
         """Move widget to point under cursor
@@ -311,26 +312,26 @@ class _CompletionList(QListView):
         """Catch events from qpart
         Move selection, select item, or close themselves
         """
-        if event.type() == QEvent.KeyPress and event.modifiers() == Qt.NoModifier:
-            if event.key() == Qt.Key_Escape:
+        if event.type() == QEvent.Type.KeyPress and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if event.key() == Qt.Key.Key_Escape:
                 self.closeMe.emit()
                 return True
-            elif event.key() == Qt.Key_Down:
+            elif event.key() == Qt.Key.Key_Down:
                 if self._selectedIndex + 1 < self.model().rowCount():
                     self._selectItem(self._selectedIndex + 1)
                 return True
-            elif event.key() == Qt.Key_Up:
+            elif event.key() == Qt.Key.Key_Up:
                 if self._selectedIndex - 1 >= 0:
                     self._selectItem(self._selectedIndex - 1)
                 return True
-            elif event.key() in (Qt.Key_Enter, Qt.Key_Return):
+            elif event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
                 if self._selectedIndex != -1:
                     self.itemSelected.emit(self._selectedIndex)
                     return True
-            elif event.key() == Qt.Key_Tab:
+            elif event.key() == Qt.Key.Key_Tab:
                 self.tabPressed.emit()
                 return True
-        elif event.type() == QEvent.FocusOut:
+        elif event.type() == QEvent.Type.FocusOut:
             self.closeMe.emit()
 
         return False
@@ -402,7 +403,7 @@ class Completer(QObject):
                 cmd=['make','LINE={}'.format(row+1),'COL={}'.format(col+1),'clang_complete']
                 try:
                     import subprocess
-                    p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir)
+                    p=subprocess.Popen(cmd,shell=False, stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=self.dir,universal_newlines=True)
                     text=self._qpart.text
                     out,err=p.communicate(text)
                     words=self.parseClang(out)
@@ -410,7 +411,7 @@ class Completer(QObject):
                         self.invokeCompletion()
                         if self._widget:
                             self._widget.model().setDotWords(words)
-                except OSError,e:
+                except OSError as e:
                     if e.errno==2:
                         QMessageBox.warning(self._qpart,"clang not available","clang not installed.  Disabling completion.")
                         self._qpart.clangCompletion=False
@@ -441,13 +442,13 @@ class Completer(QObject):
     def eventFilter(self, object, event):
         """Catch events from qpart. Show completion if necessary
         """
-        if event.type() == QEvent.KeyRelease:
+        if event.type() == QEvent.Type.KeyRelease:
             text = event.text()
-            textTyped = (event.modifiers() in (Qt.NoModifier, Qt.ShiftModifier)) and \
+            textTyped = (event.modifiers() in (Qt.KeyboardModifier.NoModifier, Qt.KeyboardModifier.ShiftModifier)) and \
                         (text.isalpha() or text.isdigit() or text == '_')
 
             if textTyped or \
-            (event.key() == Qt.Key_Backspace and self._widget is not None):
+            (event.key() == Qt.Key.Key_Backspace and self._widget is not None):
                 self._invokeCompletionIfAvailable()
                 return False
 

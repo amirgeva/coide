@@ -6,7 +6,7 @@ import callbacks
 
 def libraryDirs():
     out,err=utils.call('.','ld','--verbose')
-    return re.findall('SEARCH_DIR\("=([^"]+)"\);',out)
+    return re.findall(r'SEARCH_DIR\("=([^"]+)"\);',out)
 
 def listAllPackages():
     res=set()

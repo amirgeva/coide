@@ -1,7 +1,8 @@
-from PyQt4 import QtGui
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 import uis
 
-class DependenciesDialog(QtGui.QDialog):
+class DependenciesDialog(QtWidgets.QDialog):
     def __init__(self,libs,parent=None):
         super(DependenciesDialog,self).__init__(parent)
         uis.loadDialog('deps',self)
@@ -14,10 +15,10 @@ class DependenciesDialog(QtGui.QDialog):
         self.depsList.clear()
         for lib in libs:
             if len(lib.strip())>0:
-                self.depsList.addItem(QtGui.QListWidgetItem(lib))
+                self.depsList.addItem(QtWidgets.QListWidgetItem(lib))
 
     def addButton(self,layout,text,callback):
-        b=QtGui.QPushButton(text)
+        b=QtWidgets.QPushButton(text)
         b.clicked.connect(callback)
         layout.addWidget(b)
 
@@ -36,7 +37,7 @@ class DependenciesDialog(QtGui.QDialog):
             self.depsList.setCurrentRow(cur+1)
 
     def addPressed(self):
-        res=QtGui.QInputDialog.getText(self,"Library Name","Library")
+        res=QtWidgets.QInputDialog.getText(self,"Library Name","Library")
         if res[1]:
             lib=res[0]
             self.depsList.addItem(lib)
@@ -53,7 +54,7 @@ class DependenciesDialog(QtGui.QDialog):
     def okPressed(self):
         n=self.depsList.count()
         self.libs=[]
-        for i in xrange(0,n):
+        for i in range(0,n):
             lib=self.depsList.item(i).text()
             self.libs.append(lib)
         self.accept()

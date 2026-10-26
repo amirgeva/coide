@@ -1,5 +1,5 @@
-from PyQt4 import QtCore
+from PyQt6 import QtCore
 
-DirectoryRole = QtCore.Qt.UserRole+1
-FileRole      = QtCore.Qt.UserRole+2
+DirectoryRole = QtCore.Qt.ItemDataRole.UserRole+1
+FileRole      = QtCore.Qt.ItemDataRole.UserRole+2
     

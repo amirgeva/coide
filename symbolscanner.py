@@ -1,4 +1,4 @@
-from PyQt4 import QtCore
+from PyQt6 import QtCore
 import sys
 import os
 #import re
@@ -53,7 +53,7 @@ class Scanner:
     def isPackageListChanged(self):
         s=QtCore.QSettings()
         if s.contains('all_packages'):
-            old_packages=s.value('all_packages').toString().split(',')
+            old_packages=s.value('all_packages').split(',')
             return old_packages != self.packages
         return True
         
@@ -61,7 +61,7 @@ class Scanner:
         s=QtCore.QSettings()
         s.setValue('all_packages',','.join(self.packages))
         index={}
-        for i in xrange(0,len(self.packages)):
+        for i in range(0,len(self.packages)):
             index[self.packages[i]]=i
         all=[]
         for sym in self.librarySymbols:
@@ -79,7 +79,7 @@ class Scanner:
     def loadLists(self):
         s=QtCore.QSettings()
         utils.timestamp('load from settings')
-        ls=s.value('library_symbols').toString()
+        ls=s.value('library_symbols')
         utils.timestamp('deserialize')
         self.librarySymbols={}
         all=ls.split(';')
@@ -184,7 +184,7 @@ class Scanner:
                 pass
         if printout:
             for sym in symbols:
-                print sym
+                print(sym)
                 s=symbols.get(sym)
                 for l in s:
                     sys.stdout.write("  "+l)
@@ -219,10 +219,10 @@ class Scanner:
         if printOut:
             f=open('ws_syms.txt','w')
             for s in self.workspaceSymbols:
-                print>>f, s
+                print(s, file=f)
                 dirs=self.workspaceSymbols.get(s)
                 for d in dirs:
-                    print>>f, '    '+d
+                    print('    '+d, file=f)
             f.close()
             
     def setWorkspacePath(self,ws):

@@ -14,11 +14,11 @@ class ParseException(Exception):
 
 def recursive_find(seq,start,stop,innermost=False):
     laststart=-1
-    for i in xrange(0,len(seq)):
+    for i in range(0,len(seq)):
         if seq[i]==start:
             laststart=i
             depth=1
-            for j in xrange(i+1,len(seq)):
+            for j in range(i+1,len(seq)):
                 if seq[j]==start: 
                     laststart=j
                     depth+=1
@@ -37,7 +37,7 @@ def recursive_unite(seq,start,stop,name):
             break
         i=idx[0]
         seq[i].name=name
-        for j in xrange(i+1,idx[1]):
+        for j in range(i+1,idx[1]):
             seq[i].value+=seq[i+1].value
             del seq[i+1]
 
@@ -67,7 +67,7 @@ def unite_chars(seq):
 def match(seq,sub,i):
     if (i+len(sub))>len(seq):
         return False
-    for j in xrange(0,len(sub)):
+    for j in range(0,len(sub)):
         if not sub[j]:
             continue
         if seq[i+j]!=sub[j]:
@@ -75,7 +75,7 @@ def match(seq,sub,i):
     return True
 
 def find(seq,sub):
-    for i in xrange(0,len(seq)-len(sub)):
+    for i in range(0,len(seq)-len(sub)):
         if match(seq,sub,i):
             return i
     return -1
@@ -89,7 +89,7 @@ def collapse_refs(seq):
             if i<0: break
             ofs=2
         del seq[i]
-        for j in xrange(0,3):
+        for j in range(0,3):
             del seq[i+ofs]
         seq[i+ofs].name='EQUALS'
         seq[i+ofs].value='='
@@ -100,7 +100,7 @@ def collapse(seq,sub):
     i=0
     while i<n:
         if match(seq,sub,i):
-            for j in xrange(0,m):
+            for j in range(0,m):
                 if sub[m-j-1]:
                     del seq[i+m-j-1]
                     n-=1
@@ -200,7 +200,7 @@ class Parser(object):
             cur.children=[c for c in cur.children if c]
             seq[idx[0]]=cur
             del seq[(idx[0]+1):idx[1]]
-            if dev: print "{}\n\n".format(dump(seq))
+            if dev: print("{}\n\n".format(dump(seq)))
 
     def flatten_node(self,node):
         #print "NAME='{}' VALUE='{}'".format(node.name,node.value)
@@ -224,14 +224,14 @@ class Parser(object):
 def test():
     global dev
     dev=True
-    for i in xrange(1,len(sys.argv)):
+    for i in range(1,len(sys.argv)):
         arg=sys.argv[i]
-        print arg
+        print(arg)
         text=open(arg,'r').read()
-        print text
+        print(text)
         p=Parser(text)
         p.flatten()
-        print dump([p.root])
+        print(dump([p.root]))
 
 if __name__=='__main__':
     test()

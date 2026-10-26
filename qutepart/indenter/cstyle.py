@@ -20,7 +20,7 @@ DEBUG_MODE = False
 
 def dbg(*args):
     if (DEBUG_MODE):
-        print args
+        print(*args)
 
 #global variables and functions
 
@@ -383,8 +383,8 @@ class IndentAlgCStyle(IndentAlgBase):
         pattern =  '^(.*)'                   # any                                                  group 1
         pattern += '([,"\'\\)])'             # one of [ , " ' )                                     group 2
         pattern += '(;?)'                    # optional ;                                           group 3
-        pattern += '\s*[\.+]?\s*'            # optional spaces  optional . or +   optional spaces
-        pattern += '(//.*|/\\*.*\\*/\s*)?$'  # optional(//any  or  /*any*/spaces)                   group 4
+        pattern += r'\s*[\.+]?\s*'            # optional spaces  optional . or +   optional spaces
+        pattern += r'(//.*|/\*.*\*/\s*)?$'  # optional(//any  or  /*any*/spaces)                   group 4
         match = re.match(pattern, currentBlockText)
         if match is not None:
             alignOnAnchor = len(match.group(3)) == 0 and match.group(2) != ')'
