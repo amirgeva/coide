@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import re
+import json
 from properties import Properties
 from system import listAllPackages
 import utils
@@ -127,6 +128,18 @@ def extractFlags(s):
     
 stdIncludes=[]
 
+backtickCache={}
+
+def expandBackticks(dir,s):
+    '''Replace `cmd` with its output, as the shell does when running make rules'''
+    def run(m):
+        cmd=m.group(1)
+        if not cmd in backtickCache:
+            (out,err)=utils.shellcall(dir,cmd)
+            backtickCache[cmd]=' '.join(out.split())
+        return backtickCache.get(cmd)
+    return re.sub(r'`([^`]*)`',run,s)
+
 def fillStdIncludes():
     (out,err)=utils.call('.','/usr/bin/env','g++','-E','-x','c++','-','-v')
     found=False
@@ -151,6 +164,7 @@ class Generator:
         self.outDir=os.path.join(root,'out')
         self.scanWorkspace()
         self.cppcheck=utils.checkFor('cppcheck')
+        self.compileCommands={}
         
     def scanWorkspace(self):
         self.wsLibs={}
@@ -332,6 +346,18 @@ class Generator:
         o.write('clean_{}: {}\n\t@rm -f $(OBJS_{}) {}\n\n'.format(cfg,cleanlibs,cfg,outfile))        
         o.write('{}: {}\n\n'.format(cfg,outfile))
             
+        if cfg=='Debug':
+            # compile_commands.json entries, used by clangd for code completion
+            ccflags=templates.generateMkCommand(cflags,mkProps)
+            ccflags=' '.join(expandBackticks(absdir,ccflags).split())
+            for i in range(0,len(objs)):
+                src=os.path.join(absdir,srcs[i])
+                self.compileCommands[src]={
+                    'directory': absdir,
+                    'file': src,
+                    'command': 'g++ {} -o {} {}'.format(ccflags,objs[i],src)
+                }
+
         for i in range(0,len(objs)):
             src=os.path.join(absdir,srcs[i])
             depcmd='g++ {} -MM {}'.format(cflags,src)
@@ -391,6 +417,28 @@ class Generator:
         o.write('-code-completion-macros -v -code-completion-at -:$(LINE):$(COL) -\n\n')        
 
         o.close()
+        self.writeCompileCommands()
+
+    def writeCompileCommands(self):
+        '''Merge the entries of generated directories into the workspace compile_commands.json'''
+        path=os.path.join(self.root,'compile_commands.json')
+        entries=[]
+        try:
+            with open(path) as f:
+                entries=json.load(f)
+        except (IOError,ValueError):
+            pass
+        entries=[e for e in entries if isinstance(e,dict) and
+                 not e.get('file') in self.compileCommands and os.path.exists(e.get('file',''))]
+        entries.extend(self.compileCommands.values())
+        entries.sort(key=lambda e: e.get('file'))
+        tmp=path+'.tmp'
+        try:
+            with open(tmp,'w') as f:
+                json.dump(entries,f,indent=2)
+            os.replace(tmp,path)
+        except (IOError,OSError) as e:
+            print('Failed to write {}: {}'.format(path,e))
         
 def generateTreeRun(root):
     g=Generator(root)

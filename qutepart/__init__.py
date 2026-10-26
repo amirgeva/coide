@@ -302,6 +302,7 @@ class Qutepart(QPlainTextEdit):
         self.contextBlock=None
         self.mainWindow=None
         self.workspace=None
+        self.path=None
 
 
 #    def openHeader(self):
@@ -353,6 +354,17 @@ class Qutepart(QPlainTextEdit):
         
     def setWorkspace(self,ws):
         self.workspace=ws
+
+    def connectLanguageServer(self):
+        """Start using the language server for this file. Call after path, workspace and text are set"""
+        if self.workspace and self.path:
+            self._completer.connectLanguageServer(self.workspace.root, self.path)
+
+    def disconnectLanguageServer(self):
+        self._completer.disconnectLanguageServer()
+
+    def documentSaved(self):
+        self._completer.documentSaved()
 
     def _initActions(self):
         """Init shortcuts for text editing

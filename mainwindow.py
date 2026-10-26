@@ -22,6 +22,7 @@ import genmake
 import uis
 import plugins
 import dwarf
+import lsp
 
 class MainWindow(QtWidgets.QMainWindow):
     """ Main IDE Window
@@ -133,6 +134,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.generateTimer.stop()
         if self.debugger:
             self.debugger.closingApp()
+        lsp.shutdown()
             
         settings = QtCore.QSettings()
         settings.setValue("geometry", self.saveGeometry())
@@ -845,13 +847,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     f.close()
                     doc.setModified(False)
                     self.file_times[path]=os.path.getmtime(path)
+                    editor.documentSaved()
                     #dir=os.path.dirname(path)
                     #self.generateQueue.add(dir)
                     if self.symbolScan:
                         from system import getLibrarySymbols
                         getLibrarySymbols()
-                        from symbolscanner import rescanOnFileSave
-                        rescanOnFileSave(path)
 
 
     def saveFile(self):
@@ -900,6 +901,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     f.close()
                 elif rc == QtWidgets.QMessageBox.StandardButton.Cancel:
                     return False
+            editor.disconnectLanguageServer()
             del self.editors[path]
             del self.file_times[path]
         self.central.removeTab(index)
@@ -1019,6 +1021,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     editor.setLineWrapMode(QtWidgets.QPlainTextEdit.LineWrapMode.NoWrap)
                     editor.setWorkspace(self.workspaceTree)
                     editor.setMainWindow(self)
+                    editor.connectLanguageServer()
                     index=self.central.addTab(editor,os.path.basename(path))
                     self.central.setTabToolTip(index,path)
                     self.editors[path]=editor
