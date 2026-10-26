@@ -148,29 +148,25 @@ class SyntaxHighlighter(QObject):
     def isCode(self, block, column):
         """Check if character at column is a a code
         """
-        dataObject = block.userData()
-        data = dataObject.data if dataObject is not None else None
+        data = self._lineData(block)
         return self._syntax.isCode(data, column)
 
     def isComment(self, block, column):
         """Check if character at column is a comment
         """
-        dataObject = block.userData()
-        data = dataObject.data if dataObject is not None else None
+        data = self._lineData(block)
         return self._syntax.isComment(data, column)
 
     def isBlockComment(self, block, column):
         """Check if character at column is a block comment
         """
-        dataObject = block.userData()
-        data = dataObject.data if dataObject is not None else None
+        data = self._lineData(block)
         return self._syntax.isBlockComment(data, column)
 
     def isHereDoc(self, block, column):
         """Check if character at column is a here document
         """
-        dataObject = block.userData()
-        data = dataObject.data if dataObject is not None else None
+        data = self._lineData(block)
         return self._syntax.isHereDoc(data, column)
 
     @staticmethod
@@ -191,7 +187,8 @@ class SyntaxHighlighter(QObject):
     @staticmethod
     def _lineData(block):
         dataObject = block.userData()
-        if dataObject is not None:
+        # Other components (e.g. breakpoints) may store their own user data on the block
+        if isinstance(dataObject, _TextBlockUserData):
             return dataObject.data
         else:
             return None
@@ -248,10 +245,7 @@ class SyntaxHighlighter(QObject):
                 self._globalTimer.scheduleCallback(self._onContinueHighlighting)
                 return
 
-            if lineData is not None and hasattr(lineData, '__getitem__') and len(lineData) > 0:
-                contextStack = lineData[0]
-            else:
-                contextStack = None
+            contextStack = lineData[0] if lineData is not None else None
             if block.length() < 4096:
                 lineData, highlightedSegments = self._syntax.highlightBlock(block.text(), contextStack)
             else:
